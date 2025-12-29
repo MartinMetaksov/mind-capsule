@@ -7,7 +7,7 @@ import {
 } from "@mui/material";
 import { createAppTheme } from "../theme";
 
-type ThemePreference = "light" | "dark" | "system";
+export type ThemePreference = "light" | "dark" | "system";
 
 type ThemeModeContextValue = {
   preference: ThemePreference;
