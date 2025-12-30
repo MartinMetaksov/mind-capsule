@@ -1,11 +1,12 @@
 import { Loading } from "@/common/loading/Loading";
 import { Logo } from "@/common/logo/Logo";
-import { pickWorkspaceFolder } from "@/integrations/fileSystem/workspacePicker";
-import { WorkspaceService } from "@/integrations/fileSystem/workspaceService";
+// import { pickWorkspaceFolder } from "@/integrations/fileSystem/workspacePicker";
+// import { WorkspaceService } from "@/integrations/fileSystem/workspaceService";
+import { Project } from "@/models/project";
 import {
   Box,
   Button,
-  CircularProgress,
+  // CircularProgress,
   Stack,
   Tooltip,
   Typography,
@@ -15,7 +16,7 @@ import React from "react";
 export const ProjectOverview: React.FC = () => {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [projects, setProjects] = React.useState<any[]>([]);
+  const [projects, setProjects] = React.useState<Project[]>([]);
 
   // Example usage of the integrations
   // const handlePickWorkspace = async () => {
@@ -64,8 +65,8 @@ export const ProjectOverview: React.FC = () => {
       }}
     >
       <Stack spacing={2} sx={{ maxWidth: 420 }}>
-        <Logo width={180}/>
-        
+        <Logo width={180} />
+
         <Typography variant="h5">Welcome to Story Master</Typography>
 
         <Typography color="text.secondary">
