@@ -1,6 +1,6 @@
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
-import { SettingsStore } from "@/utils/settingsStore";
+import { SettingsStore } from "@/integrations/fileSystem/settingsStore";
 
 export async function pickWorkspaceFolder(): Promise<string | null> {
   const selected = await open({

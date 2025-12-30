@@ -1,14 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
-import { SettingsStore } from "@/utils/settingsStore";
-
-export type Project = {
-  id: string;
-  title: string;
-  createdAt: string;
-  updatedAt: string;
-  tags: string[];
-  status: string;
-};
+import { SettingsStore } from "@/integrations/fileSystem/settingsStore";
+import { Project } from "@/models/project";
 
 async function requireWorkspacePath(): Promise<string> {
   const p = await SettingsStore.getWorkspacePath();
@@ -29,7 +21,11 @@ export const WorkspaceService = {
     const workspacePath = await requireWorkspacePath();
     return invoke<string>("note_read", { workspacePath, projectId, noteName });
   },
-  async writeNote(projectId: string, noteName: string, content: string): Promise<void> {
+  async writeNote(
+    projectId: string,
+    noteName: string,
+    content: string
+  ): Promise<void> {
     const workspacePath = await requireWorkspacePath();
     await invoke("note_write", { workspacePath, projectId, noteName, content });
   },

@@ -1,29 +1,13 @@
-import React, { createContext, useContext, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   PaletteMode,
   ThemeProvider,
   CssBaseline,
   useMediaQuery,
 } from "@mui/material";
-import { createAppTheme } from "../theme";
-
-export type ThemePreference = "light" | "dark" | "system";
-
-type ThemeModeContextValue = {
-  preference: ThemePreference;
-  setPreference: (pref: ThemePreference) => void;
-};
-
-const ThemeModeContext = createContext<ThemeModeContextValue | undefined>(
-  undefined,
-);
-
-export const useThemeMode = () => {
-  const ctx = useContext(ThemeModeContext);
-  if (!ctx)
-    throw new Error("useThemeMode must be used within ThemeModeProvider");
-  return ctx;
-};
+import { createAppTheme } from "../../theme";
+import { ThemePreference } from "./themePreference";
+import { ThemeModeContext } from "./ThemeModeContext";
 
 export const ThemeModeProvider: React.FC<{ children: React.ReactNode }> = ({
   children,

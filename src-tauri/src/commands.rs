@@ -7,8 +7,8 @@ use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct WorkspaceMeta {
-  schemaVersion: u32,
-  createdAt: DateTime<Utc>,
+  schema_version: u32,
+  created_at: DateTime<Utc>,
   name: String,
 }
 
@@ -16,8 +16,8 @@ struct WorkspaceMeta {
 pub struct Project {
   pub id: String,
   pub title: String,
-  pub createdAt: DateTime<Utc>,
-  pub updatedAt: DateTime<Utc>,
+  pub created_at: DateTime<Utc>,
+  pub updated_at: DateTime<Utc>,
   pub tags: Vec<String>,
   pub status: String,
 }
@@ -42,8 +42,8 @@ fn ensure_workspace_structure(root: &Path) -> Result<(), String> {
   let meta_path = root.join("workspace.json");
   if !meta_path.exists() {
     let meta = WorkspaceMeta {
-      schemaVersion: 1,
-      createdAt: Utc::now(),
+      schema_version: 1,
+      created_at: Utc::now(),
       name: "Story Master Workspace".to_string(),
     };
     let json = serde_json::to_string_pretty(&meta).map_err(|e| e.to_string())?;
@@ -87,7 +87,7 @@ pub fn projects_list(workspace_path: String) -> Result<Vec<Project>, String> {
     }
   }
 
-  out.sort_by(|a, b| b.updatedAt.cmp(&a.updatedAt));
+  out.sort_by(|a, b| b.updated_at.cmp(&a.updated_at));
   Ok(out)
 }
 
@@ -102,8 +102,8 @@ pub fn project_create(workspace_path: String, title: String) -> Result<Project, 
   let project = Project {
     id: id.clone(),
     title,
-    createdAt: now,
-    updatedAt: now,
+    created_at: now,
+    updated_at: now,
     tags: vec![],
     status: "active".into(),
   };

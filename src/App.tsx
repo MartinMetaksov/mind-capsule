@@ -1,8 +1,8 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Home } from "./pages/home/Home";
 import { Box } from "@mui/material";
-import { ThemeModeProvider } from "./utils/ThemeModeContext";
 import { ProjectOverview } from "./pages/home/project-overview/ProjectOverview";
+import { ThemeModeProvider } from "./utils/themes/ThemeModeProvider";
 
 export default function App() {
   return (

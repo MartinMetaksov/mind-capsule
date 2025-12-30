@@ -11,14 +11,20 @@ import {
   Tooltip,
   Box,
   Divider,
+  SxProps,
 } from "@mui/material";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import BrightnessAutoOutlinedIcon from "@mui/icons-material/BrightnessAutoOutlined";
-import { ThemePreference, useThemeMode } from "@/utils/ThemeModeContext";
+import { ThemePreference } from "@/utils/themes/themePreference";
+import { useThemeMode } from "@/utils/themes/hooks/useThemeMode";
 
-export const Header: React.FC = () => {
+type HeaderProps = {
+  sharedStyling: SxProps;
+};
+
+export const Header: React.FC<HeaderProps> = ({ sharedStyling }) => {
   const { preference, setPreference } = useThemeMode();
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -35,18 +41,54 @@ export const Header: React.FC = () => {
     handleClose();
   };
 
-  const modeLabel =
-    preference === "system"
-      ? "Auto"
-      : preference === "light"
-        ? "Light"
-        : "Dark";
+  const themeSection = (
+    <>
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{ px: 2, py: 1, display: "block" }}
+      >
+        Theme
+      </Typography>
+      <Divider />
+
+      <MenuItem
+        selected={preference === "system"}
+        onClick={() => selectTheme("system")}
+      >
+        <ListItemIcon>
+          <BrightnessAutoOutlinedIcon fontSize="small" />
+        </ListItemIcon>
+        <ListItemText primary="Auto (system)" />
+      </MenuItem>
+
+      <MenuItem
+        selected={preference === "light"}
+        onClick={() => selectTheme("light")}
+      >
+        <ListItemIcon>
+          <LightModeOutlinedIcon fontSize="small" />
+        </ListItemIcon>
+        <ListItemText primary="Light" />
+      </MenuItem>
+
+      <MenuItem
+        selected={preference === "dark"}
+        onClick={() => selectTheme("dark")}
+      >
+        <ListItemIcon>
+          <DarkModeOutlinedIcon fontSize="small" />
+        </ListItemIcon>
+        <ListItemText primary="Dark" />
+      </MenuItem>
+    </>
+  );
 
   return (
     <AppBar position="sticky" elevation={0}>
       <Toolbar
         sx={{
-          px: { xs: 2, sm: 4, md: 6 },
+          ...sharedStyling,
           minHeight: 64,
           gap: 2,
         }}
@@ -59,10 +101,6 @@ export const Header: React.FC = () => {
             sx={{ fontWeight: 800 }}
           >
             Story Master
-          </Typography>
-
-          <Typography variant="body2" color="text.secondary">
-            {modeLabel}
           </Typography>
         </Box>
 
@@ -113,44 +151,7 @@ export const Header: React.FC = () => {
             },
           }}
         >
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{ px: 2, py: 1, display: "block" }}
-          >
-            Theme
-          </Typography>
-          <Divider />
-
-          <MenuItem
-            selected={preference === "system"}
-            onClick={() => selectTheme("system")}
-          >
-            <ListItemIcon>
-              <BrightnessAutoOutlinedIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText primary="Auto (system)" />
-          </MenuItem>
-
-          <MenuItem
-            selected={preference === "light"}
-            onClick={() => selectTheme("light")}
-          >
-            <ListItemIcon>
-              <LightModeOutlinedIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText primary="Light" />
-          </MenuItem>
-
-          <MenuItem
-            selected={preference === "dark"}
-            onClick={() => selectTheme("dark")}
-          >
-            <ListItemIcon>
-              <DarkModeOutlinedIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText primary="Dark" />
-          </MenuItem>
+          {themeSection}
         </Menu>
       </Toolbar>
     </AppBar>
