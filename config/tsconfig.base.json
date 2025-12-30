@@ -11,6 +11,10 @@
     "types": ["vitest/globals"],
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "useDefineForClassFields": true
+    "useDefineForClassFields": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   }
 }

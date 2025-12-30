@@ -16,7 +16,7 @@ import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import BrightnessAutoOutlinedIcon from "@mui/icons-material/BrightnessAutoOutlined";
-import { ThemePreference, useThemeMode } from "../../../utils/ThemeModeContext";
+import { ThemePreference, useThemeMode } from "@/utils/ThemeModeContext";
 
 export const Header: React.FC = () => {
   const { preference, setPreference } = useThemeMode();
