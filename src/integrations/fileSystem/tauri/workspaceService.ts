@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
-import { SettingsStore } from "@/integrations/fileSystem/settingsStore";
-import { Project } from "@/models/project";
+import { SettingsStore } from "@/integrations/fileSystem/tauri/settingsStore";
+import { Project } from "@/core/project";
 
 async function requireWorkspacePath(): Promise<string> {
   const p = await SettingsStore.getWorkspacePath();

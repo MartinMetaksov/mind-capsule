@@ -1,58 +1,105 @@
 import { Loading } from "@/common/loading/Loading";
 import { Logo } from "@/common/logo/Logo";
-// import { pickWorkspaceFolder } from "@/integrations/fileSystem/workspacePicker";
-// import { WorkspaceService } from "@/integrations/fileSystem/workspaceService";
-import { Project } from "@/models/project";
-import {
-  Box,
-  Button,
-  // CircularProgress,
-  Stack,
-  Tooltip,
-  Typography,
-} from "@mui/material";
+import { Workspace } from "@/core/workspace";
+import { getFileSystem } from "@/integrations/fileSystem/integration";
+import { Box, Button, Stack, Tooltip, Typography } from "@mui/material";
 import React from "react";
 
-export const ProjectOverview: React.FC = () => {
+const normalize_tags = (tags: string[]): string[] =>
+  Array.from(
+    new Set(tags.map((t) => t.trim().toLowerCase()).filter((t) => t.length > 0))
+  );
+
+export const VertexOverview: React.FC = () => {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [projects, setProjects] = React.useState<Project[]>([]);
+  const [workspaces, setWorkspaces] = React.useState<Workspace[]>([]);
 
-  // Example usage of the integrations
-  // const handlePickWorkspace = async () => {
-  //   setLoading(true);
-  //   setError(null);
+  const refreshWorkspaces = React.useCallback(async () => {
+    const fs = await getFileSystem();
+    const list = await fs.getWorkspaces();
+    setWorkspaces(list);
+  }, []);
 
-  //   try {
-  //     const ws = await pickWorkspaceFolder();
-
-  //     if (!ws) {
-  //       setLoading(false);
-  //       return;
-  //     }
-
-  //     // Create an example project
-  //     const created = await WorkspaceService.createProject("My first project");
-  //     console.log("Created project:", created);
-
-  //     // Load all projects
-  //     const list = await WorkspaceService.listProjects();
-  //     console.log("Project list:", list);
-
-  //     setProjects(list);
-  //   } catch (err) {
-  //     console.error(err);
-  //     setError("Failed to initialize workspace.");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
+  React.useEffect(() => {
+    // Load existing workspaces on mount (works in web mock too)
+    refreshWorkspaces().catch((err) => {
+      console.error("Failed to load workspaces:", err);
+      setError(
+        err instanceof Error ? err.message : "Failed to load workspaces."
+      );
+    });
+  }, [refreshWorkspaces]);
 
   const handlePickWorkspace = async () => {
-    // TODO: implement later
+    setLoading(true);
+    setError(null);
+
+    try {
+      const fs = await getFileSystem();
+
+      const selectedDir = await fs.selectWorkspaceDirectory();
+      if (!selectedDir) return;
+
+      const now = new Date().toISOString();
+
+      const workspace: Workspace = {
+        id: crypto.randomUUID(),
+        name: "New workspace",
+        path: selectedDir,
+        purpose: "Selected workspace directory",
+        created_at: now,
+        updated_at: now,
+        tags: [],
+        root_vertex_ids: [],
+      };
+
+      await fs.createWorkspace(workspace);
+      setWorkspaces(await fs.getWorkspaces());
+    } catch (err) {
+      console.error("Pick workspace failed:", err);
+      setError(
+        err instanceof Error ? err.message : "Failed to select workspace."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
+
   const createDefaultWorkspace = async () => {
-    // TODO: implement later
+    setLoading(true);
+    setError(null);
+
+    try {
+      const fs = await getFileSystem();
+
+      // For now we can use a conventional path/uri in web mode.
+      // In Tauri mode, you’ll likely want fs to actually create this folder and return its real path.
+      const defaultPath = "memory://.StoryMasterWorkspace";
+
+      const now = new Date().toISOString();
+
+      const workspace: Workspace = {
+        id: crypto.randomUUID(),
+        name: "Default workspace",
+        path: defaultPath,
+        purpose: "Created by Story Master",
+        created_at: now,
+        updated_at: now,
+        tags: [],
+        root_vertex_ids: [],
+      };
+
+      await fs.createWorkspace(workspace);
+      setWorkspaces(await fs.getWorkspaces());
+    } catch (err) {
+      console.error("Create default workspace failed:", err);
+      setError(
+        err instanceof Error ? err.message : "Failed to create workspace."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -102,9 +149,7 @@ export const ProjectOverview: React.FC = () => {
                 },
               },
               arrow: {
-                sx: {
-                  color: "background.paper",
-                },
+                sx: { color: "background.paper" },
               },
             }}
           >
@@ -151,11 +196,7 @@ export const ProjectOverview: React.FC = () => {
                     fontSize: "0.75rem",
                   },
                 },
-                arrow: {
-                  sx: {
-                    color: "background.paper",
-                  },
-                },
+                arrow: { sx: { color: "background.paper" } },
               }}
             >
               <Box
@@ -192,12 +233,12 @@ export const ProjectOverview: React.FC = () => {
           </Typography>
         )}
 
-        {projects.length > 0 && (
+        {workspaces.length > 0 && (
           <>
-            <Typography variant="subtitle1">Projects</Typography>
+            <Typography variant="subtitle1">Workspaces</Typography>
             <ul>
-              {projects.map((p) => (
-                <li key={p.id}>{p.title}</li>
+              {workspaces.map((w) => (
+                <li key={w.id}>{w.name}</li>
               ))}
             </ul>
           </>
