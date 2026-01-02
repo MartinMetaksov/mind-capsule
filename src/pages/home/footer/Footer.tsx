@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Box, Typography, Stack, Link } from "@mui/material";
+import { APP_NAME, GITHUB_URL } from "@/constants/appConstants";
 
 export const Footer: React.FC = () => {
   const year = new Date().getFullYear();
@@ -21,12 +22,12 @@ export const Footer: React.FC = () => {
         alignItems={{ xs: "flex-start", sm: "center" }}
       >
         <Typography variant="body2" color="text.secondary">
-          © {year} Story Master
+          © {year} {APP_NAME}
         </Typography>
 
         <Stack direction="row" spacing={2}>
           <Link
-            href="https://github.com/MartinMetaksov/story-master"
+            href={GITHUB_URL}
             underline="hover"
             color="text.secondary"
             target="_blank"

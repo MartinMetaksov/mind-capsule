@@ -1,12 +1,13 @@
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import { SettingsStore } from "@/integrations/fileSystem/tauri/settingsStore";
+import { APP_NAME } from "@/constants/appConstants";
 
 export async function pickWorkspaceFolder(): Promise<string | null> {
   const selected = await open({
     directory: true,
     multiple: false,
-    title: "Select your Story Master workspace folder",
+    title: `Select your ${APP_NAME} workspace folder`,
   });
 
   if (!selected || Array.isArray(selected)) return null;

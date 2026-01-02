@@ -19,6 +19,7 @@ import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import BrightnessAutoOutlinedIcon from "@mui/icons-material/BrightnessAutoOutlined";
 import { ThemePreference } from "@/utils/themes/themePreference";
 import { useThemeMode } from "@/utils/themes/hooks/useThemeMode";
+import { APP_NAME } from "@/constants/appConstants";
 
 type HeaderProps = {
   sharedStyling: SxProps;
@@ -93,16 +94,45 @@ export const Header: React.FC<HeaderProps> = ({ sharedStyling }) => {
           gap: 2,
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "baseline", gap: 1, flex: 1 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1.5,
+            flex: 1,
+          }}
+        >
+          <Box
+            component="img"
+            src="/images/logo.png"
+            alt="Mind Capsule logo"
+            sx={{
+              width: 32,
+              height: 32,
+              userSelect: "none",
+              pointerEvents: "none",
+            }}
+          />
+
           <Typography
             variant="h6"
             color="text.primary"
             component="h1"
             sx={{ fontWeight: 800 }}
           >
-            Story Master
+            {APP_NAME}
           </Typography>
         </Box>
+        {/* <Box sx={{ display: "flex", alignItems: "baseline", gap: 1, flex: 1 }}>
+          <Typography
+            variant="h6"
+            color="text.primary"
+            component="h1"
+            sx={{ fontWeight: 800 }}
+          >
+            {APP_NAME}
+          </Typography>
+        </Box> */}
 
         <Tooltip title="Settings">
           <IconButton

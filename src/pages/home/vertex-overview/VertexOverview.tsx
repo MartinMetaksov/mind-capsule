@@ -1,5 +1,6 @@
 import { Loading } from "@/common/loading/Loading";
 import { Logo } from "@/common/logo/Logo";
+import { APP_NAME, APP_NAME_TECHNICAL } from "@/constants/appConstants";
 import { Workspace } from "@/core/workspace";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
 import { Box, Button, Stack, Tooltip, Typography } from "@mui/material";
@@ -75,7 +76,7 @@ export const VertexOverview: React.FC = () => {
 
       // For now we can use a conventional path/uri in web mode.
       // In Tauri mode, you’ll likely want fs to actually create this folder and return its real path.
-      const defaultPath = "memory://.StoryMasterWorkspace";
+      const defaultPath = `memory://.${APP_NAME_TECHNICAL}Workspace`;
 
       const now = new Date().toISOString();
 
@@ -83,7 +84,7 @@ export const VertexOverview: React.FC = () => {
         id: crypto.randomUUID(),
         name: "Default workspace",
         path: defaultPath,
-        purpose: "Created by Story Master",
+        purpose: `Created by ${APP_NAME}`,
         created_at: now,
         updated_at: now,
         tags: [],
@@ -114,20 +115,20 @@ export const VertexOverview: React.FC = () => {
       <Stack spacing={2} sx={{ maxWidth: 420 }}>
         <Logo width={180} />
 
-        <Typography variant="h5">Welcome to Story Master</Typography>
+        <Typography variant="h5">Welcome to {APP_NAME}</Typography>
 
         <Typography color="text.secondary">
-          Story Master helps you capture and organize game ideas, story beats,
-          lore, inspiration, and world-building notes — all in one place.
+          {APP_NAME} helps you capture and organize ideas, story beats, lore,
+          inspiration, world-building notes — all in one place.
         </Typography>
 
         <Typography color="text.secondary">
-          Story Master needs a{" "}
+          {APP_NAME} requires a{" "}
           <Tooltip
             title={
               <Stack spacing={1.5}>
                 <Typography variant="body2">
-                  A workspace is a folder on your computer where Story Master
+                  A workspace is a folder on your computer where {APP_NAME}
                   stores your projects, notes, and files.
                 </Typography>
                 <Typography variant="body2">
@@ -176,12 +177,13 @@ export const VertexOverview: React.FC = () => {
 
         <Box visibility={loading ? "hidden" : "visible"}>
           <Typography color="text.secondary">
-            Prefer a quick start? Story Master can create a{" "}
+            Prefer a quick start? {APP_NAME} can create a{" "}
             <Tooltip
               title={
                 <Typography variant="body2">
-                  Creates a folder named <code>.StoryMasterWorkspace</code> in
-                  your home directory.
+                  Creates a folder named{" "}
+                  <code>.{APP_NAME_TECHNICAL}Workspace</code> in your home
+                  directory.
                 </Typography>
               }
               arrow

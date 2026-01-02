@@ -1,13 +1,13 @@
 <!-- =====================================================
-     Story Master
+     Mind Capsule
 ===================================================== -->
 
 <p align="center">
   <!-- Replace the src once you add the logo image to the repo -->
-  <img src="./public/images/logo.png" alt="Story Master logo (AI generated)" width="320" />
+  <img src="./public/images/logo.png" alt="Mind Capsule logo (AI generated)" width="320" />
 </p>
 
-<h1 align="center">Story Master</h1>
+<h1 align="center">Mind Capsule</h1>
 
 <p align="center">
   A focused workspace for managing game development ideas, stories, lore,
@@ -16,9 +16,9 @@
 
 ---
 
-## ✨ What is Story Master?
+## ✨ What is Mind Capsule?
 
-**Story Master** is an open-source, work-in-progress desktop application (built with Tauri) designed to help game developers and writers:
+**Mind Capsule** is an open-source, work-in-progress desktop application (built with Tauri) designed to help game developers and writers:
 
 - Capture story ideas quickly
 - Organize lore, characters, worlds, and concepts
@@ -27,7 +27,7 @@
 
 The goal is a **distraction-free, writing-first experience**, built with modern web tools and a calm, readable UI.
 
-While the UI is web-based, Story Master runs as a native desktop app with full local filesystem access.
+While the UI is web-based, Mind Capsule runs as a native desktop app with full local filesystem access.
 
 ---
 
@@ -64,7 +64,7 @@ Starts the Vite dev server in the browser. Useful for fast UI iteration.
 ### Start desktop app (recommended)
 
 `pnpm run dev:tauri`
-Runs the full desktop application using Tauri. This is the primary way to run Story Master.
+Runs the full desktop application using Tauri. This is the primary way to run Mind Capsule.
 
 ### 📜 Available Scripts
 
@@ -91,7 +91,7 @@ Builds production-ready desktop binaries.
 
 `pnpm run dev:tauri`
 
-Starts the Story Master desktop application using Tauri.
+Starts the Mind Capsule desktop application using Tauri.
 
 - Full filesystem access
 - Workspace folders
@@ -170,7 +170,7 @@ Formats the entire codebase using Prettier.
 
 ## 🗂 Workspace & Data Storage
 
-Story Master uses a **local workspace folder** as its primary data store.
+Mind Capsule uses a **local workspace folder** as its primary data store.
 
 - Projects, notes, images, and assets are stored as real files
 - Long-form content is stored as Markdown
@@ -207,7 +207,6 @@ This ensures the main branch stays healthy and deployable.
 - Rich text / markdown editor
 - Focus / writing mode
 - Offline-first storage
-- Cross-device synchronization
 
 ### 📄 License
 
@@ -221,5 +220,5 @@ Martin Metaksov
 
 ---
 
-Story Master is still in early development.
+Mind Capsule is still in early development.
 Ideas, feedback, and discussion are welcome as the project evolves.

@@ -1,7 +1,7 @@
 [package]
-name = "StoryMaster"
+name = "MindCapsule"
 version = "0.1.0"
-description = "Story Master App"
+description = "Mind Capsule App"
 authors = ["Martin Metaksov"]
 license = ""
 repository = ""

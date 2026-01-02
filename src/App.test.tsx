@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import App from "./App";
 
-test("renders Story Master", () => {
+test("renders application", () => {
   render(<App />);
-  expect(screen.getAllByText(/story master/i).length).toBeGreaterThan(0);
+  expect(screen.getAllByText(/mind capsule/i).length).toBeGreaterThan(0);
 });

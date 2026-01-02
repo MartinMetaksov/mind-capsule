@@ -44,7 +44,7 @@ fn ensure_workspace_structure(root: &Path) -> Result<(), String> {
     let meta = WorkspaceMeta {
       schema_version: 1,
       created_at: Utc::now(),
-      name: "Story Master Workspace".to_string(),
+      name: "Mind Capsule Workspace".to_string(),
     };
     let json = serde_json::to_string_pretty(&meta).map_err(|e| e.to_string())?;
     fs::write(meta_path, json).map_err(|e| e.to_string())?;

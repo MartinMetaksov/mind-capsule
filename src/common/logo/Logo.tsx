@@ -1,3 +1,4 @@
+import { APP_NAME } from "@/constants/appConstants";
 import { Box } from "@mui/material";
 import React from "react";
 
@@ -8,7 +9,7 @@ type LogoProps = {
 
 export const Logo: React.FC<LogoProps> = ({
   width = 180,
-  alt = "Story Master logo",
+  alt = `${APP_NAME} logo`,
 }) => {
   return (
     <Box
