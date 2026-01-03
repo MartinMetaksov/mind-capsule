@@ -11,13 +11,12 @@ export interface FileSystem {
   updateWorkspace(new_workspace: Workspace): Promise<void>;
   removeWorkspace(workspace_id: Id): Promise<void>;
 
-  // TODO: implement
-  // // vertices 
-  // createVertex(vertex: Vertex): Promise<void>;
-  // getVertices(parent_id: Id): Promise<Vertex[]>;
-  // getVertex(vertex_id: Id): Promise<Vertex | null>;
-  // updateVertex(new_vertex: Vertex): Promise<void>;
-  // removeVertex(new_vertex: Vertex): Promise<void>;
+  // vertices 
+  createVertex(vertex: Vertex): Promise<void>;
+  getVertices(parent_id: Id): Promise<Vertex[]>;
+  getVertex(vertex_id: Id): Promise<Vertex | null>;
+  updateVertex(new_vertex: Vertex): Promise<void>;
+  removeVertex(new_vertex: Vertex): Promise<void>;
   
   // references
   // TODO: implement

@@ -1,7 +1,7 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Home } from "./pages/home/Home";
 import { Box } from "@mui/material";
-import { VertexOverview } from "./pages/home/vertex-overview/VertexOverview";
+import { VertexOrchestrator } from "./pages/home/vertex-overview/VertexOrchestrator";
 import { ThemeModeProvider } from "./utils/themes/ThemeModeProvider";
 
 export default function App() {
@@ -12,7 +12,7 @@ export default function App() {
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Home />}>
-                <Route index element={<VertexOverview />} />
+                <Route index element={<VertexOrchestrator />} />
               </Route>
             </Routes>
           </BrowserRouter>
