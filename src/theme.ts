@@ -118,7 +118,7 @@ const getDesignTokens = (mode: PaletteMode): ThemeOptions => {
             backgroundImage: "none",
             border: `1px solid ${alpha(
               isDark ? DARK_TEXT : LIGHT_TEXT,
-              isDark ? 0.08 : 0.1
+              isDark ? 0.08 : 0.1,
             )}`,
           },
         },
@@ -130,7 +130,7 @@ const getDesignTokens = (mode: PaletteMode): ThemeOptions => {
             backgroundImage: "none",
             border: `1px solid ${alpha(
               isDark ? DARK_TEXT : LIGHT_TEXT,
-              isDark ? 0.08 : 0.1
+              isDark ? 0.08 : 0.1,
             )}`,
             boxShadow: isDark
               ? "0 8px 24px rgba(0,0,0,0.4)"
@@ -147,7 +147,7 @@ const getDesignTokens = (mode: PaletteMode): ThemeOptions => {
             boxShadow: "none",
             borderBottom: `1px solid ${alpha(
               isDark ? DARK_TEXT : LIGHT_TEXT,
-              isDark ? 0.08 : 0.1
+              isDark ? 0.08 : 0.1,
             )}`,
           },
         },

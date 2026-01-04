@@ -18,7 +18,7 @@ export const useWorkspaces = () => {
     } catch (err) {
       console.error("Failed to load workspaces:", err);
       setError(
-        err instanceof Error ? err.message : "Failed to load workspaces."
+        err instanceof Error ? err.message : "Failed to load workspaces.",
       );
       setWorkspaces([]);
     } finally {

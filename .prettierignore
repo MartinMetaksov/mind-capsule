@@ -1,0 +1,13 @@
+# Tauri / Rust
+src-tauri/
+**/*.rs
+
+# Build output
+dist/
+build/
+
+# Node artifacts
+node_modules/
+
+# Lockfiles (optional)
+pnpm-lock.yaml

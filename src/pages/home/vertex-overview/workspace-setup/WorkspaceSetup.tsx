@@ -46,7 +46,7 @@ export const WorkspaceSetup: React.FC<WorkspaceSetupProps> = ({
     } catch (err) {
       console.error("Pick workspace failed:", err);
       setError(
-        err instanceof Error ? err.message : "Failed to select workspace."
+        err instanceof Error ? err.message : "Failed to select workspace.",
       );
     } finally {
       setLoading(false);
@@ -79,7 +79,7 @@ export const WorkspaceSetup: React.FC<WorkspaceSetupProps> = ({
     } catch (err) {
       console.error("Create default workspace failed:", err);
       setError(
-        err instanceof Error ? err.message : "Failed to create workspace."
+        err instanceof Error ? err.message : "Failed to create workspace.",
       );
     } finally {
       setLoading(false);

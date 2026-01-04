@@ -37,10 +37,10 @@ function seedIfRequested() {
   if (alreadySeeded) return;
 
   const wsMap = Object.fromEntries(
-    (seed.workspaces as Workspace[]).map((w) => [w.id, w])
+    (seed.workspaces as Workspace[]).map((w) => [w.id, w]),
   );
   const vMap = Object.fromEntries(
-    (seed.vertices as Vertex[]).map((v) => [v.id, v])
+    (seed.vertices as Vertex[]).map((v) => [v.id, v]),
   );
 
   persist(WORKSPACE_KEY, wsMap);
