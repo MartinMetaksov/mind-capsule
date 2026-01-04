@@ -1,0 +1,50 @@
+{
+  "workspaces": [
+    {
+      "id": "ws-default",
+      "name": "Default Workspace",
+      "path": "memory://.MindCapsuleWorkspace",
+      "purpose": "Your first Mind Capsule workspace",
+      "created_at": "2024-01-01T00:00:00.000Z",
+      "updated_at": "2024-01-01T00:00:00.000Z",
+      "tags": ["default"],
+      "root_vertex_ids": ["v-project"]
+    }
+  ],
+  "vertices": [
+    {
+      "id": "v-project",
+      "title": "My First Project",
+      "kind": "project",
+      "parent_id": null,
+      "children_ids": ["v-chapter-1", "v-chapter-2"],
+      "created_at": "2024-01-01T00:00:00.000Z",
+      "updated_at": "2024-01-01T00:00:00.000Z",
+      "tags": ["story", "demo"],
+      "thumbnail_path": "/images/sample-project.jpg",
+      "reference_groups": []
+    },
+    {
+      "id": "v-chapter-1",
+      "title": "Chapter One",
+      "kind": "chapter",
+      "parent_id": "v-project",
+      "children_ids": [],
+      "created_at": "2024-01-01T00:00:00.000Z",
+      "updated_at": "2024-01-01T00:00:00.000Z",
+      "tags": ["intro"],
+      "reference_groups": []
+    },
+    {
+      "id": "v-chapter-2",
+      "title": "Chapter Two",
+      "kind": "chapter",
+      "parent_id": "v-project",
+      "children_ids": [],
+      "created_at": "2024-01-01T00:00:00.000Z",
+      "updated_at": "2024-01-01T00:00:00.000Z",
+      "tags": [],
+      "reference_groups": []
+    }
+  ]
+}

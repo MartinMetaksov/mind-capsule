@@ -5,14 +5,16 @@ import { Header } from "./header/Header";
 import { Footer } from "./footer/Footer";
 
 export const Home: React.FC = () => {
-  const sharedStyling = { px: { xs: 2, sm: 4, md: 6 } };
-
   return (
     <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-      <Header sharedStyling={sharedStyling} />
-      <Box component="main" sx={{ ...sharedStyling, flex: 1 }}>
-        <Outlet />
+      <Header />
+
+      <Box component="main" sx={{ flex: 1, minHeight: 0, display: "flex" }}>
+        <Box sx={{ flex: 1, minHeight: 0, display: "flex" }}>
+          <Outlet />
+        </Box>
       </Box>
+
       <Footer />
     </Box>
   );

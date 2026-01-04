@@ -6,31 +6,17 @@ import { getFileSystem } from "@/integrations/fileSystem/integration";
 import { Box, Button, Stack, Tooltip, Typography } from "@mui/material";
 import React from "react";
 
-const normalize_tags = (tags: string[]): string[] =>
-  Array.from(
-    new Set(tags.map((t) => t.trim().toLowerCase()).filter((t) => t.length > 0))
-  );
+type WorkspaceSetupProps = {
+  workspaces?: Workspace[];
+  onChanged?: () => Promise<void> | void;
+};
 
-export const VertexOverview: React.FC = () => {
+export const WorkspaceSetup: React.FC<WorkspaceSetupProps> = ({
+  workspaces = [],
+  onChanged,
+}) => {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [workspaces, setWorkspaces] = React.useState<Workspace[]>([]);
-
-  const refreshWorkspaces = React.useCallback(async () => {
-    const fs = await getFileSystem();
-    const list = await fs.getWorkspaces();
-    setWorkspaces(list);
-  }, []);
-
-  React.useEffect(() => {
-    // Load existing workspaces on mount (works in web mock too)
-    refreshWorkspaces().catch((err) => {
-      console.error("Failed to load workspaces:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to load workspaces."
-      );
-    });
-  }, [refreshWorkspaces]);
 
   const handlePickWorkspace = async () => {
     setLoading(true);
@@ -56,11 +42,11 @@ export const VertexOverview: React.FC = () => {
       };
 
       await fs.createWorkspace(workspace);
-      setWorkspaces(await fs.getWorkspaces());
+      await onChanged?.();
     } catch (err) {
       console.error("Pick workspace failed:", err);
       setError(
-        err instanceof Error ? err.message : "Failed to select workspace."
+        err instanceof Error ? err.message : "Failed to select workspace.",
       );
     } finally {
       setLoading(false);
@@ -74,10 +60,7 @@ export const VertexOverview: React.FC = () => {
     try {
       const fs = await getFileSystem();
 
-      // For now we can use a conventional path/uri in web mode.
-      // In Tauri mode, you’ll likely want fs to actually create this folder and return its real path.
       const defaultPath = `memory://.${APP_NAME_TECHNICAL}Workspace`;
-
       const now = new Date().toISOString();
 
       const workspace: Workspace = {
@@ -92,11 +75,11 @@ export const VertexOverview: React.FC = () => {
       };
 
       await fs.createWorkspace(workspace);
-      setWorkspaces(await fs.getWorkspaces());
+      await onChanged?.();
     } catch (err) {
       console.error("Create default workspace failed:", err);
       setError(
-        err instanceof Error ? err.message : "Failed to create workspace."
+        err instanceof Error ? err.message : "Failed to create workspace.",
       );
     } finally {
       setLoading(false);
@@ -104,14 +87,7 @@ export const VertexOverview: React.FC = () => {
   };
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        justifyContent: "center",
-        m: "auto",
-        mt: "20px",
-      }}
-    >
+    <Box sx={{ display: "flex", justifyContent: "center", m: "auto", mt: 2 }}>
       <Stack spacing={2} sx={{ maxWidth: 420 }}>
         <Logo width={180} />
 
@@ -119,7 +95,7 @@ export const VertexOverview: React.FC = () => {
 
         <Typography color="text.secondary">
           {APP_NAME} helps you capture and organize ideas, story beats, lore,
-          inspiration, world-building notes — all in one place.
+          inspiration, and world-building notes — all in one place.
         </Typography>
 
         <Typography color="text.secondary">
@@ -149,17 +125,12 @@ export const VertexOverview: React.FC = () => {
                   fontSize: "0.75rem",
                 },
               },
-              arrow: {
-                sx: { color: "background.paper" },
-              },
+              arrow: { sx: { color: "background.paper" } },
             }}
           >
             <Box
               component="span"
-              sx={{
-                textDecoration: "underline dotted",
-                cursor: "help",
-              }}
+              sx={{ textDecoration: "underline dotted", cursor: "help" }}
             >
               workspace
             </Box>
@@ -203,10 +174,7 @@ export const VertexOverview: React.FC = () => {
             >
               <Box
                 component="span"
-                sx={{
-                  textDecoration: "underline dotted",
-                  cursor: "help",
-                }}
+                sx={{ textDecoration: "underline dotted", cursor: "help" }}
               >
                 default
               </Box>

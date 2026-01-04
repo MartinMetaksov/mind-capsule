@@ -9,10 +9,10 @@ export const Footer: React.FC = () => {
     <Box
       component="footer"
       sx={(theme) => ({
-        mt: "50px",
         py: 3,
         px: 2,
         borderTop: `1px solid ${theme.palette.divider}`,
+        bgcolor: "background.paper",
       })}
     >
       <Stack
