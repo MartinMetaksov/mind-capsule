@@ -11,7 +11,6 @@ import {
   Tooltip,
   Box,
   Divider,
-  SxProps,
 } from "@mui/material";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
@@ -21,11 +20,7 @@ import { ThemePreference } from "@/utils/themes/themePreference";
 import { useThemeMode } from "@/utils/themes/hooks/useThemeMode";
 import { APP_NAME } from "@/constants/appConstants";
 
-type HeaderProps = {
-  sharedStyling: SxProps;
-};
-
-export const Header: React.FC<HeaderProps> = ({ sharedStyling }) => {
+export const Header: React.FC = () => {
   const { preference, setPreference } = useThemeMode();
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -89,7 +84,6 @@ export const Header: React.FC<HeaderProps> = ({ sharedStyling }) => {
     <AppBar position="sticky" elevation={0}>
       <Toolbar
         sx={{
-          ...sharedStyling,
           minHeight: 64,
           gap: 2,
         }}

@@ -44,17 +44,15 @@ function countReferences(vertex: Vertex): RefCounts {
 
   const groups = vertex.reference_groups ?? [];
   for (const g of groups) {
-    for (const r of g.references) {
-      counts[r.type] += 1;
-    }
+    for (const r of g.references) counts[r.type] += 1;
   }
 
   return counts;
 }
 
-/** Fixed size for all vertices */
-export const VERTEX_NODE_WIDTH = 200;
-export const VERTEX_NODE_HEIGHT = 140;
+/** Fixed size for all vertices (2× larger than before) */
+export const VERTEX_NODE_WIDTH = 300;
+export const VERTEX_NODE_HEIGHT = 210;
 export const VERTEX_RADIUS = 1;
 
 export const VertexNode: React.FC<VertexNodeProps> = ({
@@ -89,12 +87,11 @@ export const VertexNode: React.FC<VertexNodeProps> = ({
           filter: dimmed ? "grayscale(0.3)" : "none",
           transition:
             "opacity 160ms ease, filter 160ms ease, transform 160ms ease",
-          transform: selected ? "scale(1.03)" : "scale(1)",
+          transform: selected ? "scale(1.02)" : "scale(1)",
           position: "relative",
           pointerEvents: dimmed ? "none" : "auto",
         }}
       >
-        {/* Node */}
         <Paper
           onClick={handleClick}
           role="button"
@@ -112,9 +109,7 @@ export const VertexNode: React.FC<VertexNodeProps> = ({
             border: selected
               ? `1px solid ${theme.palette.primary.main}`
               : `1px solid ${theme.palette.divider}`,
-            "&:hover": {
-              borderColor: theme.palette.primary.main,
-            },
+            "&:hover": { borderColor: theme.palette.primary.main },
           })}
         >
           {/* Thumbnail */}
@@ -143,32 +138,44 @@ export const VertexNode: React.FC<VertexNodeProps> = ({
             />
           )}
 
-          {/* Overlay for text readability */}
+          {/* Overlay */}
           <Box
             sx={{
               position: "absolute",
               inset: 0,
               background:
-                "linear-gradient(to top, rgba(0,0,0,0.70), rgba(0,0,0,0.25) 55%, rgba(0,0,0,0.05))",
+                "linear-gradient(to top, rgba(0,0,0,0.74), rgba(0,0,0,0.22) 55%, rgba(0,0,0,0.08))",
             }}
           />
 
-          {/* Title */}
-          <Box
-            sx={{
-              position: "absolute",
-              left: 12,
-              right: 12,
-              bottom: 12,
-            }}
-          >
+          {/* Workspace label INSIDE */}
+          <Box sx={{ position: "absolute", top: 12, left: 12, right: 12 }}>
             <Typography
-              variant="subtitle2"
+              variant="caption"
               sx={{
                 color: "common.white",
-                fontWeight: 800,
-                lineHeight: 1.2,
+                opacity: 0.9,
+                fontWeight: 700,
                 textShadow: "0 1px 8px rgba(0,0,0,0.35)",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+              title={workspace.name}
+            >
+              {workspace.name}
+            </Typography>
+          </Box>
+
+          {/* Title */}
+          <Box sx={{ position: "absolute", left: 14, right: 14, bottom: 14 }}>
+            <Typography
+              variant="h6"
+              sx={{
+                color: "common.white",
+                fontWeight: 900,
+                lineHeight: 1.15,
+                textShadow: "0 1px 10px rgba(0,0,0,0.42)",
                 display: "-webkit-box",
                 WebkitLineClamp: 2,
                 WebkitBoxOrient: "vertical",
@@ -180,23 +187,6 @@ export const VertexNode: React.FC<VertexNodeProps> = ({
           </Box>
         </Paper>
 
-        {/* Workspace label */}
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{
-            mt: 0.75,
-            display: "block",
-            textAlign: "center",
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-          }}
-          title={workspace.name}
-        >
-          {workspace.name}
-        </Typography>
-
         {/* Action bar */}
         {selected && (
           <Paper
@@ -204,7 +194,7 @@ export const VertexNode: React.FC<VertexNodeProps> = ({
             sx={(theme) => ({
               position: "absolute",
               left: "50%",
-              bottom: -48,
+              bottom: -54,
               transform: "translateX(-50%)",
               px: 1,
               py: 0.5,
@@ -313,7 +303,7 @@ export const VertexNode: React.FC<VertexNodeProps> = ({
             sx={{
               position: "absolute",
               left: "50%",
-              bottom: -70,
+              bottom: -78,
               transform: "translateX(-50%)",
               whiteSpace: "nowrap",
             }}

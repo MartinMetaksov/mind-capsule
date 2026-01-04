@@ -4,17 +4,19 @@ import { Vertex } from "@/core/vertex";
 import { Workspace } from "@/core/workspace";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
 
-export type VerticesMap = Record<Id, Vertex[]>;
+export type WorkspaceByVertexId = Record<Id, Workspace>;
 
 export const useVertices = (workspaces: Workspace[] | undefined) => {
-  const [verticesByWorkspace, setVerticesByWorkspace] =
-    React.useState<VerticesMap>({});
+  const [vertices, setVertices] = React.useState<Vertex[]>([]);
+  const [workspaceByVertexId, setWorkspaceByVertexId] =
+    React.useState<WorkspaceByVertexId>({});
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
   const loadVertices = React.useCallback(async () => {
     if (!workspaces || workspaces.length === 0) {
-      setVerticesByWorkspace({});
+      setVertices([]);
+      setWorkspaceByVertexId({});
       setLoading(false);
       setError(null);
       return;
@@ -25,27 +27,33 @@ export const useVertices = (workspaces: Workspace[] | undefined) => {
 
     try {
       const fs = await getFileSystem();
-      const next: VerticesMap = {};
 
+      const nextVertices: Vertex[] = [];
+      const nextWorkspaceByVertexId: WorkspaceByVertexId = {};
+
+      // Flatten all root vertices across all workspaces
       for (const ws of workspaces) {
         const rootIds = ws.root_vertex_ids ?? [];
 
-        if (rootIds.length === 0) {
-          next[ws.id] = [];
-          continue;
-        }
+        if (rootIds.length === 0) continue;
 
+        // Keep the workspace-defined order
         const roots = await Promise.all(rootIds.map((id) => fs.getVertex(id)));
 
-        // filter out nulls (in case ids reference missing vertices)
-        next[ws.id] = roots.filter((v): v is Vertex => Boolean(v));
+        for (const v of roots) {
+          if (!v) continue;
+          nextVertices.push(v);
+          nextWorkspaceByVertexId[v.id] = ws;
+        }
       }
 
-      setVerticesByWorkspace(next);
+      setVertices(nextVertices);
+      setWorkspaceByVertexId(nextWorkspaceByVertexId);
     } catch (err) {
       console.error("Failed to load vertices:", err);
       setError(err instanceof Error ? err.message : "Failed to load vertices.");
-      setVerticesByWorkspace({});
+      setVertices([]);
+      setWorkspaceByVertexId({});
     } finally {
       setLoading(false);
     }
@@ -55,5 +63,11 @@ export const useVertices = (workspaces: Workspace[] | undefined) => {
     loadVertices();
   }, [loadVertices]);
 
-  return { verticesByWorkspace, loading, error, reloadVertices: loadVertices };
+  return {
+    vertices,
+    workspaceByVertexId,
+    loading,
+    error,
+    reloadVertices: loadVertices,
+  };
 };

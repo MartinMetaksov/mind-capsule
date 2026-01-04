@@ -3,9 +3,7 @@ import { getFileSystem } from "@/integrations/fileSystem/integration";
 import React from "react";
 
 export const useWorkspaces = () => {
-  const [workspaces, setWorkspaces] = React.useState<Workspace[] | undefined>(
-    undefined
-  );
+  const [workspaces, setWorkspaces] = React.useState<Workspace[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
