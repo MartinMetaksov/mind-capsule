@@ -93,6 +93,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
   trail,
   onJumpTo,
   onBackToRoot,
+  onOpenVertex,
 }) => {
   const tabOrder: VertexTab[] = React.useMemo(
     () => [
@@ -122,6 +123,12 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
   const childrenLabel = React.useMemo(
     () => formatChildLabel(vertex.children_behavior),
     [vertex.children_behavior],
+  );
+  const handleOpenVertex = React.useCallback(
+    (id: string) => {
+      onOpenVertex?.(id);
+    },
+    [onOpenVertex],
   );
   const vertexTabs = React.useMemo(
     () => [
@@ -252,7 +259,14 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
               }}
             >
               {/* TAB CONTENTS (no big rounded wrapper) */}
-              {tab === "children" && <ChildrenTab label={childrenLabel} />}
+              {tab === "children" && (
+                <ChildrenTab
+                  label={childrenLabel}
+                  vertex={vertex}
+                  workspace={workspace}
+                  onOpenVertex={handleOpenVertex}
+                />
+              )}
 
               {tab === "details" && (
                 <DetailsTab

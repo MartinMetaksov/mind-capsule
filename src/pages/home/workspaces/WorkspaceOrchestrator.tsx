@@ -14,6 +14,7 @@ import { BreadcrumbsTrail } from "./components/BreadcrumbsTrail";
 import { VerticalTabs } from "./components/VerticalTabs";
 import { ChildrenTab as WorkspaceChildrenTab } from "./children/ChildrenTab";
 import { WorkspacesTab } from "./workspaces/WorkspacesTab";
+import { getFileSystem } from "@/integrations/fileSystem/integration";
 
 import { VertexOrchestrator } from "./vertices/VertexOrchestrator";
 
@@ -75,15 +76,51 @@ export const WorkspaceOrchestrator: React.FC = () => {
     console.log("create vertex in workspace:", ws.id, ws.name);
   };
 
-  const openVertex = (vertexId: string) => {
-    const v = vertices.find((x) => x.id === vertexId);
-    if (!v) return;
+  const openVertex = React.useCallback(
+    async (vertexId: string) => {
+      const fs = await getFileSystem();
 
-    const ws = workspaceByVertexId[v.id];
-    if (!ws) return;
+      let v = vertices.find((x) => x.id === vertexId) ?? null;
+      let ws = v ? workspaceByVertexId[v.id] : undefined;
 
-    setTrail((prev) => [...prev, { vertex: v, workspace: ws }]);
-  };
+      if (!v) {
+        v = (await fs.getVertex(vertexId)) ?? null;
+      }
+
+      if (!v) return;
+
+      if (!ws) {
+        // climb ancestors to find a workspace root
+        let current: Vertex | null = v;
+        while (current?.parent_id) {
+          const parent: Vertex | null =
+            (await fs.getVertex(current.parent_id)) ?? null;
+          if (!parent) break;
+          current = parent;
+          const currentId = current?.id;
+          if (!currentId) break;
+          const match = (workspaces ?? []).find((w) =>
+            (w.root_vertex_ids ?? []).includes(currentId),
+          );
+          if (match) {
+            ws = match;
+            break;
+          }
+        }
+
+        if (!ws) {
+          ws = (workspaces ?? []).find((w) =>
+            (w.root_vertex_ids ?? []).includes(v.id),
+          );
+        }
+      }
+
+      if (!ws) return;
+
+      setTrail((prev) => [...prev, { vertex: v, workspace: ws }]);
+    },
+    [vertices, workspaceByVertexId, workspaces],
+  );
 
   const jumpToTrailIndex = (index: number) => {
     setTrail((prev) => prev.slice(0, index + 1));

@@ -33,6 +33,8 @@ type VertexGridProps = {
    * Most of the time you want this `true`.
    */
   scrollY?: boolean;
+
+  showWorkspaceLabel?: boolean;
 };
 
 export const VertexGrid: React.FC<VertexGridProps> = ({
@@ -44,6 +46,7 @@ export const VertexGrid: React.FC<VertexGridProps> = ({
   onOpenChildren,
   dimPredicate,
   scrollY = true,
+  showWorkspaceLabel = true,
 }) => {
   const anySelected = selectedVertexId !== null;
 
@@ -112,6 +115,7 @@ export const VertexGrid: React.FC<VertexGridProps> = ({
               onDeselect={onDeselect}
               onOpenReferences={onOpenReferences}
               onOpenChildren={onOpenChildren}
+              showWorkspaceLabel={showWorkspaceLabel}
             />
           </Box>
         ))}

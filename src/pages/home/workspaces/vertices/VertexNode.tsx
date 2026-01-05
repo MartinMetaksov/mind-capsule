@@ -29,6 +29,7 @@ export type VertexNodeProps = {
 
   onOpenReferences?: (vertex: Vertex, type: Reference["type"]) => void;
   onOpenChildren?: (vertex: Vertex) => void;
+  showWorkspaceLabel?: boolean;
 };
 
 type RefCounts = Record<Reference["type"], number>;
@@ -61,6 +62,7 @@ export const VertexNode: React.FC<VertexNodeProps> = ({
   onDeselect,
   onOpenReferences,
   onOpenChildren,
+  showWorkspaceLabel = true,
 }) => {
   const refs = React.useMemo(() => countReferences(vertex), [vertex]);
 
@@ -146,23 +148,25 @@ export const VertexNode: React.FC<VertexNodeProps> = ({
           />
 
           {/* Workspace label INSIDE */}
-          <Box sx={{ position: "absolute", top: 12, left: 12, right: 12 }}>
-            <Typography
-              variant="caption"
-              sx={{
-                color: "common.white",
-                opacity: 0.9,
-                fontWeight: 700,
-                textShadow: "0 1px 8px rgba(0,0,0,0.35)",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-              title={workspace.name}
-            >
-              {workspace.name}
-            </Typography>
-          </Box>
+          {showWorkspaceLabel && (
+            <Box sx={{ position: "absolute", top: 12, left: 12, right: 12 }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: "common.white",
+                  opacity: 0.9,
+                  fontWeight: 700,
+                  textShadow: "0 1px 8px rgba(0,0,0,0.35)",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+                title={workspace.name}
+              >
+                {workspace.name}
+              </Typography>
+            </Box>
+          )}
 
           {/* Title */}
           <Box sx={{ position: "absolute", left: 14, right: 14, bottom: 14 }}>
