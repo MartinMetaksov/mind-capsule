@@ -31,13 +31,11 @@ export const useVertices = (workspaces: Workspace[] | undefined) => {
       const nextVertices: Vertex[] = [];
       const nextWorkspaceByVertexId: WorkspaceByVertexId = {};
 
-      // Flatten all root vertices across all workspaces
       for (const ws of workspaces) {
         const rootIds = ws.root_vertex_ids ?? [];
 
         if (rootIds.length === 0) continue;
 
-        // Keep the workspace-defined order
         const roots = await Promise.all(rootIds.map((id) => fs.getVertex(id)));
 
         for (const v of roots) {

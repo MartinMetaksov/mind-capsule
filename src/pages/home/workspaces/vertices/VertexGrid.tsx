@@ -50,25 +50,20 @@ export const VertexGrid: React.FC<VertexGridProps> = ({
   return (
     <Box
       sx={{
-        // Fill available space (important when inside a "canvas" wrapper)
         width: "100%",
         height: "100%",
         minHeight: 0,
         minWidth: 0,
 
-        // Optional vertical scrolling
         overflowY: scrollY ? "auto" : "visible",
         overflowX: "hidden",
 
-        // padding around the grid
         px: 2,
         py: 2,
 
-        // provide some breathing room for VertexNode action bar if it overflows
         pb: 10,
       }}
       onMouseDown={(e) => {
-        // Clicking empty space deselects
         if (e.currentTarget === e.target) onDeselect();
       }}
     >
@@ -97,13 +92,9 @@ export const VertexGrid: React.FC<VertexGridProps> = ({
           <Box
             key={vertex.id}
             sx={{
-              // Ensure each node occupies its fixed footprint
               width: VERTEX_NODE_WIDTH,
 
-              // Reserve a bit more height so the action bar (absolute) doesn’t overlap next row
-              // You can tune this if you change the action bar position.
               height: VERTEX_NODE_HEIGHT + 10,
-              // Make sure clicks on the node don't trigger the grid "empty area" handler
               pointerEvents: "auto",
             }}
             onMouseDown={(e) => e.stopPropagation()}
