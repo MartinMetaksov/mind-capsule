@@ -43,16 +43,6 @@ export const DetailsTab: React.FC<DetailsTabProps> = ({
         <Typography variant="body2" color="text.secondary">
           Workspace: <strong>{workspace.name}</strong>
         </Typography>
-
-        {vertex.short_description && (
-          <Typography variant="body2">{vertex.short_description}</Typography>
-        )}
-
-        {vertex.long_description && (
-          <Typography variant="body2" color="text.secondary">
-            {vertex.long_description}
-          </Typography>
-        )}
       </Box>
 
       <Divider sx={{ my: 2 }} />

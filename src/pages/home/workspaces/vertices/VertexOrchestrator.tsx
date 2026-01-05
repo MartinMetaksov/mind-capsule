@@ -7,6 +7,7 @@ import LinkOutlinedIcon from "@mui/icons-material/LinkOutlined";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutlined";
 import CommentOutlinedIcon from "@mui/icons-material/CommentOutlined";
+import TagOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 
 import type { Vertex, VertexTabId } from "@/core/vertex";
 import type { Workspace } from "@/core/workspace";
@@ -15,6 +16,7 @@ import { BreadcrumbsTrail } from "../components/BreadcrumbsTrail";
 import { VerticalTabs } from "../components/VerticalTabs";
 import { ChildrenTab } from "./children/ChildrenTab";
 import { DetailsTab } from "./details/DetailsTab";
+import { TagsTab } from "./tags/TagsTab";
 import { ReferencesTab } from "./references/ReferencesTab";
 import { LinksTab } from "./links/LinksTab";
 import { ImagesTab } from "./images/ImagesTab";
@@ -24,6 +26,7 @@ import { NotesTab } from "./notes/NotesTab";
 type VertexTab =
   | "children"
   | "details"
+  | "tags"
   | "notes"
   | "images"
   | "urls"
@@ -95,6 +98,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
     () => [
       "children",
       "details",
+      "tags",
       "notes",
       "images",
       "urls",
@@ -131,6 +135,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
         label: "Details",
         icon: <InfoOutlinedIcon />,
       },
+      { value: "tags" as const, label: "Tags", icon: <TagOutlinedIcon /> },
       {
         value: "notes" as const,
         label: "Notes",
@@ -182,6 +187,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
         minHeight: 0,
         display: "flex",
         flexDirection: "column",
+        overflow: "hidden",
       }}
     >
       {/* Two-pane layout */}
@@ -191,6 +197,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
           minHeight: 0,
           display: "flex",
           alignItems: "stretch",
+          overflow: "hidden",
         }}
       >
         {/* LEFT TAB RAIL */}
@@ -199,6 +206,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
             width: 110,
             flexShrink: 0,
             alignSelf: "stretch",
+            height: "100%",
             borderRight: `1px solid ${theme.palette.divider}`,
             bgcolor: "background.paper",
             display: "flex",
@@ -254,6 +262,8 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
                   refCounts={refCounts}
                 />
               )}
+
+              {tab === "tags" && <TagsTab tags={vertex.tags ?? []} />}
 
               {tab === "notes" && <NotesTab />}
 

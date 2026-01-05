@@ -25,6 +25,7 @@ export type VertexLayout =
 export type VertexTabId =
   | "children"
   | "details"
+  | "tags"
   | "notes"
   | "images"
   | "urls"

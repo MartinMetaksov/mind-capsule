@@ -153,6 +153,7 @@ export const WorkspaceOrchestrator: React.FC = () => {
         minHeight: 0,
         display: "flex",
         flexDirection: "column",
+        overflow: "hidden",
       }}
     >
       <Box
@@ -161,6 +162,7 @@ export const WorkspaceOrchestrator: React.FC = () => {
           minHeight: 0,
           display: "flex",
           alignItems: "stretch",
+          overflow: "hidden",
         }}
       >
         {/* LEFT TAB RAIL */}
@@ -170,6 +172,7 @@ export const WorkspaceOrchestrator: React.FC = () => {
             width: 110,
             flexShrink: 0,
             alignSelf: "stretch",
+            height: "100%",
             borderRight: `1px solid ${theme.palette.divider}`,
             borderRadius: 0,
             display: "flex",

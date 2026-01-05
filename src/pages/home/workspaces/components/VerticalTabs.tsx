@@ -34,6 +34,9 @@ export const VerticalTabs = <T extends string>({
       sx={{
         flex: 1,
         minHeight: 0,
+        height: "100%",
+        overflowY: "auto",
+        overflowX: "hidden",
         "& .MuiTab-root": {
           minHeight: 84,
           px: 1,
