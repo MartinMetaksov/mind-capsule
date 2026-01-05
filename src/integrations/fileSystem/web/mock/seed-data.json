@@ -17,34 +17,41 @@
       "title": "My First Project",
       "kind": "project",
       "parent_id": null,
+      "default_tab": "children",
       "children_ids": ["v-chapter-1", "v-chapter-2"],
       "created_at": "2024-01-01T00:00:00.000Z",
       "updated_at": "2024-01-01T00:00:00.000Z",
       "tags": ["story", "demo"],
       "thumbnail_path": "/images/sample-project.jpg",
-      "reference_groups": []
+      "references": [],
+      "children_behavior": {
+        "child_kind": "chapter",
+        "display": "list"
+      }
     },
     {
       "id": "v-chapter-1",
       "title": "Chapter One",
       "kind": "chapter",
+      "default_tab": "notes",
       "parent_id": "v-project",
       "children_ids": [],
       "created_at": "2024-01-01T00:00:00.000Z",
       "updated_at": "2024-01-01T00:00:00.000Z",
       "tags": ["intro"],
-      "reference_groups": []
+      "references": []
     },
     {
       "id": "v-chapter-2",
       "title": "Chapter Two",
       "kind": "chapter",
+      "default_tab": "notes",
       "parent_id": "v-project",
       "children_ids": [],
       "created_at": "2024-01-01T00:00:00.000Z",
       "updated_at": "2024-01-01T00:00:00.000Z",
       "tags": [],
-      "reference_groups": []
+      "references": []
     }
   ]
 }

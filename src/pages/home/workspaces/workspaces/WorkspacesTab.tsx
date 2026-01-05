@@ -7,9 +7,7 @@ type WorkspacesTabProps = {
   workspaces: Workspace[];
 };
 
-export const WorkspacesTab: React.FC<WorkspacesTabProps> = ({
-  workspaces,
-}) => {
+export const WorkspacesTab: React.FC<WorkspacesTabProps> = ({ workspaces }) => {
   return (
     <Box
       sx={{

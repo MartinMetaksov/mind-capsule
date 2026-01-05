@@ -11,4 +11,4 @@ export type Reference =
       extension?: string;
       iconPath?: string;
     }
-  | { type: "comment"; text: string; created_at?: string };
+  | { type: "note"; text: string; created_at?: string };

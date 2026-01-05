@@ -9,7 +9,7 @@ type RefCounts = {
   url: number;
   image: number;
   file: number;
-  comment: number;
+  note: number;
 };
 
 type DetailsTabProps = {
@@ -86,7 +86,7 @@ export const DetailsTab: React.FC<DetailsTabProps> = ({
         />
         <Chip
           size="small"
-          label={`Notes: ${refCounts.comment}`}
+          label={`Notes: ${refCounts.note}`}
           variant="outlined"
         />
       </Box>

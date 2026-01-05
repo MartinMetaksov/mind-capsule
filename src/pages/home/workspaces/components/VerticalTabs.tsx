@@ -24,6 +24,13 @@ export const VerticalTabs = <T extends string>({
       value={value}
       onChange={(_, nextValue) => onChange(nextValue)}
       variant="scrollable"
+      TabIndicatorProps={{
+        sx: {
+          left: 0,
+          right: "auto",
+          width: 3,
+        },
+      }}
       sx={{
         flex: 1,
         minHeight: 0,

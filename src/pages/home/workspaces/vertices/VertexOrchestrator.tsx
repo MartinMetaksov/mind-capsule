@@ -8,7 +8,7 @@ import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutlined";
 import CommentOutlinedIcon from "@mui/icons-material/CommentOutlined";
 
-import type { Vertex } from "@/core/vertex";
+import type { Vertex, VertexTabId } from "@/core/vertex";
 import type { Workspace } from "@/core/workspace";
 import type { Reference } from "@/core/common/reference";
 import { BreadcrumbsTrail } from "../components/BreadcrumbsTrail";
@@ -24,11 +24,11 @@ import { NotesTab } from "./notes/NotesTab";
 type VertexTab =
   | "children"
   | "details"
-  | "vertex_refs"
-  | "urls"
+  | "notes"
   | "images"
+  | "urls"
   | "files"
-  | "comments";
+  | "references";
 
 type TrailItem = {
   vertex: Vertex;
@@ -54,51 +54,35 @@ function countReferences(vertex: Vertex): RefCounts {
     url: 0,
     image: 0,
     file: 0,
-    comment: 0,
+    note: 0,
   };
-  for (const g of vertex.reference_groups ?? []) {
-    for (const r of g.references) counts[r.type] += 1;
-  }
+  for (const r of vertex.references ?? []) counts[r.type] += 1;
   return counts;
 }
 
-const vertexTabs = [
-  {
-    value: "children" as const,
-    label: "Children",
-    icon: <AccountTreeOutlinedIcon />,
-  },
-  {
-    value: "details" as const,
-    label: "Details",
-    icon: <InfoOutlinedIcon />,
-  },
-  {
-    value: "vertex_refs" as const,
-    label: "Vertices",
-    icon: <HubOutlinedIcon />,
-  },
-  {
-    value: "urls" as const,
-    label: "Links",
-    icon: <LinkOutlinedIcon />,
-  },
-  {
-    value: "images" as const,
-    label: "Images",
-    icon: <ImageOutlinedIcon />,
-  },
-  {
-    value: "files" as const,
-    label: "Files",
-    icon: <InsertDriveFileOutlinedIcon />,
-  },
-  {
-    value: "comments" as const,
-    label: "Notes",
-    icon: <CommentOutlinedIcon />,
-  },
-];
+function pluralize(word: string): string {
+  const lower = word.toLowerCase();
+  if (lower.endsWith("s") || lower.endsWith("x") || lower.endsWith("z")) {
+    return `${word}es`;
+  }
+  if (lower.endsWith("ch") || lower.endsWith("sh")) {
+    return `${word}es`;
+  }
+  const penultimate = lower[lower.length - 2];
+  if (lower.endsWith("y") && penultimate && !"aeiou".includes(penultimate)) {
+    return `${word.slice(0, -1)}ies`;
+  }
+  return `${word}s`;
+}
+
+function formatChildLabel(behavior: Vertex["children_behavior"]): string {
+  if (!behavior?.child_kind) return "Children";
+  const raw = behavior.child_kind.startsWith("custom:")
+    ? behavior.child_kind.slice("custom:".length) || "custom"
+    : behavior.child_kind;
+  const plural = pluralize(raw);
+  return plural.charAt(0).toUpperCase() + plural.slice(1);
+}
 
 export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
   vertex,
@@ -107,10 +91,74 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
   onJumpTo,
   onBackToRoot,
 }) => {
-  const [tab, setTab] = React.useState<VertexTab>("children");
+  const tabOrder: VertexTab[] = React.useMemo(
+    () => [
+      "children",
+      "details",
+      "notes",
+      "images",
+      "urls",
+      "files",
+      "references",
+    ],
+    [],
+  );
+
+  const resolveInitialTab = React.useCallback((): VertexTab => {
+    const candidate = vertex.default_tab as VertexTabId | undefined;
+    return tabOrder.includes(candidate as VertexTab)
+      ? (candidate as VertexTab)
+      : "children";
+  }, [tabOrder, vertex.default_tab]);
+
+  const [tab, setTab] = React.useState<VertexTab>(() => resolveInitialTab());
 
   const refCounts = React.useMemo(() => countReferences(vertex), [vertex]);
   const hasChildren = (vertex.children_ids?.length ?? 0) > 0;
+  const childrenLabel = React.useMemo(
+    () => formatChildLabel(vertex.children_behavior),
+    [vertex.children_behavior],
+  );
+  const vertexTabs = React.useMemo(
+    () => [
+      {
+        value: "children" as const,
+        label: childrenLabel,
+        icon: <AccountTreeOutlinedIcon />,
+      },
+      {
+        value: "details" as const,
+        label: "Details",
+        icon: <InfoOutlinedIcon />,
+      },
+      {
+        value: "notes" as const,
+        label: "Notes",
+        icon: <CommentOutlinedIcon />,
+      },
+      {
+        value: "images" as const,
+        label: "Images",
+        icon: <ImageOutlinedIcon />,
+      },
+      { value: "urls" as const, label: "Links", icon: <LinkOutlinedIcon /> },
+      {
+        value: "files" as const,
+        label: "Files",
+        icon: <InsertDriveFileOutlinedIcon />,
+      },
+      {
+        value: "references" as const,
+        label: "References",
+        icon: <HubOutlinedIcon />,
+      },
+    ],
+    [childrenLabel],
+  );
+
+  React.useEffect(() => {
+    setTab(resolveInitialTab());
+  }, [resolveInitialTab, vertex.id]);
   const breadcrumbItems = React.useMemo(
     () =>
       trail.map((t, idx) => {
@@ -122,7 +170,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
           onClick: isLast ? undefined : () => onJumpTo(idx),
         };
       }),
-    [onJumpTo, trail]
+    [onJumpTo, trail],
   );
 
   return (
@@ -155,7 +203,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
             bgcolor: "background.paper",
             display: "flex",
             flexDirection: "column",
-            py: 1,
+            py: 0,
             overflow: "hidden",
           })}
         >
@@ -196,7 +244,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
               }}
             >
               {/* TAB CONTENTS (no big rounded wrapper) */}
-              {tab === "children" && <ChildrenTab />}
+              {tab === "children" && <ChildrenTab label={childrenLabel} />}
 
               {tab === "details" && (
                 <DetailsTab
@@ -207,15 +255,15 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
                 />
               )}
 
-              {tab === "vertex_refs" && <ReferencesTab />}
-
-              {tab === "urls" && <LinksTab />}
+              {tab === "notes" && <NotesTab />}
 
               {tab === "images" && <ImagesTab />}
 
+              {tab === "urls" && <LinksTab />}
+
               {tab === "files" && <FilesTab />}
 
-              {tab === "comments" && <NotesTab />}
+              {tab === "references" && <ReferencesTab />}
             </Box>
           </Box>
         </Box>

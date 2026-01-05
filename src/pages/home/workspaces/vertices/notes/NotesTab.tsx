@@ -8,7 +8,7 @@ export const NotesTab: React.FC = () => {
         Notes
       </Typography>
       <Typography color="text.secondary">
-        References of type <code>comment</code> (soon renamed to notes).
+        References of type <code>note</code>.
       </Typography>
     </Box>
   );

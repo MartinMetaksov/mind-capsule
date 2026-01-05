@@ -174,7 +174,7 @@ export const WorkspaceOrchestrator: React.FC = () => {
             borderRadius: 0,
             display: "flex",
             flexDirection: "column",
-            py: 1,
+            py: 0,
             overflow: "hidden",
             bgcolor: "background.paper",
           })}

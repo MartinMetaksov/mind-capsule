@@ -39,13 +39,10 @@ function countReferences(vertex: Vertex): RefCounts {
     url: 0,
     image: 0,
     file: 0,
-    comment: 0,
+    note: 0,
   };
 
-  const groups = vertex.reference_groups ?? [];
-  for (const g of groups) {
-    for (const r of g.references) counts[r.type] += 1;
-  }
+  for (const r of vertex.references ?? []) counts[r.type] += 1;
 
   return counts;
 }
@@ -68,7 +65,7 @@ export const VertexNode: React.FC<VertexNodeProps> = ({
   const refs = React.useMemo(() => countReferences(vertex), [vertex]);
 
   const hasAnyRefs =
-    refs.vertex + refs.url + refs.image + refs.file + refs.comment > 0;
+    refs.vertex + refs.url + refs.image + refs.file + refs.note > 0;
 
   const hasChildren = (vertex.children_ids?.length ?? 0) > 0;
 
@@ -262,14 +259,14 @@ export const VertexNode: React.FC<VertexNodeProps> = ({
               </span>
             </Tooltip>
 
-            <Tooltip title="Comments" disableInteractive>
+            <Tooltip title="Notes" disableInteractive>
               <span>
                 <IconButton
                   size="small"
-                  disabled={!refs.comment}
-                  onClick={() => onOpenReferences?.(vertex, "comment")}
+                  disabled={!refs.note}
+                  onClick={() => onOpenReferences?.(vertex, "note")}
                 >
-                  <Badge badgeContent={refs.comment} color="primary" max={99}>
+                  <Badge badgeContent={refs.note} color="primary" max={99}>
                     <CommentOutlinedIcon fontSize="small" />
                   </Badge>
                 </IconButton>
