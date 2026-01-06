@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 
 import { VertexGrid, VertexItem } from "../vertices/VertexGrid";
-import { CreateVertexFab } from "../components/CreateVertexFab";
+import { CreateFab } from "../components/CreateFab";
 import type { Workspace } from "@/core/workspace";
 
 type ProjectsTabProps = {
@@ -77,7 +77,11 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
         />
       </Box>
 
-      <CreateVertexFab onClick={openPopover} />
+      <CreateFab
+        onClick={openPopover}
+        title="Create project"
+        sx={{ position: "absolute", bottom: 20, right: 20 }}
+      />
 
       <Popover
         open={popoverOpen}

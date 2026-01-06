@@ -2,15 +2,19 @@ import * as React from "react";
 import { Fab, Tooltip } from "@mui/material";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 
-type CreateVertexFabProps = {
+type CreateFabProps = {
   onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  title?: string;
+  sx?: object;
 };
 
-export const CreateVertexFab: React.FC<CreateVertexFabProps> = ({
+export const CreateFab: React.FC<CreateFabProps> = ({
   onClick,
+  title = "Create",
+  sx = {},
 }) => {
   return (
-    <Tooltip title="Create vertex" placement="left">
+    <Tooltip title={title} placement="left">
       <Fab
         color="primary"
         onClick={onClick}
@@ -18,6 +22,7 @@ export const CreateVertexFab: React.FC<CreateVertexFabProps> = ({
           position: "absolute",
           right: 20,
           bottom: 20,
+          ...sx,
         }}
       >
         <AddRoundedIcon />

@@ -30,5 +30,5 @@ export const useWorkspaces = () => {
     refreshWorkspaces();
   }, [refreshWorkspaces]);
 
-  return { workspaces, loading, error, refreshWorkspaces };
+  return { workspaces, loading, error, refreshWorkspaces, setWorkspaces };
 };

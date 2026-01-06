@@ -283,37 +283,42 @@ export const WorkspaceOrchestrator: React.FC = () => {
             bgcolor: "background.default",
           }}
         >
-          <BreadcrumbsTrail rootLabel="Workspaces" />
-
-          {/* Error */}
-          {error && (
-            <Box sx={{ px: 2, pt: 7 }}>
-              <Typography color="error" variant="body2">
-                {error}
-              </Typography>
-            </Box>
-          )}
-
-          {/* Loading */}
-          {verticesLoading && (
-            <Box sx={{ px: 2, pt: 7 }}>
-              <Loading />
-            </Box>
-          )}
-
           {/* PROJECTS TAB */}
           {tab === "projects" && (
-            <ProjectsTab
-              title="Projects"
-              items={vertexItems}
-              workspaces={workspaces}
-              onOpenVertex={openVertex}
-              onCreateProjectInWorkspace={handleCreateProjectInWorkspace}
-            />
+            <>
+              <BreadcrumbsTrail rootLabel="Workspaces" />
+              {error && (
+                <Box sx={{ px: 2, pt: 7 }}>
+                  <Typography color="error" variant="body2">
+                    {error}
+                  </Typography>
+                </Box>
+              )}
+              {verticesLoading && (
+                <Box sx={{ px: 2, pt: 7 }}>
+                  <Loading />
+                </Box>
+              )}
+              <ProjectsTab
+                title="Projects"
+                items={vertexItems}
+                workspaces={workspaces}
+                onOpenVertex={openVertex}
+                onCreateProjectInWorkspace={handleCreateProjectInWorkspace}
+              />
+            </>
           )}
 
           {/* WORKSPACES TAB */}
-          {tab === "workspaces" && <WorkspacesTab workspaces={workspaces} />}
+          {tab === "workspaces" && (
+            <WorkspacesTab
+              workspaces={workspaces}
+              onChanged={async () => {
+                await refreshWorkspaces();
+                await reloadVertices();
+              }}
+            />
+          )}
         </Box>
       </Box>
     </Box>
