@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Box, Typography, Stack, Link } from "@mui/material";
-import { APP_NAME, GITHUB_URL } from "@/constants/appConstants";
+import { APP_NAME, GITHUB_URL, LICENSE_URL } from "@/constants/appConstants";
 
 export const Footer: React.FC = () => {
   const year = new Date().getFullYear();
@@ -18,14 +18,20 @@ export const Footer: React.FC = () => {
       <Stack
         direction={{ xs: "column", sm: "row" }}
         spacing={1}
-        justifyContent="space-between"
-        alignItems={{ xs: "flex-start", sm: "center" }}
+        justifyContent={{ xs: "center", sm: "space-between" }}
+        alignItems={{ xs: "center", sm: "center" }}
+        textAlign={{ xs: "center", sm: "left" }}
       >
         <Typography variant="body2" color="text.secondary">
           © {year} {APP_NAME}
         </Typography>
 
-        <Stack direction="row" spacing={2}>
+        <Stack
+          direction="row"
+          spacing={2}
+          justifyContent={{ xs: "center", sm: "flex-start" }}
+          sx={{ width: { xs: "100%", sm: "auto" } }}
+        >
           <Link
             href={GITHUB_URL}
             underline="hover"
@@ -37,10 +43,11 @@ export const Footer: React.FC = () => {
           </Link>
 
           <Link
-            href="#"
+            href={LICENSE_URL}
             underline="hover"
             color="text.secondary"
-            onClick={(e) => e.preventDefault()}
+            target="_blank"
+            rel="noreferrer"
           >
             License
           </Link>

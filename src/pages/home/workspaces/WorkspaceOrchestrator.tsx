@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Box, Paper, Typography } from "@mui/material";
 import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
-import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
+import WorkspacesOutlinedIcon from "@mui/icons-material/WorkspacesOutlined";
 
 import { Loading } from "@/common/loading/Loading";
 import { useWorkspaces } from "./hooks/useWorkspaces";
@@ -12,29 +12,35 @@ import type { Workspace } from "@/core/workspace";
 import type { Vertex } from "@/core/vertex";
 import { BreadcrumbsTrail } from "./components/BreadcrumbsTrail";
 import { VerticalTabs } from "./components/VerticalTabs";
-import { ChildrenTab as WorkspaceChildrenTab } from "./children/ChildrenTab";
+import { ProjectsTab } from "./projects/ProjectsTab";
 import { WorkspacesTab } from "./workspaces/WorkspacesTab";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
+import { useLocation, useNavigate } from "react-router-dom";
+import { VertexNotFound } from "./components/VertexNotFound";
 
 import { VertexOrchestrator } from "./vertices/VertexOrchestrator";
 
-type RootTab = "children" | "workspaces";
+type RootTab = "projects" | "workspaces";
 
 type TrailItem = {
   vertex: Vertex;
   workspace: Workspace;
 };
 
+type NotFoundState = {
+  missingId: string | null;
+};
+
 const rootTabs = [
   {
-    value: "children" as const,
-    label: "Children",
+    value: "projects" as const,
+    label: "Projects",
     icon: <AccountTreeOutlinedIcon />,
   },
   {
     value: "workspaces" as const,
     label: "Workspaces",
-    icon: <SettingsOutlinedIcon />,
+    icon: <WorkspacesOutlinedIcon />,
   },
 ];
 
@@ -54,9 +60,14 @@ export const WorkspaceOrchestrator: React.FC = () => {
     reloadVertices,
   } = useVertices(workspaces);
 
-  const [tab, setTab] = React.useState<RootTab>("children");
+  const [tab, setTab] = React.useState<RootTab>("projects");
 
   const [trail, setTrail] = React.useState<TrailItem[]>([]);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [notFound, setNotFound] = React.useState<NotFoundState>({
+    missingId: null,
+  });
 
   const active = trail.length > 0 ? trail[trail.length - 1] : null;
 
@@ -72,8 +83,8 @@ export const WorkspaceOrchestrator: React.FC = () => {
 
   const error = workspacesError ?? verticesError;
 
-  const handleCreateVertexInWorkspace = (ws: Workspace) => {
-    console.log("create vertex in workspace:", ws.id, ws.name);
+  const handleCreateProjectInWorkspace = (ws: Workspace) => {
+    console.log("create project in workspace:", ws.id, ws.name);
   };
 
   const openVertex = React.useCallback(
@@ -117,22 +128,83 @@ export const WorkspaceOrchestrator: React.FC = () => {
 
       if (!ws) return;
 
-      setTrail((prev) => [...prev, { vertex: v, workspace: ws }]);
+      setTrail((prev) => {
+        const nextTrail = [...prev, { vertex: v, workspace: ws }];
+        navigate(`/${nextTrail.map((t) => t.vertex.id).join("/")}`, {
+          replace: false,
+        });
+        return nextTrail;
+      });
     },
-    [vertices, workspaceByVertexId, workspaces],
+    [navigate, vertices, workspaceByVertexId, workspaces],
   );
 
   const jumpToTrailIndex = (index: number) => {
-    setTrail((prev) => prev.slice(0, index + 1));
+    setTrail((prev) => {
+      const next = prev.slice(0, index + 1);
+      navigate(`/${next.map((t) => t.vertex.id).join("/")}`);
+      return next;
+    });
   };
 
-  const backToRoot = () => setTrail([]);
+  const backToRoot = () => {
+    setTrail([]);
+    navigate("/");
+    setNotFound({ missingId: null });
+  };
+
+  React.useEffect(() => {
+    const syncTrailFromPath = async () => {
+      if (workspacesLoading || !workspaces) return;
+      const segments = location.pathname.split("/").filter(Boolean);
+      if (segments.length === 0) {
+        setTrail([]);
+        setNotFound({ missingId: null });
+        return;
+      }
+
+      const fs = await getFileSystem();
+      const nextTrail: TrailItem[] = [];
+      let failedId: string | null = null;
+
+      let currentWorkspace: Workspace | undefined;
+      for (let i = 0; i < segments.length; i++) {
+        const vid = segments[i];
+        const v = (await fs.getVertex(vid)) ?? null;
+        if (!v) {
+          failedId = vid;
+          break;
+        }
+
+        if (i === 0) {
+          currentWorkspace = workspaces.find((w) =>
+            (w.root_vertex_ids ?? []).includes(v.id),
+          );
+          if (!currentWorkspace) break;
+        }
+
+        if (!currentWorkspace) break;
+        nextTrail.push({ vertex: v, workspace: currentWorkspace });
+      }
+
+      setTrail(nextTrail);
+      setNotFound({ missingId: failedId });
+    };
+
+    syncTrailFromPath();
+  }, [location.pathname, workspaces, workspacesLoading]);
 
   if (workspacesLoading || !workspaces) {
     return (
       <Box sx={{ p: 2 }}>
         <Loading />
       </Box>
+    );
+  }
+
+  if (notFound.missingId) {
+    return (
+      <VertexNotFound missingId={notFound.missingId} onBack={backToRoot} />
     );
   }
 
@@ -251,13 +323,14 @@ export const WorkspaceOrchestrator: React.FC = () => {
             </Box>
           )}
 
-          {/* CHILDREN TAB */}
-          {tab === "children" && (
-            <WorkspaceChildrenTab
+          {/* PROJECTS TAB */}
+          {tab === "projects" && (
+            <ProjectsTab
+              title="Projects"
               items={vertexItems}
               workspaces={workspaces}
               onOpenVertex={openVertex}
-              onCreateVertexInWorkspace={handleCreateVertexInWorkspace}
+              onCreateProjectInWorkspace={handleCreateProjectInWorkspace}
             />
           )}
 
