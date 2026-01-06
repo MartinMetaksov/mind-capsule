@@ -119,7 +119,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
   const [tab, setTab] = React.useState<VertexTab>(() => resolveInitialTab());
 
   const refCounts = React.useMemo(() => countReferences(vertex), [vertex]);
-  const hasChildren = (vertex.children_ids?.length ?? 0) > 0;
+  const hasChildren = false;
   const childrenLabel = React.useMemo(
     () => formatChildLabel(vertex.children_behavior),
     [vertex.children_behavior],

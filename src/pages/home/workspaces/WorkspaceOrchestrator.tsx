@@ -92,7 +92,9 @@ export const WorkspaceOrchestrator: React.FC = () => {
       const fs = await getFileSystem();
 
       let v = vertices.find((x) => x.id === vertexId) ?? null;
-      let ws = v ? workspaceByVertexId[v.id] : undefined;
+      let ws = v
+        ? workspaceByVertexId[v.id] ?? workspaces.find((w) => w.id === v!.workspace_id)
+        : undefined;
 
       if (!v) {
         v = (await fs.getVertex(vertexId)) ?? null;
@@ -101,29 +103,7 @@ export const WorkspaceOrchestrator: React.FC = () => {
       if (!v) return;
 
       if (!ws) {
-        // climb ancestors to find a workspace root
-        let current: Vertex | null = v;
-        while (current?.parent_id) {
-          const parent: Vertex | null =
-            (await fs.getVertex(current.parent_id)) ?? null;
-          if (!parent) break;
-          current = parent;
-          const currentId = current?.id;
-          if (!currentId) break;
-          const match = (workspaces ?? []).find((w) =>
-            (w.root_vertex_ids ?? []).includes(currentId),
-          );
-          if (match) {
-            ws = match;
-            break;
-          }
-        }
-
-        if (!ws) {
-          ws = (workspaces ?? []).find((w) =>
-            (w.root_vertex_ids ?? []).includes(v.id),
-          );
-        }
+        ws = workspaces.find((w) => w.id === v.workspace_id);
       }
 
       if (!ws) return;
@@ -177,9 +157,7 @@ export const WorkspaceOrchestrator: React.FC = () => {
         }
 
         if (i === 0) {
-          currentWorkspace = workspaces.find((w) =>
-            (w.root_vertex_ids ?? []).includes(v.id),
-          );
+          currentWorkspace = workspaces.find((w) => w.id === v.workspace_id);
           if (!currentWorkspace) break;
         }
 

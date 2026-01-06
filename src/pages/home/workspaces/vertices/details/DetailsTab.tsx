@@ -50,7 +50,7 @@ export const DetailsTab: React.FC<DetailsTabProps> = ({
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
         <Chip
           size="small"
-          label={`Children: ${vertex.children_ids?.length ?? 0}`}
+          label={`Children: 0`}
           variant="outlined"
           color={hasChildren ? "primary" : "default"}
         />

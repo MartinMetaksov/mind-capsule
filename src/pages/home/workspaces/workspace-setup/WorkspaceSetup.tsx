@@ -38,7 +38,6 @@ export const WorkspaceSetup: React.FC<WorkspaceSetupProps> = ({
         created_at: now,
         updated_at: now,
         tags: [],
-        root_vertex_ids: [],
       };
 
       await fs.createWorkspace(workspace);
@@ -71,7 +70,6 @@ export const WorkspaceSetup: React.FC<WorkspaceSetupProps> = ({
         created_at: now,
         updated_at: now,
         tags: [],
-        root_vertex_ids: [],
       };
 
       await fs.createWorkspace(workspace);

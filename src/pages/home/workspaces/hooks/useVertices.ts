@@ -32,14 +32,8 @@ export const useVertices = (workspaces: Workspace[] | undefined) => {
       const nextWorkspaceByVertexId: WorkspaceByVertexId = {};
 
       for (const ws of workspaces) {
-        const rootIds = ws.root_vertex_ids ?? [];
-
-        if (rootIds.length === 0) continue;
-
-        const roots = await Promise.all(rootIds.map((id) => fs.getVertex(id)));
-
+        const roots = await fs.getWorkspaceRootVertices(ws.id);
         for (const v of roots) {
-          if (!v) continue;
           nextVertices.push(v);
           nextWorkspaceByVertexId[v.id] = ws;
         }

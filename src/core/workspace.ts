@@ -9,5 +9,4 @@ export type Workspace = Identifiable &
     name: string;
     path: string;
     purpose?: string;
-    root_vertex_ids?: Id[];
   };

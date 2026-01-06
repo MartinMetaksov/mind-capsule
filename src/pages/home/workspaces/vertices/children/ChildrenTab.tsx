@@ -24,19 +24,11 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
   const [error, setError] = React.useState<string | null>(null);
 
   const loadChildren = React.useCallback(async () => {
-    const ids = vertex.children_ids ?? [];
-    if (ids.length === 0) {
-      setChildren([]);
-      setError(null);
-      return;
-    }
-
     setLoading(true);
     setError(null);
     try {
       const fs = await getFileSystem();
-      const fetched = await Promise.all(ids.map((id) => fs.getVertex(id)));
-      const vertices = fetched.filter(Boolean) as Vertex[];
+      const vertices = await fs.getVertices(vertex.id);
       setChildren(vertices.map((v) => ({ vertex: v, workspace })));
     } catch (err) {
       console.error("Failed to load child vertices:", err);
@@ -47,7 +39,7 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [vertex.children_ids, workspace]);
+  }, [vertex.id, workspace]);
 
   React.useEffect(() => {
     loadChildren();

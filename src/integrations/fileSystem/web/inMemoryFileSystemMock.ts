@@ -124,6 +124,12 @@ export const inMemoryFileSystemMock: FileSystem = {
     return Object.values(vertices).filter((v) => v.parent_id === parent_id);
   },
 
+  async getWorkspaceRootVertices(workspace_id: Id): Promise<Vertex[]> {
+    return Object.values(vertices).filter(
+      (v) => v.parent_id === null || v.parent_id === undefined
+    ).filter((v) => v.workspace_id === workspace_id);
+  },
+
   async getVertex(vertex_id: Id): Promise<Vertex | null> {
     return vertices[vertex_id] ?? null;
   },
@@ -143,14 +149,6 @@ export const inMemoryFileSystemMock: FileSystem = {
 
   async removeVertex(vertex: Vertex): Promise<void> {
     delete vertices[vertex.id];
-
-    // Also clean up children references
-    for (const v of Object.values(vertices)) {
-      if (v.children_ids?.includes(vertex.id)) {
-        v.children_ids = v.children_ids.filter((id) => id !== vertex.id);
-      }
-    }
-
     persist(VERTEX_KEY, vertices);
   },
 };

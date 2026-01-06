@@ -69,7 +69,7 @@ export const VertexNode: React.FC<VertexNodeProps> = ({
   const hasAnyRefs =
     refs.vertex + refs.url + refs.image + refs.file + refs.note > 0;
 
-  const hasChildren = (vertex.children_ids?.length ?? 0) > 0;
+  const hasChildren = false;
 
   const handleClick = () => {
     if (selected) onDeselect();
@@ -285,7 +285,7 @@ export const VertexNode: React.FC<VertexNodeProps> = ({
                   onClick={() => onOpenChildren?.(vertex)}
                 >
                   <Badge
-                    badgeContent={vertex.children_ids?.length ?? 0}
+                    badgeContent={0}
                     color="secondary"
                     max={99}
                   >

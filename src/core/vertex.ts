@@ -38,7 +38,7 @@ export type Vertex = Identifiable &
   Taggable & {
     title: string;
     parent_id?: Id;
-    children_ids?: Id[];
+    workspace_id?: Id;
     children_layout?: VertexLayout;
     references?: Reference[];
     children_behavior?: ChildrenBehavior;
