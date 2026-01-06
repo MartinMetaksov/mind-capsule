@@ -24,6 +24,7 @@ type VertexGridProps = {
 
   onOpenReferences?: (vertex: Vertex, type: Reference["type"]) => void;
   onOpenChildren?: (vertex: Vertex) => void;
+  onDeleteVertex?: (vertex: Vertex) => void;
 
   dimPredicate?: (vertexId: string) => boolean;
 
@@ -44,6 +45,7 @@ export const VertexGrid: React.FC<VertexGridProps> = ({
   onDeselect,
   onOpenReferences,
   onOpenChildren,
+  onDeleteVertex,
   dimPredicate,
   scrollY = true,
   showWorkspaceLabel = true,
@@ -137,6 +139,7 @@ export const VertexGrid: React.FC<VertexGridProps> = ({
               onOpenReferences={onOpenReferences}
               onOpenChildren={onOpenChildren}
               showWorkspaceLabel={showWorkspaceLabel}
+              onDelete={onDeleteVertex}
             />
           </Box>
         ))}

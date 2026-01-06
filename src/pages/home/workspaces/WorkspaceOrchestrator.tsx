@@ -86,6 +86,14 @@ export const WorkspaceOrchestrator: React.FC = () => {
   const handleCreateProjectInWorkspace = (ws: Workspace) => {
     console.log("create project in workspace:", ws.id, ws.name);
   };
+  const handleDeleteProject = async (vertexId: string) => {
+    const fs = await getFileSystem();
+    const v = vertices.find((x) => x.id === vertexId);
+    if (!v) return;
+    await fs.removeVertex(v);
+    setTrail((prev) => prev.filter((t) => t.vertex.id !== vertexId));
+    await reloadVertices();
+  };
 
   const openVertex = React.useCallback(
     async (vertexId: string) => {
@@ -304,7 +312,11 @@ export const WorkspaceOrchestrator: React.FC = () => {
                 items={vertexItems}
                 workspaces={workspaces}
                 onOpenVertex={openVertex}
-                onCreateProjectInWorkspace={handleCreateProjectInWorkspace}
+                onDeleteProject={handleDeleteProject}
+                onChanged={async () => {
+                  await refreshWorkspaces();
+                  await reloadVertices();
+                }}
               />
             </>
           )}

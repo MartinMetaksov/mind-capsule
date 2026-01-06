@@ -14,6 +14,7 @@ import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutl
 import CommentOutlinedIcon from "@mui/icons-material/CommentOutlined";
 import HubOutlinedIcon from "@mui/icons-material/HubOutlined";
 import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
+import { DeleteOutlineRounded } from "@mui/icons-material";
 
 import type { Vertex } from "@/core/vertex";
 import type { Workspace } from "@/core/workspace";
@@ -30,6 +31,7 @@ export type VertexNodeProps = {
   onOpenReferences?: (vertex: Vertex, type: Reference["type"]) => void;
   onOpenChildren?: (vertex: Vertex) => void;
   showWorkspaceLabel?: boolean;
+  onDelete?: (vertex: Vertex) => void;
 };
 
 type RefCounts = Record<Reference["type"], number>;
@@ -63,6 +65,7 @@ export const VertexNode: React.FC<VertexNodeProps> = ({
   onOpenReferences,
   onOpenChildren,
   showWorkspaceLabel = true,
+  onDelete,
 }) => {
   const refs = React.useMemo(() => countReferences(vertex), [vertex]);
 
@@ -147,9 +150,37 @@ export const VertexNode: React.FC<VertexNodeProps> = ({
             }}
           />
 
-          {/* Workspace label INSIDE */}
-          {showWorkspaceLabel && (
-            <Box sx={{ position: "absolute", top: 12, left: 12, right: 12 }}>
+          {onDelete && (
+            <IconButton
+              size="small"
+              sx={{
+                position: "absolute",
+                top: 8,
+                right: 8,
+                bgcolor: "background.paper",
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(vertex);
+              }}
+            >
+              <DeleteOutlineRounded fontSize="small" />
+            </IconButton>
+          )}
+
+          {/* Title */}
+          <Box
+            sx={{
+              position: "absolute",
+              left: 14,
+              right: 14,
+              bottom: 14,
+              display: "flex",
+              flexDirection: "column",
+              gap: 0.25,
+            }}
+          >
+            {showWorkspaceLabel && (
               <Typography
                 variant="caption"
                 sx={{
@@ -165,11 +196,7 @@ export const VertexNode: React.FC<VertexNodeProps> = ({
               >
                 {workspace.name}
               </Typography>
-            </Box>
-          )}
-
-          {/* Title */}
-          <Box sx={{ position: "absolute", left: 14, right: 14, bottom: 14 }}>
+            )}
             <Typography
               variant="h6"
               sx={{
@@ -284,11 +311,7 @@ export const VertexNode: React.FC<VertexNodeProps> = ({
                   disabled={!hasChildren}
                   onClick={() => onOpenChildren?.(vertex)}
                 >
-                  <Badge
-                    badgeContent={0}
-                    color="secondary"
-                    max={99}
-                  >
+                  <Badge badgeContent={0} color="secondary" max={99}>
                     <AccountTreeOutlinedIcon fontSize="small" />
                   </Badge>
                 </IconButton>
