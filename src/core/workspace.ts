@@ -1,4 +1,3 @@
-import { Id } from "./common/id";
 import { Identifiable } from "./traits/identifiable";
 import { Taggable } from "./traits/taggable";
 import { Timestampable } from "./traits/timestampable";

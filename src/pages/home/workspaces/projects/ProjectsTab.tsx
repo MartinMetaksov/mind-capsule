@@ -13,7 +13,6 @@ import {
   DialogContent,
   DialogActions,
   Button,
-  Stack,
   MenuItem,
   Paper,
   DialogContentText,
@@ -22,7 +21,7 @@ import {
 import { VertexGrid, VertexItem } from "../vertices/VertexGrid";
 import { CreateFab } from "../components/CreateFab";
 import type { Workspace } from "@/core/workspace";
-import type { Vertex, VertexTabId } from "@/core/vertex";
+import type { Vertex } from "@/core/vertex";
 import type { VertexKind } from "@/core/common/vertexKind";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
 
@@ -70,7 +69,7 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
   const [thumbPreview, setThumbPreview] = React.useState<string | undefined>();
   const [error, setError] = React.useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = React.useState<VertexItem | null>(
-    null,
+    null
   );
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
@@ -90,11 +89,11 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
     setError(null);
   };
 
-  const handleWorkspacePick = (ws: Workspace) => {
-    setSelectedWorkspace(ws);
-    setEditorOpen(true);
-    closePopover();
-  };
+  // const handleWorkspacePick = (ws: Workspace) => {
+  //   setSelectedWorkspace(ws);
+  //   setEditorOpen(true);
+  //   closePopover();
+  // };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -145,7 +144,9 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
       await onChanged();
       closeEditor();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create project.");
+      setError(
+        err instanceof Error ? err.message : "Failed to create project."
+      );
     }
   };
 
@@ -186,7 +187,15 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
 
       <Dialog open={editorOpen} onClose={closeEditor} fullWidth maxWidth="sm">
         <DialogTitle>Create project</DialogTitle>
-        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 2, pb: 1 }}>
+        <DialogContent
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+            pt: 2,
+            pb: 1,
+          }}
+        >
           <Typography variant="body2" color="text.secondary">
             Workspace: {selectedWorkspace?.name ?? "Not selected"}
           </Typography>

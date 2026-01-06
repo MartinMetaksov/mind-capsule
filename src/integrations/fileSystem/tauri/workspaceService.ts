@@ -1,11 +1,11 @@
-import { invoke } from "@tauri-apps/api/core";
-import { SettingsStore } from "@/integrations/fileSystem/tauri/settingsStore";
+// import { invoke } from "@tauri-apps/api/core";
+// import { SettingsStore } from "@/integrations/fileSystem/tauri/settingsStore";
 
-async function requireWorkspacePath(): Promise<string> {
-  const p = await SettingsStore.getWorkspacePath();
-  if (!p) throw new Error("No workspace selected.");
-  return p;
-}
+// async function requireWorkspacePath(): Promise<string> {
+//   const p = await SettingsStore.getWorkspacePath();
+//   if (!p) throw new Error("No workspace selected.");
+//   return p;
+// }
 
 export const WorkspaceService = {
   // async listProjects(): Promise<Project[]> {

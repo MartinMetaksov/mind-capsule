@@ -83,9 +83,6 @@ export const WorkspaceOrchestrator: React.FC = () => {
 
   const error = workspacesError ?? verticesError;
 
-  const handleCreateProjectInWorkspace = (ws: Workspace) => {
-    console.log("create project in workspace:", ws.id, ws.name);
-  };
   const handleDeleteProject = async (vertexId: string) => {
     const fs = await getFileSystem();
     const v = vertices.find((x) => x.id === vertexId);
@@ -101,7 +98,8 @@ export const WorkspaceOrchestrator: React.FC = () => {
 
       let v = vertices.find((x) => x.id === vertexId) ?? null;
       let ws = v
-        ? workspaceByVertexId[v.id] ?? workspaces.find((w) => w.id === v!.workspace_id)
+        ? (workspaceByVertexId[v.id] ??
+          workspaces.find((w) => w.id === v!.workspace_id))
         : undefined;
 
       if (!v) {
@@ -124,7 +122,7 @@ export const WorkspaceOrchestrator: React.FC = () => {
         return nextTrail;
       });
     },
-    [navigate, vertices, workspaceByVertexId, workspaces],
+    [navigate, vertices, workspaceByVertexId, workspaces]
   );
 
   const jumpToTrailIndex = (index: number) => {
