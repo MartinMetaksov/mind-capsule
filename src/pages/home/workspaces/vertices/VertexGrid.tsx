@@ -49,22 +49,39 @@ export const VertexGrid: React.FC<VertexGridProps> = ({
   showWorkspaceLabel = true,
 }) => {
   const anySelected = selectedVertexId !== null;
+  const outerRef = React.useRef<HTMLDivElement | null>(null);
+  const [containerWidth, setContainerWidth] = React.useState(0);
+
+  React.useLayoutEffect(() => {
+    if (!outerRef.current) return;
+
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) setContainerWidth(entry.contentRect.width);
+    });
+    observer.observe(outerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  const gapPx = 24; // gap: 3 -> 24px with MUI spacing
+  const slotWidth = VERTEX_NODE_WIDTH + gapPx;
+  const maxColumns =
+    containerWidth > 0
+      ? Math.max(1, Math.floor((containerWidth + gapPx) / slotWidth))
+      : 1;
+  const leftAlign = items.length < maxColumns;
 
   return (
     <Box
+      ref={outerRef}
       sx={{
         width: "100%",
         height: "100%",
         minHeight: 0,
         minWidth: 0,
-
         overflowY: scrollY ? "auto" : "visible",
         overflowX: "hidden",
-
-        px: 2,
         py: 2,
-
-        pb: 10,
       }}
       onMouseDown={(e) => {
         if (e.currentTarget === e.target) onDeselect();
@@ -73,21 +90,25 @@ export const VertexGrid: React.FC<VertexGridProps> = ({
       <Box
         sx={{
           display: "grid",
-          gap: 1.25,
+          gap: 3,
+          width: "100%",
+          maxWidth: "100%",
+          mx: 0,
 
           /**
            * Responsive grid:
            * - Each card keeps its own fixed width (VertexNode width),
            * - Grid auto-fills columns and wraps to rows.
            */
-          gridTemplateColumns: `repeat(auto-fill, minmax(${VERTEX_NODE_WIDTH}px, 1fr))`,
+          gridTemplateColumns: `repeat(auto-fit, minmax(${VERTEX_NODE_WIDTH}px, ${VERTEX_NODE_WIDTH}px))`,
 
           /**
            * Keep items left-aligned (prevents stretched weirdness when space is wide).
            * Each grid cell becomes at least VERTEX_NODE_WIDTH, but can grow.
            * We still want the node itself to stay fixed width, so we align items.
            */
-          justifyItems: "start",
+          justifyContent: leftAlign ? "flex-start" : "center",
+          justifyItems: leftAlign ? "start" : "center",
           alignItems: "start",
         }}
       >

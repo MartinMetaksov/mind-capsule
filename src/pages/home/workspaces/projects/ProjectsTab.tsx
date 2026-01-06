@@ -14,18 +14,20 @@ import { VertexGrid, VertexItem } from "../vertices/VertexGrid";
 import { CreateVertexFab } from "../components/CreateVertexFab";
 import type { Workspace } from "@/core/workspace";
 
-type ChildrenTabProps = {
+type ProjectsTabProps = {
+  title?: string;
   items: VertexItem[];
   workspaces: Workspace[];
   onOpenVertex: (vertexId: string) => void;
-  onCreateVertexInWorkspace: (workspace: Workspace) => void;
+  onCreateProjectInWorkspace: (workspace: Workspace) => void;
 };
 
-export const ChildrenTab: React.FC<ChildrenTabProps> = ({
+export const ProjectsTab: React.FC<ProjectsTabProps> = ({
+  title = "Projects",
   items,
   workspaces,
   onOpenVertex,
-  onCreateVertexInWorkspace,
+  onCreateProjectInWorkspace,
 }) => {
   const [fabAnchor, setFabAnchor] = React.useState<HTMLElement | null>(null);
   const popoverOpen = Boolean(fabAnchor);
@@ -45,8 +47,8 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
     return workspaces.filter((ws) => ws.name.toLowerCase().includes(q));
   }, [workspaces, workspaceQuery]);
 
-  const handleCreateVertexInWorkspace = (ws: Workspace) => {
-    onCreateVertexInWorkspace(ws);
+  const handleCreateProjectInWorkspace = (ws: Workspace) => {
+    onCreateProjectInWorkspace(ws);
     closePopover();
   };
 
@@ -60,14 +62,20 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
       }}
       onMouseDown={(e) => e.stopPropagation()}
     >
-      <VertexGrid
-        items={items}
-        selectedVertexId={null}
-        onSelect={(id) => onOpenVertex(id)}
-        onDeselect={() => {}}
-        onOpenChildren={undefined}
-        onOpenReferences={undefined}
-      />
+      <Box sx={{ px: 2, pb: 2, pt: 2 }}>
+        <Typography variant="h6" sx={{ fontWeight: 900, mb: 1 }}>
+          {title}
+        </Typography>
+
+        <VertexGrid
+          items={items}
+          selectedVertexId={null}
+          onSelect={(id) => onOpenVertex(id)}
+          onDeselect={() => {}}
+          onOpenChildren={undefined}
+          onOpenReferences={undefined}
+        />
+      </Box>
 
       <CreateVertexFab onClick={openPopover} />
 
@@ -87,7 +95,7 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
       >
         <Box sx={{ p: 1.25 }}>
           <Typography sx={{ fontWeight: 900, mb: 1 }}>
-            Add vertex to workspace
+            Add project to workspace
           </Typography>
 
           <TextField
@@ -114,7 +122,7 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
               filteredWorkspaces.map((ws) => (
                 <ListItemButton
                   key={ws.id}
-                  onClick={() => handleCreateVertexInWorkspace(ws)}
+                  onClick={() => handleCreateProjectInWorkspace(ws)}
                 >
                   <ListItemText
                     primary={ws.name}

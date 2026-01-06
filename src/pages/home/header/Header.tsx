@@ -19,6 +19,7 @@ import BrightnessAutoOutlinedIcon from "@mui/icons-material/BrightnessAutoOutlin
 import { ThemePreference } from "@/utils/themes/themePreference";
 import { useThemeMode } from "@/utils/themes/hooks/useThemeMode";
 import { APP_NAME } from "@/constants/appConstants";
+import { useNavigate } from "react-router-dom";
 
 export const Header: React.FC = () => {
   const { preference, setPreference } = useThemeMode();
@@ -80,6 +81,8 @@ export const Header: React.FC = () => {
     </>
   );
 
+  const navigate = useNavigate();
+
   return (
     <AppBar position="sticky" elevation={0}>
       <Toolbar
@@ -89,11 +92,16 @@ export const Header: React.FC = () => {
         }}
       >
         <Box
+          role="button"
+          aria-label={`${APP_NAME} home`}
+          onClick={() => navigate("/")}
           sx={{
             display: "flex",
             alignItems: "center",
             gap: 1.5,
             flex: 1,
+            cursor: "pointer",
+            userSelect: "none",
           }}
         >
           <Box
@@ -104,7 +112,6 @@ export const Header: React.FC = () => {
               width: 32,
               height: 32,
               userSelect: "none",
-              pointerEvents: "none",
             }}
           />
 
@@ -117,16 +124,6 @@ export const Header: React.FC = () => {
             {APP_NAME}
           </Typography>
         </Box>
-        {/* <Box sx={{ display: "flex", alignItems: "baseline", gap: 1, flex: 1 }}>
-          <Typography
-            variant="h6"
-            color="text.primary"
-            component="h1"
-            sx={{ fontWeight: 800 }}
-          >
-            {APP_NAME}
-          </Typography>
-        </Box> */}
 
         <Tooltip title="Settings">
           <IconButton
