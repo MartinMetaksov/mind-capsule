@@ -268,7 +268,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
                 <TagsTab vertex={vertex} onVertexUpdated={onVertexUpdated} />
               )}
 
-              {tab === "notes" && <NotesTab />}
+              {tab === "notes" && <NotesTab vertex={vertex} />}
 
               {tab === "images" && <ImagesTab />}
 
