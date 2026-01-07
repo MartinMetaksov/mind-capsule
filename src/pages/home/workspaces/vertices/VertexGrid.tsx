@@ -44,7 +44,7 @@ export const VertexGrid: React.FC<VertexGridProps> = ({
     return () => observer.disconnect();
   }, []);
 
-  const gapPx = 24; // gap: 3 -> 24px with MUI spacing
+  const gapPx = 24;
   const slotWidth = VERTEX_NODE_WIDTH + gapPx;
   const maxColumns =
     containerWidth > 0
@@ -72,19 +72,7 @@ export const VertexGrid: React.FC<VertexGridProps> = ({
           width: "100%",
           maxWidth: "100%",
           mx: 0,
-
-          /**
-           * Responsive grid:
-           * - Each card keeps its own fixed width (VertexNode width),
-           * - Grid auto-fills columns and wraps to rows.
-           */
           gridTemplateColumns: `repeat(auto-fit, minmax(${VERTEX_NODE_WIDTH}px, ${VERTEX_NODE_WIDTH}px))`,
-
-          /**
-           * Keep items left-aligned (prevents stretched weirdness when space is wide).
-           * Each grid cell becomes at least VERTEX_NODE_WIDTH, but can grow.
-           * We still want the node itself to stay fixed width, so we align items.
-           */
           justifyContent: leftAlign ? "flex-start" : "center",
           justifyItems: leftAlign ? "start" : "center",
           alignItems: "start",

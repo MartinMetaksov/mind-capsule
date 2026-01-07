@@ -99,8 +99,8 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
       "notes",
       "images",
       "urls",
-      "files",
-      "references",
+      // "files",
+      // "references",
     ],
     []
   );

@@ -13,7 +13,6 @@ export type VertexNodeProps = {
   onDelete?: (vertex: Vertex) => void;
 };
 
-/** Fixed size for all vertices (2× larger than before) */
 export const VERTEX_NODE_WIDTH = 300;
 export const VERTEX_NODE_HEIGHT = 210;
 export const VERTEX_RADIUS = 1;
