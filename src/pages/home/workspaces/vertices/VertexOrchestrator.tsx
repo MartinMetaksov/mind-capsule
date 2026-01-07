@@ -278,13 +278,17 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
                 />
               )}
 
-              {tab === "tags" && <TagsTab tags={vertex.tags ?? []} />}
+              {tab === "tags" && (
+                <TagsTab vertex={vertex} onVertexUpdated={onVertexUpdated} />
+              )}
 
               {tab === "notes" && <NotesTab />}
 
               {tab === "images" && <ImagesTab />}
 
-              {tab === "urls" && <LinksTab />}
+              {tab === "urls" && (
+                <LinksTab vertex={vertex} onVertexUpdated={onVertexUpdated} />
+              )}
 
               {/* {tab === "files" && <FilesTab />}
 

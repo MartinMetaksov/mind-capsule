@@ -88,9 +88,19 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
         {loading ? (
           <Typography color="text.secondary">Loading children…</Typography>
         ) : children.length === 0 ? (
-          <Typography color="text.secondary">
-            No child vertices yet. Add one to see it here.
-          </Typography>
+          <Box
+            sx={{
+              flex: 1,
+              minHeight: 240,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Typography color="text.secondary" align="center">
+              No child vertices yet. Add one to see it here.
+            </Typography>
+          </Box>
         ) : (
           <Box sx={{ flex: 1, minHeight: 0 }}>
             <VertexGrid

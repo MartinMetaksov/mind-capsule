@@ -1,22 +1,154 @@
 import * as React from "react";
-import { Box, Chip, Typography } from "@mui/material";
+import {
+  Alert,
+  Box,
+  Chip,
+  IconButton,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
+import ClearIcon from "@mui/icons-material/Clear";
+
+import type { Vertex } from "@/core/vertex";
+import { getFileSystem } from "@/integrations/fileSystem/integration";
 
 type TagsTabProps = {
-  tags: string[];
+  vertex: Vertex;
+  onVertexUpdated?: (vertex: Vertex) => Promise<void> | void;
 };
 
-export const TagsTab: React.FC<TagsTabProps> = ({ tags }) => {
+export const TagsTab: React.FC<TagsTabProps> = ({ vertex, onVertexUpdated }) => {
+  const [tags, setTags] = React.useState<string[]>(vertex.tags ?? []);
+  const [input, setInput] = React.useState("");
+  const [saving, setSaving] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const inputRef = React.useRef<HTMLInputElement | null>(null);
+
+  const focusInput = React.useCallback(() => {
+    requestAnimationFrame(() => {
+      inputRef.current?.focus({ preventScroll: true });
+    });
+  }, []);
+
+  React.useEffect(() => {
+    setTags(vertex.tags ?? []);
+    setError(null);
+    focusInput();
+  }, [vertex, focusInput]);
+
+  const persistTags = async (next: string[]) => {
+    setSaving(true);
+    setError(null);
+    try {
+      const fs = await getFileSystem();
+      const updated: Vertex = {
+        ...vertex,
+        tags: next,
+        updated_at: new Date().toISOString(),
+      };
+      await fs.updateVertex(updated);
+      setTags(next);
+      await onVertexUpdated?.(updated);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update tags.");
+    } finally {
+      setSaving(false);
+      focusInput();
+    }
+  };
+
+  const handleAdd = async () => {
+    const trimmed = input.trim();
+    if (!trimmed) return;
+    if (tags.includes(trimmed)) {
+      setInput("");
+      focusInput();
+      return;
+    }
+    await persistTags([...tags, trimmed]);
+    setInput("");
+    focusInput();
+  };
+
+  const handleRemove = async (tag: string) => {
+    const next = tags.filter((t) => t !== tag);
+    await persistTags(next);
+  };
+
+  const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = async (
+    e
+  ) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      await handleAdd();
+    }
+  };
+
   return (
-    <Box>
-      <Typography variant="h6" sx={{ fontWeight: 900, mb: 1 }}>
-        Tags
-      </Typography>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 2,
+        maxWidth: 760,
+        mx: "auto",
+        width: "100%",
+      }}
+    >
+      <Box>
+        <Typography variant="h6" sx={{ fontWeight: 900, mb: 1 }}>
+          Tags
+        </Typography>
+        <Typography color="text.secondary">
+          Add keywords to organize and search this vertex.
+        </Typography>
+      </Box>
+
+      {error && (
+        <Alert severity="error" onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
+
+      <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} alignItems="center">
+        <TextField
+          label="New tag"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          inputRef={inputRef}
+          fullWidth
+          size="small"
+          InputLabelProps={{ shrink: true }}
+          placeholder="e.g. draft, idea"
+          disabled={saving}
+        />
+        <IconButton
+          color="primary"
+          onClick={handleAdd}
+          disabled={saving || !input.trim()}
+          aria-label="Add tag"
+          sx={{ border: 1, borderColor: "divider" }}
+        >
+          <AddIcon />
+        </IconButton>
+      </Stack>
+
       {tags.length === 0 ? (
         <Typography color="text.secondary">No tags yet.</Typography>
       ) : (
         <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
           {tags.map((tag) => (
-            <Chip key={tag} label={tag} size="small" variant="outlined" />
+            <Chip
+              key={tag}
+              label={tag}
+              size="small"
+              variant="outlined"
+              onDelete={saving ? undefined : () => handleRemove(tag)}
+              deleteIcon={<ClearIcon fontSize="small" />}
+            />
           ))}
         </Box>
       )}

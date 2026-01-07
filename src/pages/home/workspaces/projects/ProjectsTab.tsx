@@ -117,15 +117,31 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
           {title}
         </Typography>
 
-        <VertexGrid
-          items={items}
-          selectedVertexId={null}
-          onSelect={(id) => onOpenVertex(id)}
-          onDeleteVertex={(v) => {
-            const match = items.find((it) => it.vertex.id === v.id);
-            if (match) setConfirmDelete(match);
-          }}
-        />
+        {items.length === 0 ? (
+          <Box
+            sx={{
+              flex: 1,
+              minHeight: 260,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Typography color="text.secondary" align="center">
+              No projects yet. Create one to get started.
+            </Typography>
+          </Box>
+        ) : (
+          <VertexGrid
+            items={items}
+            selectedVertexId={null}
+            onSelect={(id) => onOpenVertex(id)}
+            onDeleteVertex={(v) => {
+              const match = items.find((it) => it.vertex.id === v.id);
+              if (match) setConfirmDelete(match);
+            }}
+          />
+        )}
       </Box>
 
       <CreateFab
