@@ -12,14 +12,14 @@ type RefCounts = {
   note: number;
 };
 
-type DetailsTabProps = {
+type PropertiesTabProps = {
   vertex: Vertex;
   workspace: Workspace;
   hasChildren: boolean;
   refCounts: RefCounts;
 };
 
-export const DetailsTab: React.FC<DetailsTabProps> = ({
+export const PropertiesTab: React.FC<PropertiesTabProps> = ({
   vertex,
   workspace,
   hasChildren,
@@ -28,11 +28,11 @@ export const DetailsTab: React.FC<DetailsTabProps> = ({
   return (
     <Box>
       <Typography variant="h6" sx={{ fontWeight: 900, mb: 1 }}>
-        Details
+        Properties
       </Typography>
 
       <Typography color="text.secondary">
-        Basic information about this vertex.
+        Manage the core properties for this vertex.
       </Typography>
 
       <Divider sx={{ my: 2 }} />

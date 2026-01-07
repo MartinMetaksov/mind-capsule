@@ -1,19 +1,18 @@
 import * as React from "react";
 import { Box } from "@mui/material";
 import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import LinkOutlinedIcon from "@mui/icons-material/LinkOutlined";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import CommentOutlinedIcon from "@mui/icons-material/CommentOutlined";
 import TagOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
-
+import { TuneOutlined } from "@mui/icons-material";
 import type { Vertex, VertexTabId } from "@/core/vertex";
 import type { Workspace } from "@/core/workspace";
 import type { Reference } from "@/core/common/reference";
 import { BreadcrumbsTrail } from "../components/BreadcrumbsTrail";
 import { VerticalTabs } from "../components/VerticalTabs";
 import { ChildrenTab } from "./children/ChildrenTab";
-import { DetailsTab } from "./details/DetailsTab";
+import { PropertiesTab } from "./properties/PropertiesTab";
 import { TagsTab } from "./tags/TagsTab";
 import { LinksTab } from "./links/LinksTab";
 import { ImagesTab } from "./images/ImagesTab";
@@ -21,13 +20,13 @@ import { NotesTab } from "./notes/NotesTab";
 
 type VertexTab =
   | "children"
-  | "details"
+  | "properties"
   | "tags"
   | "notes"
   | "images"
-  | "urls"
-  | "files"
-  | "references";
+  | "urls";
+// | "files"
+// | "references"
 
 type TrailItem = {
   vertex: Vertex;
@@ -94,7 +93,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
   const tabOrder: VertexTab[] = React.useMemo(
     () => [
       "children",
-      "details",
+      "properties",
       "tags",
       "notes",
       "images",
@@ -134,9 +133,9 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
         icon: <AccountTreeOutlinedIcon />,
       },
       {
-        value: "details" as const,
-        label: "Details",
-        icon: <InfoOutlinedIcon />,
+        value: "properties" as const,
+        label: "Properties",
+        icon: <TuneOutlined />,
       },
       { value: "tags" as const, label: "Tags", icon: <TagOutlinedIcon /> },
       {
@@ -264,8 +263,8 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
                 />
               )}
 
-              {tab === "details" && (
-                <DetailsTab
+              {tab === "properties" && (
+                <PropertiesTab
                   vertex={vertex}
                   workspace={workspace}
                   hasChildren={hasChildren}
