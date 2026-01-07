@@ -1,22 +1,17 @@
 import * as React from "react";
-import {
-  Box,
-  Typography,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Paper,
-  TextField,
-  MenuItem,
-} from "@mui/material";
+import { Box, Typography } from "@mui/material";
 
 import { VertexGrid, VertexItem } from "../VertexGrid";
 import { CreateFab } from "../../components/CreateFab";
+import {
+  CreateVertexDialog,
+  DeleteVertexDialog,
+  CreateVertexForm,
+} from "../../components/VertexDialogs";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
 import type { Vertex } from "@/core/vertex";
 import type { Workspace } from "@/core/workspace";
+import type { VertexKind } from "@/core/common/vertexKind";
 
 type ChildrenTabProps = {
   label: string;
@@ -38,14 +33,9 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
     null
   );
   const [createOpen, setCreateOpen] = React.useState(false);
-  const [titleValue, setTitleValue] = React.useState("");
-  const [thumbPreview, setThumbPreview] = React.useState<string | undefined>();
-  const [kind, setKind] = React.useState<Vertex["kind"]>(
-    vertex.children_behavior?.child_kind ?? "generic"
-  );
   const [createError, setCreateError] = React.useState<string | null>(null);
-  const [dragging, setDragging] = React.useState(false);
-  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const defaultKind: VertexKind =
+    vertex.children_behavior?.child_kind ?? "generic";
 
   const loadChildren = React.useCallback(async () => {
     setLoading(true);
@@ -111,9 +101,6 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
               onSelect={(id) => {
                 onOpenVertex?.(id);
               }}
-              onDeselect={() => {}}
-              onOpenChildren={() => {}}
-              onOpenReferences={() => {}}
               onDeleteVertex={(v) => {
                 const match = children.find((c) => c.vertex.id === v.id);
                 if (match) setConfirmDelete(match);
@@ -126,206 +113,72 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
       </Box>
       <CreateFab
         onClick={() => {
-          setTitleValue("");
-          setThumbPreview(undefined);
-          setCreateError(null);
           setCreateOpen(true);
         }}
         title="Create child"
         sx={{ position: "absolute", bottom: 20, right: 20 }}
       />
-      <Dialog
+      <CreateVertexDialog
         open={createOpen}
-        onClose={() => setCreateOpen(false)}
-        fullWidth
-        maxWidth="sm"
-      >
-        <DialogTitle>Create child</DialogTitle>
-        <DialogContent
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 2,
-            pt: 2,
-            pb: 1,
-          }}
-        >
-          <Box sx={{ pt: 1, display: "flex", flexDirection: "column", gap: 2 }}>
-            <TextField
-              label="Title"
-              fullWidth
-              value={titleValue}
-              onChange={(e) => setTitleValue(e.target.value)}
-              InputLabelProps={{ shrink: true }}
-            />
-            <TextField
-              label="Kind"
-              select
-              fullWidth
-              value={kind}
-              onChange={(e) => setKind(e.target.value as Vertex["kind"])}
-              InputLabelProps={{ shrink: true }}
-            >
-              <MenuItem value="project">Project</MenuItem>
-              <MenuItem value="chapter">Chapter</MenuItem>
-              <MenuItem value="section">Section</MenuItem>
-              <MenuItem value="note">Note</MenuItem>
-              <MenuItem value="generic">Generic</MenuItem>
-            </TextField>
-          </Box>
-          <Box sx={{ pt: 1 }}>
-            <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-              Thumbnail
-            </Typography>
-            <Paper
-              variant="outlined"
-              sx={{
-                p: 2,
-                textAlign: "center",
-                cursor: "pointer",
-                bgcolor: "background.default",
-                minHeight: 260,
-                borderStyle: dragging ? "dashed" : "solid",
-                borderWidth: 1,
-                borderColor: dragging ? "primary.main" : "divider",
-              }}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setDragging(true);
-              }}
-              onDrop={(e) => {
-                e.preventDefault();
-                setDragging(false);
-                const file = e.dataTransfer.files?.[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = () => {
-                  if (typeof reader.result === "string")
-                    setThumbPreview(reader.result);
-                };
-                reader.readAsDataURL(file);
-              }}
-              onClick={() => fileInputRef.current?.click()}
-              onDragEnter={(e) => {
-                e.preventDefault();
-                setDragging(true);
-              }}
-              onDragLeave={(e) => {
-                e.preventDefault();
-                setDragging(false);
-              }}
-            >
-              {thumbPreview ? (
-                <Box
-                  component="img"
-                  src={thumbPreview}
-                  alt="thumbnail preview"
-                  sx={{ maxWidth: "100%", maxHeight: 160, borderRadius: 1 }}
-                />
-              ) : (
-                <Typography variant="body2" color="text.secondary">
-                  Drag & drop or click to add an image
-                </Typography>
-              )}
-            </Paper>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              style={{ display: "none" }}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = () => {
-                  if (typeof reader.result === "string")
-                    setThumbPreview(reader.result);
-                };
-                reader.readAsDataURL(file);
-              }}
-            />
-          </Box>
-          {createError && (
-            <Typography color="error" variant="body2">
-              {createError}
-            </Typography>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setCreateOpen(false)}>Cancel</Button>
-          <Button
-            variant="contained"
-            onClick={async () => {
-              if (!titleValue.trim()) {
-                setCreateError("Title is required.");
-                return;
-              }
-              try {
-                const fs = await getFileSystem();
-                const now = new Date().toISOString();
-                const newVertex: Vertex = {
-                  id: crypto.randomUUID(),
-                  title: titleValue.trim(),
-                  parent_id: vertex.id,
-                  workspace_id: workspace.id,
-                  kind,
-                  default_tab: "children",
-                  created_at: now,
-                  updated_at: now,
-                  tags: [],
-                  thumbnail_path: thumbPreview,
-                };
-                await fs.createVertex(newVertex);
-                setCreateOpen(false);
-                await loadChildren();
-              } catch (err) {
-                setCreateError(
-                  err instanceof Error ? err.message : "Failed to create child."
-                );
-              }
-            }}
-          >
-            Create
-          </Button>
-        </DialogActions>
-      </Dialog>
+        onClose={() => {
+          setCreateOpen(false);
+          setCreateError(null);
+        }}
+        onSubmit={async (data: CreateVertexForm) => {
+          try {
+            const fs = await getFileSystem();
+            const now = new Date().toISOString();
+            const newVertex: Vertex = {
+              id: crypto.randomUUID(),
+              title: data.title,
+              parent_id: vertex.id,
+              workspace_id: workspace.id,
+              kind: data.kind,
+              default_tab: "children",
+              created_at: now,
+              updated_at: now,
+              tags: [],
+              thumbnail_path: data.thumbnail,
+            };
+            await fs.createVertex(newVertex);
+            setCreateOpen(false);
+            await loadChildren();
+          } catch (err) {
+            setCreateError(
+              err instanceof Error ? err.message : "Failed to create child."
+            );
+          }
+        }}
+        workspaceLabel={workspace.name}
+        defaultKind={defaultKind}
+        submitLabel="Create child"
+        title="Create child"
+      />
+      {createError && (
+        <Typography color="error" variant="body2" sx={{ px: 2, pt: 1 }}>
+          {createError}
+        </Typography>
+      )}
 
-      <Dialog
+      <DeleteVertexDialog
         open={Boolean(confirmDelete)}
-        onClose={() => setConfirmDelete(null)}
-        fullWidth
-        maxWidth="xs"
-      >
-        <DialogTitle>Delete child</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to delete{" "}
-            <strong>{confirmDelete?.vertex.title ?? "this child"}</strong>?
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfirmDelete(null)}>Cancel</Button>
-          <Button
-            color="error"
-            variant="contained"
-            onClick={async () => {
-              if (!confirmDelete) return;
-              try {
-                const fs = await getFileSystem();
-                await fs.removeVertex(confirmDelete.vertex);
-                setConfirmDelete(null);
-                await loadChildren();
-              } catch (err) {
-                setError(
-                  err instanceof Error ? err.message : "Failed to delete child."
-                );
-              }
-            }}
-          >
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
+        name={confirmDelete?.vertex.title}
+        onCancel={() => setConfirmDelete(null)}
+        onConfirm={async () => {
+          if (!confirmDelete) return;
+          try {
+            const fs = await getFileSystem();
+            await fs.removeVertex(confirmDelete.vertex);
+            setConfirmDelete(null);
+            await loadChildren();
+          } catch (err) {
+            setError(
+              err instanceof Error ? err.message : "Failed to delete child."
+            );
+          }
+        }}
+        entityLabel="child"
+      />
     </Box>
   );
 };

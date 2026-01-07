@@ -8,22 +8,18 @@ import {
   Popover,
   TextField,
   Typography,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  MenuItem,
-  Paper,
-  DialogContentText,
 } from "@mui/material";
-
 import { VertexGrid, VertexItem } from "../vertices/VertexGrid";
 import { CreateFab } from "../components/CreateFab";
 import type { Workspace } from "@/core/workspace";
 import type { Vertex } from "@/core/vertex";
 import type { VertexKind } from "@/core/common/vertexKind";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
+import {
+  CreateVertexDialog,
+  DeleteVertexDialog,
+  CreateVertexForm,
+} from "../components/VertexDialogs";
 
 type ProjectsTabProps = {
   title?: string;
@@ -49,7 +45,14 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
   const closePopover = () => setFabAnchor(null);
 
   const [workspaceQuery, setWorkspaceQuery] = React.useState("");
-  const [dragging, setDragging] = React.useState(false);
+  const [editorOpen, setEditorOpen] = React.useState(false);
+  const [selectedWorkspace, setSelectedWorkspace] =
+    React.useState<Workspace | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = React.useState<VertexItem | null>(
+    null,
+  );
+  const defaultKind: VertexKind = "project";
 
   React.useEffect(() => {
     if (!popoverOpen) setWorkspaceQuery("");
@@ -61,18 +64,6 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
     return workspaces.filter((ws) => ws.name.toLowerCase().includes(q));
   }, [workspaces, workspaceQuery]);
 
-  const [editorOpen, setEditorOpen] = React.useState(false);
-  const [selectedWorkspace, setSelectedWorkspace] =
-    React.useState<Workspace | null>(null);
-  const [titleValue, setTitleValue] = React.useState("");
-  const [kind, setKind] = React.useState<VertexKind>("project");
-  const [thumbPreview, setThumbPreview] = React.useState<string | undefined>();
-  const [error, setError] = React.useState<string | null>(null);
-  const [confirmDelete, setConfirmDelete] = React.useState<VertexItem | null>(
-    null
-  );
-  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
-
   const handleCreateProjectInWorkspace = (ws: Workspace) => {
     setSelectedWorkspace(ws);
     setEditorOpen(true);
@@ -80,49 +71,9 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
     closePopover();
   };
 
-  const closeEditor = () => {
-    setEditorOpen(false);
-    setSelectedWorkspace(null);
-    setTitleValue("");
-    setKind("project");
-    setThumbPreview(undefined);
-    setError(null);
-  };
-
-  // const handleWorkspacePick = (ws: Workspace) => {
-  //   setSelectedWorkspace(ws);
-  //   setEditorOpen(true);
-  //   closePopover();
-  // };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") setThumbPreview(reader.result);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleThumbSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") setThumbPreview(reader.result);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const saveProject = async () => {
+  const handleCreate = async (data: CreateVertexForm) => {
     if (!selectedWorkspace) {
       setError("Select a workspace first.");
-      return;
-    }
-    if (!titleValue.trim()) {
-      setError("Title is required.");
       return;
     }
     try {
@@ -130,19 +81,20 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
       const now = new Date().toISOString();
       const vertex: Vertex = {
         id: crypto.randomUUID(),
-        title: titleValue.trim(),
+        title: data.title,
         parent_id: undefined,
         workspace_id: selectedWorkspace.id,
-        kind,
+        kind: data.kind,
         default_tab: "children",
         created_at: now,
         updated_at: now,
         tags: [],
-        thumbnail_path: thumbPreview,
+        thumbnail_path: data.thumbnail,
       };
       await fs.createVertex(vertex);
       await onChanged();
-      closeEditor();
+      setEditorOpen(false);
+      setSelectedWorkspace(null);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to create project."
@@ -169,9 +121,6 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
           items={items}
           selectedVertexId={null}
           onSelect={(id) => onOpenVertex(id)}
-          onDeselect={() => {}}
-          onOpenChildren={undefined}
-          onOpenReferences={undefined}
           onDeleteVertex={(v) => {
             const match = items.find((it) => it.vertex.id === v.id);
             if (match) setConfirmDelete(match);
@@ -185,138 +134,35 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
         sx={{ position: "absolute", bottom: 20, right: 20 }}
       />
 
-      <Dialog open={editorOpen} onClose={closeEditor} fullWidth maxWidth="sm">
-        <DialogTitle>Create project</DialogTitle>
-        <DialogContent
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 2,
-            pt: 2,
-            pb: 1,
-          }}
-        >
-          <Typography variant="body2" color="text.secondary">
-            Workspace: {selectedWorkspace?.name ?? "Not selected"}
-          </Typography>
+      <CreateVertexDialog
+        open={editorOpen}
+        onClose={() => {
+          setEditorOpen(false);
+          setSelectedWorkspace(null);
+          setError(null);
+        }}
+        onSubmit={handleCreate}
+        workspaceLabel={selectedWorkspace?.name}
+        defaultKind={defaultKind}
+        submitLabel="Create project"
+        title="Create project"
+      />
+      {error && (
+        <Typography color="error" variant="body2" sx={{ px: 2, pt: 1 }}>
+          {error}
+        </Typography>
+      )}
 
-          <TextField
-            label="Title"
-            fullWidth
-            value={titleValue}
-            onChange={(e) => setTitleValue(e.target.value)}
-            InputLabelProps={{ shrink: true }}
-          />
-
-          <TextField
-            label="Kind"
-            select
-            fullWidth
-            value={kind}
-            onChange={(e) => setKind(e.target.value as VertexKind)}
-            InputLabelProps={{ shrink: true }}
-          >
-            <MenuItem value="project">Project</MenuItem>
-            <MenuItem value="chapter">Chapter</MenuItem>
-            <MenuItem value="section">Section</MenuItem>
-            <MenuItem value="note">Note</MenuItem>
-            <MenuItem value="generic">Generic</MenuItem>
-          </TextField>
-
-          <Box>
-            <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-              Thumbnail
-            </Typography>
-            <Paper
-              variant="outlined"
-              sx={{
-                p: 2,
-                textAlign: "center",
-                cursor: "pointer",
-                bgcolor: "background.default",
-                minHeight: 260,
-                borderStyle: dragging ? "dashed" : "solid",
-                borderWidth: 1,
-                borderColor: dragging ? "primary.main" : "divider",
-              }}
-              onDrop={handleDrop}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setDragging(true);
-              }}
-              onClick={() => fileInputRef.current?.click()}
-              onDragEnter={(e) => {
-                e.preventDefault();
-                setDragging(true);
-              }}
-              onDragLeave={(e) => {
-                e.preventDefault();
-                setDragging(false);
-              }}
-            >
-              {thumbPreview ? (
-                <Box
-                  component="img"
-                  src={thumbPreview}
-                  alt="thumbnail preview"
-                  sx={{ maxWidth: "100%", maxHeight: 160, borderRadius: 1 }}
-                />
-              ) : (
-                <Typography variant="body2" color="text.secondary">
-                  Drag & drop or click to add an image
-                </Typography>
-              )}
-            </Paper>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              style={{ display: "none" }}
-              onChange={handleThumbSelect}
-            />
-          </Box>
-
-          {error && (
-            <Typography color="error" variant="body2">
-              {error}
-            </Typography>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeEditor}>Cancel</Button>
-          <Button variant="contained" onClick={saveProject}>
-            Create
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog
+      <DeleteVertexDialog
         open={Boolean(confirmDelete)}
-        onClose={() => setConfirmDelete(null)}
-        fullWidth
-        maxWidth="xs"
-      >
-        <DialogTitle>Delete project</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Are you sure you want to delete{" "}
-            <strong>{confirmDelete?.vertex.title ?? "this project"}</strong>?
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfirmDelete(null)}>Cancel</Button>
-          <Button
-            color="error"
-            variant="contained"
-            onClick={() => {
-              if (confirmDelete) onDeleteProject(confirmDelete.vertex.id);
-              setConfirmDelete(null);
-            }}
-          >
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
+        name={confirmDelete?.vertex.title}
+        onCancel={() => setConfirmDelete(null)}
+        onConfirm={() => {
+          if (confirmDelete) onDeleteProject(confirmDelete.vertex.id);
+          setConfirmDelete(null);
+        }}
+        entityLabel="project"
+      />
 
       <Popover
         open={popoverOpen}

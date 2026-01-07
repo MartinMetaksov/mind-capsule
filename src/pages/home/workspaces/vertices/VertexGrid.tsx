@@ -1,9 +1,7 @@
 import * as React from "react";
 import { Box } from "@mui/material";
-
 import type { Vertex } from "@/core/vertex";
 import type { Workspace } from "@/core/workspace";
-import type { Reference } from "@/core/common/reference";
 import {
   VertexNode,
   VERTEX_NODE_HEIGHT,
@@ -17,24 +15,10 @@ export type VertexItem = {
 
 type VertexGridProps = {
   items: VertexItem[];
-
   selectedVertexId: string | null;
   onSelect: (vertexId: string) => void;
-  onDeselect: () => void;
-
-  onOpenReferences?: (vertex: Vertex, type: Reference["type"]) => void;
-  onOpenChildren?: (vertex: Vertex) => void;
   onDeleteVertex?: (vertex: Vertex) => void;
-
-  dimPredicate?: (vertexId: string) => boolean;
-
-  /**
-   * Optional: if you render this inside an absolutely-positioned canvas,
-   * you can choose whether the grid itself scrolls vertically.
-   * Most of the time you want this `true`.
-   */
   scrollY?: boolean;
-
   showWorkspaceLabel?: boolean;
 };
 
@@ -42,15 +26,10 @@ export const VertexGrid: React.FC<VertexGridProps> = ({
   items,
   selectedVertexId,
   onSelect,
-  onDeselect,
-  onOpenReferences,
-  onOpenChildren,
   onDeleteVertex,
-  dimPredicate,
   scrollY = true,
   showWorkspaceLabel = true,
 }) => {
-  const anySelected = selectedVertexId !== null;
   const outerRef = React.useRef<HTMLDivElement | null>(null);
   const [containerWidth, setContainerWidth] = React.useState(0);
 
@@ -84,9 +63,6 @@ export const VertexGrid: React.FC<VertexGridProps> = ({
         overflowY: scrollY ? "auto" : "visible",
         overflowX: "hidden",
         py: 2,
-      }}
-      onMouseDown={(e) => {
-        if (e.currentTarget === e.target) onDeselect();
       }}
     >
       <Box
@@ -129,15 +105,7 @@ export const VertexGrid: React.FC<VertexGridProps> = ({
               vertex={vertex}
               workspace={workspace}
               selected={selectedVertexId === vertex.id}
-              dimmed={
-                dimPredicate
-                  ? dimPredicate(vertex.id)
-                  : anySelected && selectedVertexId !== vertex.id
-              }
               onSelect={onSelect}
-              onDeselect={onDeselect}
-              onOpenReferences={onOpenReferences}
-              onOpenChildren={onOpenChildren}
               showWorkspaceLabel={showWorkspaceLabel}
               onDelete={onDeleteVertex}
             />

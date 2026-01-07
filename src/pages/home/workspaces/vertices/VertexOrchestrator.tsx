@@ -2,10 +2,8 @@ import * as React from "react";
 import { Box } from "@mui/material";
 import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
-import HubOutlinedIcon from "@mui/icons-material/HubOutlined";
 import LinkOutlinedIcon from "@mui/icons-material/LinkOutlined";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
-import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutlined";
 import CommentOutlinedIcon from "@mui/icons-material/CommentOutlined";
 import TagOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 
@@ -17,10 +15,8 @@ import { VerticalTabs } from "../components/VerticalTabs";
 import { ChildrenTab } from "./children/ChildrenTab";
 import { DetailsTab } from "./details/DetailsTab";
 import { TagsTab } from "./tags/TagsTab";
-import { ReferencesTab } from "./references/ReferencesTab";
 import { LinksTab } from "./links/LinksTab";
 import { ImagesTab } from "./images/ImagesTab";
-import { FilesTab } from "./files/FilesTab";
 import { NotesTab } from "./notes/NotesTab";
 
 type VertexTab =
@@ -106,7 +102,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
       "files",
       "references",
     ],
-    [],
+    []
   );
 
   const resolveInitialTab = React.useCallback((): VertexTab => {
@@ -122,13 +118,13 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
   const hasChildren = false;
   const childrenLabel = React.useMemo(
     () => formatChildLabel(vertex.children_behavior),
-    [vertex.children_behavior],
+    [vertex.children_behavior]
   );
   const handleOpenVertex = React.useCallback(
     (id: string) => {
       onOpenVertex?.(id);
     },
-    [onOpenVertex],
+    [onOpenVertex]
   );
   const vertexTabs = React.useMemo(
     () => [
@@ -154,18 +150,18 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
         icon: <ImageOutlinedIcon />,
       },
       { value: "urls" as const, label: "Links", icon: <LinkOutlinedIcon /> },
-      {
-        value: "files" as const,
-        label: "Files",
-        icon: <InsertDriveFileOutlinedIcon />,
-      },
-      {
-        value: "references" as const,
-        label: "References",
-        icon: <HubOutlinedIcon />,
-      },
+      // {
+      //   value: "files" as const,
+      //   label: "Files",
+      //   icon: <InsertDriveFileOutlinedIcon />,
+      // },
+      // {
+      //   value: "references" as const,
+      //   label: "References",
+      //   icon: <HubOutlinedIcon />,
+      // },
     ],
-    [childrenLabel],
+    [childrenLabel]
   );
 
   React.useEffect(() => {
@@ -182,7 +178,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
           onClick: isLast ? undefined : () => onJumpTo(idx),
         };
       }),
-    [onJumpTo, trail],
+    [onJumpTo, trail]
   );
 
   return (
@@ -285,9 +281,9 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
 
               {tab === "urls" && <LinksTab />}
 
-              {tab === "files" && <FilesTab />}
+              {/* {tab === "files" && <FilesTab />}
 
-              {tab === "references" && <ReferencesTab />}
+              {tab === "references" && <ReferencesTab />} */}
             </Box>
           </Box>
         </Box>
