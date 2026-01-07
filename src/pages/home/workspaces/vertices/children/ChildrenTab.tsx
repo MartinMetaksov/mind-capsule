@@ -11,6 +11,7 @@ import {
 import { getFileSystem } from "@/integrations/fileSystem/integration";
 import type { Vertex } from "@/core/vertex";
 import type { Workspace } from "@/core/workspace";
+import { pluralize } from "@/utils/text";
 
 type ChildrenTabProps = {
   label: string;
@@ -25,6 +26,12 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
   workspace,
   onOpenVertex,
 }) => {
+  const emptyLabel = React.useMemo(() => {
+    const kind = vertex.children_behavior?.child_kind?.trim();
+    if (!kind) return "children";
+    return pluralize(kind);
+  }, [vertex.children_behavior?.child_kind]);
+
   const [children, setChildren] = React.useState<VertexItem[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -33,7 +40,8 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
   );
   const [createOpen, setCreateOpen] = React.useState(false);
   const [createError, setCreateError] = React.useState<string | null>(null);
-  const defaultKind = (vertex.children_behavior?.child_kind as Vertex["kind"]) ?? "generic";
+  const defaultKind =
+    (vertex.children_behavior?.child_kind as Vertex["kind"]) ?? "generic";
 
   const loadChildren = React.useCallback(async () => {
     setLoading(true);
@@ -98,7 +106,7 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
             }}
           >
             <Typography color="text.secondary" align="center">
-              No child vertices yet. Add one to see it here.
+              No {emptyLabel} found. Start by creating one.
             </Typography>
           </Box>
         ) : (
