@@ -79,25 +79,29 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
   onVertexUpdated,
 }) => {
   const tabOrder: VertexTab[] = React.useMemo(
-    () => [
-      "children",
-      "properties",
-      "tags",
-      "notes",
-      "images",
-      "urls",
-      // "files",
-      // "references",
-    ],
-    []
+    () => {
+      const base: VertexTab[] = [
+        "children",
+        "properties",
+        "tags",
+        "notes",
+        "images",
+        "urls",
+        // "files",
+        // "references",
+      ];
+      return vertex.is_leaf ? base.filter((t) => t !== "children") : base;
+    },
+    [vertex.is_leaf]
   );
 
   const resolveInitialTab = React.useCallback((): VertexTab => {
     const candidate = vertex.default_tab as VertexTabId | undefined;
+    const fallback = vertex.is_leaf ? "properties" : "children";
     return tabOrder.includes(candidate as VertexTab)
       ? (candidate as VertexTab)
-      : "children";
-  }, [tabOrder, vertex.default_tab]);
+      : (fallback as VertexTab);
+  }, [tabOrder, vertex.default_tab, vertex.is_leaf]);
 
   const [tab, setTab] = React.useState<VertexTab>(() => resolveInitialTab());
 
@@ -115,11 +119,15 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
   );
   const vertexTabs = React.useMemo(
     () => [
-      {
-        value: "children" as const,
-        label: childrenLabel,
-        icon: <AccountTreeOutlinedIcon />,
-      },
+      ...(!vertex.is_leaf
+        ? [
+            {
+              value: "children" as const,
+              label: childrenLabel,
+              icon: <AccountTreeOutlinedIcon />,
+            },
+          ]
+        : []),
       {
         value: "properties" as const,
         label: "Properties",
@@ -148,7 +156,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
       //   icon: <HubOutlinedIcon />,
       // },
     ],
-    [childrenLabel]
+    [childrenLabel, vertex.is_leaf]
   );
 
   React.useEffect(() => {

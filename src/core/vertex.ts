@@ -44,4 +44,5 @@ export type Vertex = Identifiable &
     children_behavior?: ChildrenBehavior;
     default_tab?: VertexTabId;
     kind: VertexKind;
+    is_leaf?: boolean;
   };

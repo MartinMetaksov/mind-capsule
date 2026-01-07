@@ -7,6 +7,7 @@ import {
   MenuItem,
   Stack,
   TextField,
+  Tooltip,
   Typography,
 } from "@mui/material";
 
@@ -60,6 +61,7 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
   );
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [isLeaf, setIsLeaf] = React.useState<boolean>(Boolean(vertex.is_leaf));
 
   React.useEffect(() => {
     setTitle(vertex.title);
@@ -71,6 +73,7 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
     });
     setThumbnail(vertex.thumbnail_path);
     setError(null);
+    setIsLeaf(Boolean(vertex.is_leaf));
   }, [vertex]);
 
   const tabOptions: { value: VertexTabId; label: string }[] = [
@@ -103,7 +106,8 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
     childBehavior.child_kind !==
       (vertex.children_behavior?.child_kind ?? "generic") ||
     childBehavior.display !== (vertex.children_behavior?.display ?? "grid") ||
-    thumbnail !== vertex.thumbnail_path;
+    thumbnail !== vertex.thumbnail_path ||
+    isLeaf !== Boolean(vertex.is_leaf);
 
   const handleSave = async () => {
     if (!title.trim()) {
@@ -122,10 +126,15 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
         children_behavior: childBehavior,
         thumbnail_path: thumbnail,
         updated_at: new Date().toISOString(),
+        is_leaf: isLeaf,
       };
       await fs.updateVertex(updated);
       await onVertexUpdated?.(updated);
-      onSelectTab(updated.default_tab ?? "children");
+      onSelectTab(
+        updated.is_leaf
+          ? ("properties" as VertexTabId)
+          : (updated.default_tab ?? "children")
+      );
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to save properties."
@@ -205,6 +214,27 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
         </Stack>
 
         <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+          <TextField
+            label="Leaf node"
+            select
+            value={isLeaf ? "yes" : "no"}
+            onChange={(e) => setIsLeaf(e.target.value === "yes")}
+            fullWidth
+            InputLabelProps={{ shrink: true }}
+            InputProps={{
+              endAdornment: (
+                <Tooltip title="If yes, this vertex will not show a children tab.">
+                  <Typography component="span" sx={{ ml: 1, color: "text.secondary" }}>
+                    ?
+                  </Typography>
+                </Tooltip>
+              ),
+            }}
+          >
+            <MenuItem value="no">No</MenuItem>
+            <MenuItem value="yes">Yes</MenuItem>
+          </TextField>
+
           <TextField
             label="Children kind"
             value={childBehavior.child_kind}
