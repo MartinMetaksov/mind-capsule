@@ -42,6 +42,7 @@ export type VertexOrchestratorProps = {
   onBackToRoot: () => void;
 
   onOpenVertex?: (vertexId: string) => void;
+  onVertexUpdated?: (vertex: Vertex) => Promise<void> | void;
 };
 
 type RefCounts = Record<Reference["type"], number>;
@@ -89,6 +90,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
   onJumpTo,
   onBackToRoot,
   onOpenVertex,
+  onVertexUpdated,
 }) => {
   const tabOrder: VertexTab[] = React.useMemo(
     () => [
@@ -269,6 +271,10 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
                   workspace={workspace}
                   hasChildren={hasChildren}
                   refCounts={refCounts}
+                  onVertexUpdated={onVertexUpdated}
+                  onSelectTab={(nextTab) =>
+                    setTab((nextTab as VertexTab) ?? "children")
+                  }
                 />
               )}
 

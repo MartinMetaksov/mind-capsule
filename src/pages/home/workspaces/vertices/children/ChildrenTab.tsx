@@ -11,7 +11,6 @@ import {
 import { getFileSystem } from "@/integrations/fileSystem/integration";
 import type { Vertex } from "@/core/vertex";
 import type { Workspace } from "@/core/workspace";
-import type { VertexKind } from "@/core/common/vertexKind";
 
 type ChildrenTabProps = {
   label: string;
@@ -34,8 +33,7 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
   );
   const [createOpen, setCreateOpen] = React.useState(false);
   const [createError, setCreateError] = React.useState<string | null>(null);
-  const defaultKind: VertexKind =
-    vertex.children_behavior?.child_kind ?? "generic";
+  const defaultKind = (vertex.children_behavior?.child_kind as Vertex["kind"]) ?? "generic";
 
   const loadChildren = React.useCallback(async () => {
     setLoading(true);

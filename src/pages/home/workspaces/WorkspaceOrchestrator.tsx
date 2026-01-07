@@ -232,6 +232,14 @@ export const WorkspaceOrchestrator: React.FC = () => {
           onBackToRoot={backToRoot}
           onJumpTo={(idx) => jumpToTrailIndex(idx)}
           onOpenVertex={(nextVertexId) => openVertex(nextVertexId)}
+          onVertexUpdated={async (updated) => {
+            setTrail((prev) =>
+              prev.map((t) =>
+                t.vertex.id === updated.id ? { ...t, vertex: updated } : t
+              )
+            );
+            await reloadVertices();
+          }}
         />
       </Box>
     );

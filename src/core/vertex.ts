@@ -14,7 +14,7 @@ export type ChildrenDisplayHint =
   | `custom:${string}`;
 
 export type ChildrenBehavior = {
-  child_kind: VertexKind;
+  child_kind: string;
   display: ChildrenDisplayHint;
 };
 
@@ -24,13 +24,13 @@ export type VertexLayout =
 
 export type VertexTabId =
   | "children"
-  | "details"
+  | "properties"
   | "tags"
   | "notes"
   | "images"
-  | "urls"
-  | "files"
-  | "references";
+  | "urls";
+// | "files"
+// | "references";
 
 export type Vertex = Identifiable &
   Thumbnailable &
