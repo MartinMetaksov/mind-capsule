@@ -26,10 +26,13 @@ export const SearchDialog: React.FC<Props> = ({ open, onClose }) => {
   const [search, setSearch] = React.useState("");
   const [searchTab, setSearchTab] = React.useState(0);
   const [allVertices, setAllVertices] = React.useState<Vertex[]>([]);
+  const inputRef = React.useRef<HTMLInputElement | null>(null);
   const navigate = useNavigate();
 
   React.useEffect(() => {
     if (!open) return;
+    setSearch("");
+    setSearchTab(0);
     (async () => {
       const fs = await getFileSystem();
       // load all vertices present in storage
@@ -53,6 +56,10 @@ export const SearchDialog: React.FC<Props> = ({ open, onClose }) => {
         if (v) verts.push(v);
       }
       setAllVertices(verts);
+      // defer focus to ensure dialog is painted
+      requestAnimationFrame(() => {
+        inputRef.current?.focus();
+      });
     })();
   }, [open]);
 
@@ -131,6 +138,7 @@ export const SearchDialog: React.FC<Props> = ({ open, onClose }) => {
       <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
         <TextField
           autoFocus
+          inputRef={inputRef}
           placeholder="Search…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
