@@ -65,13 +65,20 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
 
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
-    const newRefs: ImageRef[] = [];
-    for (const file of Array.from(files)) {
-      const data = await fileToDataUrl(file);
-      newRefs.push({ type: "image", path: data });
+    setError(null);
+    try {
+      const newRefs: ImageRef[] = [];
+      for (const file of Array.from(files)) {
+        const data = await fileToDataUrl(file);
+        newRefs.push({ type: "image", path: data });
+      }
+      await persistImages([...images, ...newRefs]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to add images.");
+    } finally {
+      setDragging(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
-    await persistImages([...images, ...newRefs]);
-    setDragging(false);
   };
 
   const fileToDataUrl = (file: File): Promise<string> =>

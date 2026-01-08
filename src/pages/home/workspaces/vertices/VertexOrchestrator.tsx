@@ -78,6 +78,12 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
   onOpenVertex,
   onVertexUpdated,
 }) => {
+  const [currentVertex, setCurrentVertex] = React.useState<Vertex>(vertex);
+
+  React.useEffect(() => {
+    setCurrentVertex(vertex);
+  }, [vertex]);
+
   const tabOrder: VertexTab[] = React.useMemo(
     () => {
       const base: VertexTab[] = [
@@ -96,20 +102,20 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
   );
 
   const resolveInitialTab = React.useCallback((): VertexTab => {
-    const candidate = vertex.default_tab as VertexTabId | undefined;
-    const fallback = vertex.is_leaf ? "properties" : "children";
+    const candidate = currentVertex.default_tab as VertexTabId | undefined;
+    const fallback = currentVertex.is_leaf ? "properties" : "children";
     return tabOrder.includes(candidate as VertexTab)
       ? (candidate as VertexTab)
       : (fallback as VertexTab);
-  }, [tabOrder, vertex.default_tab, vertex.is_leaf]);
+  }, [tabOrder, currentVertex.default_tab, currentVertex.is_leaf]);
 
   const [tab, setTab] = React.useState<VertexTab>(() => resolveInitialTab());
 
-  const refCounts = React.useMemo(() => countReferences(vertex), [vertex]);
+  const refCounts = React.useMemo(() => countReferences(currentVertex), [currentVertex]);
   const hasChildren = false;
   const childrenLabel = React.useMemo(
-    () => formatChildLabel(vertex.children_behavior),
-    [vertex.children_behavior]
+    () => formatChildLabel(currentVertex.children_behavior),
+    [currentVertex.children_behavior]
   );
   const handleOpenVertex = React.useCallback(
     (id: string) => {
@@ -119,7 +125,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
   );
   const vertexTabs = React.useMemo(
     () => [
-      ...(!vertex.is_leaf
+      ...(!currentVertex.is_leaf
         ? [
             {
               value: "children" as const,
@@ -156,12 +162,12 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
       //   icon: <HubOutlinedIcon />,
       // },
     ],
-    [childrenLabel, vertex.is_leaf]
+    [childrenLabel, currentVertex.is_leaf]
   );
 
   React.useEffect(() => {
     setTab(resolveInitialTab());
-  }, [resolveInitialTab, vertex.id]);
+  }, [resolveInitialTab, currentVertex.id]);
   const breadcrumbItems = React.useMemo(
     () =>
       trail.map((t, idx) => {
@@ -253,7 +259,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
               {tab === "children" && (
                 <ChildrenTab
                   label={childrenLabel}
-                  vertex={vertex}
+                  vertex={currentVertex}
                   workspace={workspace}
                   onOpenVertex={handleOpenVertex}
                 />
@@ -261,11 +267,14 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
 
               {tab === "properties" && (
                 <PropertiesTab
-                  vertex={vertex}
+                  vertex={currentVertex}
                   workspace={workspace}
                   hasChildren={hasChildren}
                   refCounts={refCounts}
-                  onVertexUpdated={onVertexUpdated}
+                  onVertexUpdated={(v) => {
+                    setCurrentVertex(v);
+                    return onVertexUpdated?.(v);
+                  }}
                   onSelectTab={(nextTab) =>
                     setTab((nextTab as VertexTab) ?? "children")
                   }
@@ -273,15 +282,43 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
               )}
 
               {tab === "tags" && (
-                <TagsTab vertex={vertex} onVertexUpdated={onVertexUpdated} />
+                <TagsTab
+                  vertex={currentVertex}
+                  onVertexUpdated={(v) => {
+                    setCurrentVertex(v);
+                    return onVertexUpdated?.(v);
+                  }}
+                />
               )}
 
-              {tab === "notes" && <NotesTab vertex={vertex} />}
+              {tab === "notes" && (
+                <NotesTab
+                  vertex={currentVertex}
+                  onVertexUpdated={(v) => {
+                    setCurrentVertex(v);
+                    return onVertexUpdated?.(v);
+                  }}
+                />
+              )}
 
-              {tab === "images" && <ImagesTab vertex={vertex} />}
+              {tab === "images" && (
+                <ImagesTab
+                  vertex={currentVertex}
+                  onVertexUpdated={(v) => {
+                    setCurrentVertex(v);
+                    return onVertexUpdated?.(v);
+                  }}
+                />
+              )}
 
               {tab === "urls" && (
-                <LinksTab vertex={vertex} onVertexUpdated={onVertexUpdated} />
+                <LinksTab
+                  vertex={currentVertex}
+                  onVertexUpdated={(v) => {
+                    setCurrentVertex(v);
+                    return onVertexUpdated?.(v);
+                  }}
+                />
               )}
 
               {/* {tab === "files" && <FilesTab />}

@@ -233,12 +233,23 @@ export const WorkspaceOrchestrator: React.FC = () => {
           onJumpTo={(idx) => jumpToTrailIndex(idx)}
           onOpenVertex={(nextVertexId) => openVertex(nextVertexId)}
           onVertexUpdated={async (updated) => {
+            // update active trail entry immediately
             setTrail((prev) =>
               prev.map((t) =>
                 t.vertex.id === updated.id ? { ...t, vertex: updated } : t
               )
             );
             await reloadVertices();
+            // refresh the active vertex from storage to keep references in sync across tabs
+            const fs = await getFileSystem();
+            const fresh = await fs.getVertex(updated.id);
+            if (fresh) {
+              setTrail((prev) =>
+                prev.map((t) =>
+                  t.vertex.id === fresh.id ? { ...t, vertex: fresh } : t
+                )
+              );
+            }
           }}
         />
       </Box>
