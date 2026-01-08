@@ -18,6 +18,7 @@ import { LinksTab } from "./links/LinksTab";
 import { ImagesTab } from "./images/ImagesTab";
 import { NotesTab } from "./notes/NotesTab";
 import { pluralize } from "@/utils/text";
+import { useLocation, useNavigate } from "react-router-dom";
 
 type VertexTab =
   | "children"
@@ -78,28 +79,27 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
   onOpenVertex,
   onVertexUpdated,
 }) => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [currentVertex, setCurrentVertex] = React.useState<Vertex>(vertex);
 
   React.useEffect(() => {
     setCurrentVertex(vertex);
   }, [vertex]);
 
-  const tabOrder: VertexTab[] = React.useMemo(
-    () => {
-      const base: VertexTab[] = [
-        "children",
-        "properties",
-        "tags",
-        "notes",
-        "images",
-        "urls",
-        // "files",
-        // "references",
-      ];
-      return vertex.is_leaf ? base.filter((t) => t !== "children") : base;
-    },
-    [vertex.is_leaf]
-  );
+  const tabOrder: VertexTab[] = React.useMemo(() => {
+    const base: VertexTab[] = [
+      "children",
+      "properties",
+      "tags",
+      "notes",
+      "images",
+      "urls",
+      // "files",
+      // "references",
+    ];
+    return vertex.is_leaf ? base.filter((t) => t !== "children") : base;
+  }, [vertex.is_leaf]);
 
   const resolveInitialTab = React.useCallback((): VertexTab => {
     const candidate = currentVertex.default_tab as VertexTabId | undefined;
@@ -111,7 +111,10 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
 
   const [tab, setTab] = React.useState<VertexTab>(() => resolveInitialTab());
 
-  const refCounts = React.useMemo(() => countReferences(currentVertex), [currentVertex]);
+  const refCounts = React.useMemo(
+    () => countReferences(currentVertex),
+    [currentVertex]
+  );
   const hasChildren = false;
   const childrenLabel = React.useMemo(
     () => formatChildLabel(currentVertex.children_behavior),
@@ -164,10 +167,31 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
     ],
     [childrenLabel, currentVertex.is_leaf]
   );
+  const availableTabValues = React.useMemo(
+    () => vertexTabs.map((t) => t.value),
+    [vertexTabs]
+  );
 
   React.useEffect(() => {
     setTab(resolveInitialTab());
   }, [resolveInitialTab, currentVertex.id]);
+
+  // Apply tab query param once (then strip it)
+  React.useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const queryTab = params.get("tab") as VertexTabId | null;
+    if (!queryTab) {
+      return;
+    }
+    params.delete("tab");
+    if (availableTabValues.includes(queryTab as VertexTab)) {
+      setTab(queryTab as VertexTab);
+    }
+    navigate(
+      { pathname: location.pathname, search: params.toString() },
+      { replace: true }
+    );
+  }, [availableTabValues, location.pathname, location.search, navigate]);
   const breadcrumbItems = React.useMemo(
     () =>
       trail.map((t, idx) => {
