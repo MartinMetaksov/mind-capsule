@@ -6,6 +6,8 @@ import { useNavigate } from "react-router-dom";
 
 import { APP_NAME } from "@/constants/appConstants";
 import { useThemeMode } from "@/utils/themes/hooks/useThemeMode";
+import { detectOperatingSystem } from "@/utils/os";
+import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
 import { SearchDialog } from "./SearchDialog";
 import { SettingsDialog } from "./SettingsDialog";
 
@@ -14,6 +16,26 @@ export const Header: React.FC = () => {
   const [searchOpen, setSearchOpen] = React.useState(false);
   const [settingsOpen, setSettingsOpen] = React.useState(false);
   const navigate = useNavigate();
+  const os = React.useMemo(() => detectOperatingSystem(), []);
+
+  React.useEffect(() => {
+    const searchShortcut = getShortcut("openSearch", os);
+    const settingsShortcut = getShortcut("openSettings", os);
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (matchesShortcut(event, searchShortcut)) {
+        event.preventDefault();
+        setSearchOpen(true);
+      }
+      if (matchesShortcut(event, settingsShortcut)) {
+        event.preventDefault();
+        setSettingsOpen(true);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [os]);
 
   return (
     <AppBar position="sticky" elevation={0}>
