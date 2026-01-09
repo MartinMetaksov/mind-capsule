@@ -13,6 +13,8 @@ import {
   Typography,
 } from "@mui/material";
 import type { VertexKind } from "@/core/common/vertexKind";
+import { detectOperatingSystem } from "@/utils/os";
+import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
 
 export type CreateVertexForm = {
   title: string;
@@ -217,19 +219,46 @@ export const DeleteVertexDialog: React.FC<DeleteVertexDialogProps> = ({
   onCancel,
   onConfirm,
   entityLabel = "item",
-}) => (
-  <Dialog open={open} onClose={onCancel} fullWidth maxWidth="xs">
-    <DialogTitle>Delete {entityLabel}</DialogTitle>
-    <DialogContent>
-      <DialogContentText>
-        Are you sure you want to delete <strong>{name ?? `this ${entityLabel}`}</strong>?
-      </DialogContentText>
-    </DialogContent>
-    <DialogActions>
-      <Button onClick={onCancel}>Cancel</Button>
-      <Button color="error" variant="contained" onClick={onConfirm}>
-        Delete
-      </Button>
-    </DialogActions>
-  </Dialog>
-);
+}) => {
+  const os = React.useMemo(() => detectOperatingSystem(), []);
+  const confirmShortcut = React.useMemo(
+    () => getShortcut("confirmDelete", os),
+    [os]
+  );
+  const cancelShortcut = React.useMemo(
+    () => getShortcut("cancelDelete", os),
+    [os]
+  );
+
+  React.useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => {
+      if (matchesShortcut(e, confirmShortcut)) {
+        e.preventDefault();
+        onConfirm();
+      } else if (matchesShortcut(e, cancelShortcut)) {
+        e.preventDefault();
+        onCancel();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [cancelShortcut, confirmShortcut, open, onCancel, onConfirm]);
+
+  return (
+    <Dialog open={open} onClose={onCancel} fullWidth maxWidth="xs">
+      <DialogTitle>Delete {entityLabel}</DialogTitle>
+      <DialogContent>
+        <DialogContentText>
+          Are you sure you want to delete <strong>{name ?? `this ${entityLabel}`}</strong>?
+        </DialogContentText>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onCancel}>Cancel</Button>
+        <Button color="error" variant="contained" onClick={onConfirm}>
+          Delete
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};

@@ -10,7 +10,9 @@ import {
   Typography,
 } from "@mui/material";
 import { VertexGrid, VertexItem } from "../vertices/VertexGrid";
-import { CreateFab } from "../components/CreateFab";
+import { CreateFab, type CreateFabHandle } from "../components/CreateFab";
+import { detectOperatingSystem } from "@/utils/os";
+import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
 import type { Workspace } from "@/core/workspace";
 import type { Vertex } from "@/core/vertex";
 import type { VertexKind } from "@/core/common/vertexKind";
@@ -40,6 +42,7 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
 }) => {
   const [fabAnchor, setFabAnchor] = React.useState<HTMLElement | null>(null);
   const popoverOpen = Boolean(fabAnchor);
+  const fabRef = React.useRef<CreateFabHandle | null>(null);
   const openPopover = (e: React.MouseEvent<HTMLElement>) =>
     setFabAnchor(e.currentTarget);
   const closePopover = () => setFabAnchor(null);
@@ -53,6 +56,11 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
     null,
   );
   const defaultKind: VertexKind = "project";
+  const os = React.useMemo(() => detectOperatingSystem(), []);
+  const createShortcut = React.useMemo(
+    () => getShortcut("createVertex", os),
+    [os],
+  );
 
   React.useEffect(() => {
     if (!popoverOpen) setWorkspaceQuery("");
@@ -70,6 +78,17 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
     setError(null);
     closePopover();
   };
+
+  React.useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (matchesShortcut(e, createShortcut)) {
+        e.preventDefault();
+        fabRef.current?.click();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [createShortcut]);
 
   const handleCreate = async (data: CreateVertexForm) => {
     if (!selectedWorkspace) {
@@ -145,6 +164,7 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
       </Box>
 
       <CreateFab
+        ref={fabRef}
         onClick={openPopover}
         title="Create project"
         sx={{ position: "absolute", bottom: 20, right: 20 }}

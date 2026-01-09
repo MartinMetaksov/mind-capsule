@@ -2,7 +2,7 @@ import * as React from "react";
 import { Box, Typography } from "@mui/material";
 
 import { VertexGrid, VertexItem } from "../VertexGrid";
-import { CreateFab } from "../../components/CreateFab";
+import { CreateFab, type CreateFabHandle } from "../../components/CreateFab";
 import {
   CreateVertexDialog,
   DeleteVertexDialog,
@@ -12,6 +12,8 @@ import { getFileSystem } from "@/integrations/fileSystem/integration";
 import type { Vertex } from "@/core/vertex";
 import type { Workspace } from "@/core/workspace";
 import { pluralize } from "@/utils/text";
+import { detectOperatingSystem } from "@/utils/os";
+import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
 
 type ChildrenTabProps = {
   label: string;
@@ -26,6 +28,12 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
   workspace,
   onOpenVertex,
 }) => {
+  const fabRef = React.useRef<CreateFabHandle | null>(null);
+  const os = React.useMemo(() => detectOperatingSystem(), []);
+  const createShortcut = React.useMemo(
+    () => getShortcut("createVertex", os),
+    [os]
+  );
   const emptyLabel = React.useMemo(() => {
     const kind = vertex.children_behavior?.child_kind?.trim();
     if (!kind) return "children";
@@ -64,6 +72,17 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
   React.useEffect(() => {
     loadChildren();
   }, [loadChildren, vertex.id]);
+
+  React.useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (matchesShortcut(e, createShortcut)) {
+        e.preventDefault();
+        fabRef.current?.click();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [createShortcut]);
 
   return (
     <Box
@@ -128,6 +147,7 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
         )}
       </Box>
       <CreateFab
+        ref={fabRef}
         onClick={() => {
           setCreateOpen(true);
         }}

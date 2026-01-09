@@ -19,7 +19,9 @@ import FolderOpenRoundedIcon from "@mui/icons-material/FolderOpenRounded";
 
 import type { Workspace } from "@/core/workspace";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
-import { CreateFab } from "../components/CreateFab";
+import { CreateFab, type CreateFabHandle } from "../components/CreateFab";
+import { detectOperatingSystem } from "@/utils/os";
+import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
 
 type WorkspacesTabProps = {
   workspaces: Workspace[];
@@ -32,11 +34,17 @@ export const WorkspacesTab: React.FC<WorkspacesTabProps> = ({
   workspaces,
   onChanged,
 }) => {
+  const fabRef = React.useRef<CreateFabHandle | null>(null);
   const [editorOpen, setEditorOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<EditingWorkspace>({});
   const [error, setError] = React.useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = React.useState<Workspace | null>(
     null
+  );
+  const os = React.useMemo(() => detectOperatingSystem(), []);
+  const createShortcut = React.useMemo(
+    () => getShortcut("createVertex", os),
+    [os]
   );
 
   const openCreate = () => {
@@ -121,6 +129,17 @@ export const WorkspacesTab: React.FC<WorkspacesTabProps> = ({
       );
     }
   };
+
+  React.useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (matchesShortcut(e, createShortcut)) {
+        e.preventDefault();
+        fabRef.current?.click();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [createShortcut]);
 
   return (
     <Box
@@ -279,6 +298,7 @@ export const WorkspacesTab: React.FC<WorkspacesTabProps> = ({
       </Dialog>
 
       <CreateFab
+        ref={fabRef}
         onClick={openCreate}
         title="Create workspace"
         sx={{ position: "absolute", bottom: 20, right: 20 }}

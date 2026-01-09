@@ -19,6 +19,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { VertexNotFound } from "./components/VertexNotFound";
 
 import { VertexOrchestrator } from "./vertices/VertexOrchestrator";
+import { detectOperatingSystem } from "@/utils/os";
+import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
 
 type RootTab = "projects" | "workspaces";
 
@@ -68,6 +70,7 @@ export const WorkspaceOrchestrator: React.FC = () => {
   const [notFound, setNotFound] = React.useState<NotFoundState>({
     missingId: null,
   });
+  const os = React.useMemo(() => detectOperatingSystem(), []);
 
   const active = trail.length > 0 ? trail[trail.length - 1] : null;
 
@@ -80,6 +83,31 @@ export const WorkspaceOrchestrator: React.FC = () => {
     }
     return items;
   }, [vertices, workspaceByVertexId]);
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tabParam = params.get("tab") as RootTab | null;
+    if (!tabParam) return;
+    params.delete("tab");
+    if (rootTabs.some((t) => t.value === tabParam)) {
+      setTab(tabParam);
+    }
+    navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
+  }, [location.pathname, location.search, navigate]);
+
+  React.useEffect(() => {
+    const shortcuts = [getShortcut("tab1", os), getShortcut("tab2", os)];
+    const handleKeyDown = (event: KeyboardEvent) => {
+      shortcuts.forEach((shortcut, idx) => {
+        if (matchesShortcut(event, shortcut) && rootTabs[idx]) {
+          event.preventDefault();
+          setTab(rootTabs[idx].value);
+        }
+      });
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [os]);
 
   const error = workspacesError ?? verticesError;
 

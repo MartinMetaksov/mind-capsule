@@ -18,6 +18,8 @@ import { LinksTab } from "./links/LinksTab";
 import { ImagesTab } from "./images/ImagesTab";
 import { NotesTab } from "./notes/NotesTab";
 import { pluralize } from "@/utils/text";
+import { detectOperatingSystem } from "@/utils/os";
+import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
 import { useLocation, useNavigate } from "react-router-dom";
 
 type VertexTab =
@@ -82,6 +84,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
   const location = useLocation();
   const navigate = useNavigate();
   const [currentVertex, setCurrentVertex] = React.useState<Vertex>(vertex);
+  const os = React.useMemo(() => detectOperatingSystem(), []);
 
   React.useEffect(() => {
     setCurrentVertex(vertex);
@@ -192,6 +195,29 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
       { replace: true }
     );
   }, [availableTabValues, location.pathname, location.search, navigate]);
+
+  React.useEffect(() => {
+    const shortcuts = [
+      getShortcut("tab1", os),
+      getShortcut("tab2", os),
+      getShortcut("tab3", os),
+      getShortcut("tab4", os),
+      getShortcut("tab5", os),
+      getShortcut("tab6", os),
+    ];
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      shortcuts.forEach((shortcut, idx) => {
+        if (matchesShortcut(event, shortcut) && availableTabValues[idx]) {
+          event.preventDefault();
+          setTab(availableTabValues[idx] as VertexTab);
+        }
+      });
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [availableTabValues, os]);
   const breadcrumbItems = React.useMemo(
     () =>
       trail.map((t, idx) => {

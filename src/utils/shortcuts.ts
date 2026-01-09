@@ -1,34 +1,58 @@
 import { detectOperatingSystem, type OperatingSystem } from "./os";
 
-export type ShortcutAction = "openSearch" | "openSettings";
+export type ShortcutAction =
+  | "openSearch"
+  | "openSettings"
+  | "createVertex"
+  | "confirmDelete"
+  | "cancelDelete"
+  | "tab1"
+  | "tab2"
+  | "tab3"
+  | "tab4"
+  | "tab5"
+  | "tab6";
 
 export type ShortcutDefinition = {
   keys: Array<"ctrl" | "meta" | "alt" | "shift" | string>;
   display: string;
 };
 
+const BASE_OS: OperatingSystem[] = [
+  "macOS",
+  "Windows",
+  "Linux",
+  "Android",
+  "iOS",
+  "Unknown",
+];
+
+const makeUniformShortcuts = (def: ShortcutDefinition) =>
+  BASE_OS.reduce((acc, os) => ({ ...acc, [os]: def }), {
+    default: def,
+  } as Record<OperatingSystem | "default", ShortcutDefinition>);
+
 const SHORTCUTS: Record<
   ShortcutAction,
   Record<OperatingSystem | "default", ShortcutDefinition>
 > = {
-  openSearch: {
-    macOS: { keys: ["meta", "f"], display: "⌘ + F" },
-    Windows: { keys: ["ctrl", "f"], display: "Ctrl + F" },
-    Linux: { keys: ["ctrl", "f"], display: "Ctrl + F" },
-    Android: { keys: ["ctrl", "f"], display: "Ctrl + F" },
-    iOS: { keys: ["ctrl", "f"], display: "Ctrl + F" },
-    Unknown: { keys: ["ctrl", "f"], display: "Ctrl + F" },
-    default: { keys: ["ctrl", "f"], display: "Ctrl + F" },
-  },
-  openSettings: {
-    macOS: { keys: ["meta", "o"], display: "⌘ + O" },
-    Windows: { keys: ["ctrl", "o"], display: "Ctrl + O" },
-    Linux: { keys: ["ctrl", "o"], display: "Ctrl + O" },
-    Android: { keys: ["ctrl", "o"], display: "Ctrl + O" },
-    iOS: { keys: ["ctrl", "o"], display: "Ctrl + O" },
-    Unknown: { keys: ["ctrl", "o"], display: "Ctrl + O" },
-    default: { keys: ["ctrl", "o"], display: "Ctrl + O" },
-  },
+  openSearch: makeUniformShortcuts({ keys: ["~"], display: "~" }),
+  openSettings: makeUniformShortcuts({
+    keys: ["meta", "o"],
+    display: "⌘ + O / Ctrl + O",
+  }),
+  createVertex: makeUniformShortcuts({
+    keys: ["meta", "a"],
+    display: "⌘ + A / Ctrl + A",
+  }),
+  confirmDelete: makeUniformShortcuts({ keys: ["y"], display: "Y" }),
+  cancelDelete: makeUniformShortcuts({ keys: ["n"], display: "N" }),
+  tab1: makeUniformShortcuts({ keys: ["meta", "1"], display: "⌘/Ctrl + 1" }),
+  tab2: makeUniformShortcuts({ keys: ["meta", "2"], display: "⌘/Ctrl + 2" }),
+  tab3: makeUniformShortcuts({ keys: ["meta", "3"], display: "⌘/Ctrl + 3" }),
+  tab4: makeUniformShortcuts({ keys: ["meta", "4"], display: "⌘/Ctrl + 4" }),
+  tab5: makeUniformShortcuts({ keys: ["meta", "5"], display: "⌘/Ctrl + 5" }),
+  tab6: makeUniformShortcuts({ keys: ["meta", "6"], display: "⌘/Ctrl + 6" }),
 };
 
 export function getShortcut(
@@ -59,8 +83,15 @@ export function matchesShortcut(
   if (wantsCtrl !== event.ctrlKey) return false;
   if (wantsMeta !== event.metaKey) return false;
   if (wantsAlt !== event.altKey) return false;
-  if (wantsShift !== event.shiftKey) return false;
-  if (mainKey && key !== mainKey) return false;
+  const isTildeShortcut = mainKey === "~";
+  if (!isTildeShortcut && wantsShift !== event.shiftKey) return false;
+  if (mainKey) {
+    const normalizedMain = mainKey.toLowerCase();
+    const matchesBackquote =
+      normalizedMain === "~" &&
+      (event.code === "Backquote" || key === "`" || key === "~");
+    if (!matchesBackquote && key !== normalizedMain) return false;
+  }
 
   return true;
 }

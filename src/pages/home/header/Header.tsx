@@ -19,14 +19,17 @@ export const Header: React.FC = () => {
   const os = React.useMemo(() => detectOperatingSystem(), []);
 
   React.useEffect(() => {
-    const searchShortcut = getShortcut("openSearch", os);
-    const settingsShortcut = getShortcut("openSettings", os);
+    const shortcuts = {
+      search: getShortcut("openSearch", os),
+      settings: getShortcut("openSettings", os),
+    };
+
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (matchesShortcut(event, searchShortcut)) {
+      if (matchesShortcut(event, shortcuts.search)) {
         event.preventDefault();
         setSearchOpen(true);
       }
-      if (matchesShortcut(event, settingsShortcut)) {
+      if (matchesShortcut(event, shortcuts.settings)) {
         event.preventDefault();
         setSettingsOpen(true);
       }
