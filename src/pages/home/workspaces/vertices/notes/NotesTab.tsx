@@ -19,6 +19,7 @@ import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import { useTranslation } from "react-i18next";
 
 import type { Vertex } from "@/core/vertex";
 import type { Reference } from "@/core/common/reference";
@@ -58,6 +59,7 @@ export const NotesTab: React.FC<NotesTabProps> = ({
   vertex,
   onVertexUpdated,
 }) => {
+  const { t } = useTranslation("common");
   const [notes, setNotes] = React.useState<NoteRef[]>(
     (vertex.references ?? []).filter((r): r is NoteRef => r.type === "note")
   );
@@ -100,12 +102,12 @@ export const NotesTab: React.FC<NotesTabProps> = ({
         setNotes(nextNotes);
         await onVertexUpdated?.(updated);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to save note.");
+        setError(err instanceof Error ? err.message : t("notesTab.errors.save"));
       } finally {
         setSaving(false);
       }
     },
-    [onVertexUpdated, vertex]
+    [onVertexUpdated, vertex, t]
   );
 
   const handleCreateVersion = async () => {
@@ -167,7 +169,7 @@ export const NotesTab: React.FC<NotesTabProps> = ({
       {notes.map((n, idx) => {
         const created = n.created_at
           ? new Date(n.created_at).toLocaleString()
-          : `Revision ${idx + 1}`;
+          : t("notesTab.revisionLabel", { number: idx + 1 });
         return (
           <ListItem key={`${n.created_at ?? idx}`} disablePadding>
             <ListItemButton
@@ -176,7 +178,7 @@ export const NotesTab: React.FC<NotesTabProps> = ({
               sx={{ borderRadius: 1, pr: 1 }}
             >
               <ListItemText
-                primary={`Revision ${idx + 1}`}
+                primary={t("notesTab.revisionLabel", { number: idx + 1 })}
                 secondary={created}
                 primaryTypographyProps={{ noWrap: true }}
                 secondaryTypographyProps={{ noWrap: true }}
@@ -211,10 +213,10 @@ export const NotesTab: React.FC<NotesTabProps> = ({
     >
       <Box>
         <Typography variant="h6" sx={{ fontWeight: 900, mb: 1 }}>
-          Notes
+          {t("notesTab.title")}
         </Typography>
         <Typography color="text.secondary">
-          Write notes for this vertex and keep each revision accessible.
+          {t("notesTab.subtitle")}
         </Typography>
       </Box>
 
@@ -248,12 +250,13 @@ export const NotesTab: React.FC<NotesTabProps> = ({
             justifyContent="space-between"
           >
             <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-              Revisions
+              {t("notesTab.revisions")}
             </Typography>
             <IconButton
               size="small"
               onClick={handleCreateVersion}
               disabled={saving}
+              aria-label={t("notesTab.create")}
             >
               <AddIcon fontSize="small" />
             </IconButton>
@@ -267,7 +270,9 @@ export const NotesTab: React.FC<NotesTabProps> = ({
                 alignItems: "center",
               }}
             >
-              <Typography color="text.secondary">No revisions yet.</Typography>
+              <Typography color="text.secondary">
+                {t("notesTab.empty")}
+              </Typography>
             </Box>
           ) : (
             <Box sx={{ flex: 1, overflow: "auto" }}>{revisionsList}</Box>
@@ -302,14 +307,14 @@ export const NotesTab: React.FC<NotesTabProps> = ({
                 sx={{ px: 2.6 }}
                 disabled={!currentNote}
               >
-                <VisibilityIcon fontSize="small" sx={{ mr: 0.5 }} /> Preview
+                <VisibilityIcon fontSize="small" sx={{ mr: 0.5 }} /> {t("notesTab.preview")}
               </ToggleButton>
               <ToggleButton
                 value="edit"
                 sx={{ px: 2.6 }}
                 disabled={!currentNote}
               >
-                <EditIcon fontSize="small" sx={{ mr: 0.5 }} /> Edit
+                <EditIcon fontSize="small" sx={{ mr: 0.5 }} /> {t("notesTab.edit")}
               </ToggleButton>
             </ToggleButtonGroup>
             <Box sx={{ minWidth: 80 }} />
@@ -333,7 +338,7 @@ export const NotesTab: React.FC<NotesTabProps> = ({
                 />
               ) : (
                 <Typography color="text.secondary">
-                  No notes yet. Create the first revision to start writing.
+                  {t("notesTab.noNotes")}
                 </Typography>
               )
             ) : (
@@ -343,7 +348,7 @@ export const NotesTab: React.FC<NotesTabProps> = ({
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 onBlur={handleAutoSave}
-                placeholder="Write in Markdown…"
+                placeholder={t("notesTab.placeholder")}
                 InputLabelProps={{ shrink: true }}
                 minRows={12}
                 sx={{ flex: 1 }}

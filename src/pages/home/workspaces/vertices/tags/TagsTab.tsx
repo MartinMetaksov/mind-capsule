@@ -13,6 +13,7 @@ import ClearIcon from "@mui/icons-material/Clear";
 
 import type { Vertex } from "@/core/vertex";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
+import { useTranslation } from "react-i18next";
 
 type TagsTabProps = {
   vertex: Vertex;
@@ -20,6 +21,7 @@ type TagsTabProps = {
 };
 
 export const TagsTab: React.FC<TagsTabProps> = ({ vertex, onVertexUpdated }) => {
+  const { t } = useTranslation("common");
   const [tags, setTags] = React.useState<string[]>(vertex.tags ?? []);
   const [input, setInput] = React.useState("");
   const [saving, setSaving] = React.useState(false);
@@ -52,7 +54,7 @@ export const TagsTab: React.FC<TagsTabProps> = ({ vertex, onVertexUpdated }) => 
       setTags(next);
       await onVertexUpdated?.(updated);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update tags.");
+      setError(err instanceof Error ? err.message : t("tagsTab.errors.update"));
     } finally {
       setSaving(false);
       focusInput();
@@ -99,10 +101,10 @@ export const TagsTab: React.FC<TagsTabProps> = ({ vertex, onVertexUpdated }) => 
     >
       <Box>
         <Typography variant="h6" sx={{ fontWeight: 900, mb: 1 }}>
-          Tags
+          {t("tagsTab.title")}
         </Typography>
         <Typography color="text.secondary">
-          Add keywords to organize and search this vertex.
+          {t("tagsTab.description")}
         </Typography>
       </Box>
 
@@ -114,7 +116,7 @@ export const TagsTab: React.FC<TagsTabProps> = ({ vertex, onVertexUpdated }) => 
 
       <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} alignItems="center">
         <TextField
-          label="New tag"
+          label={t("tagsTab.newTag")}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -122,14 +124,14 @@ export const TagsTab: React.FC<TagsTabProps> = ({ vertex, onVertexUpdated }) => 
           fullWidth
           size="small"
           InputLabelProps={{ shrink: true }}
-          placeholder="e.g. draft, idea"
+          placeholder={t("tagsTab.placeholder")}
           disabled={saving}
         />
         <IconButton
           color="primary"
           onClick={handleAdd}
           disabled={saving || !input.trim()}
-          aria-label="Add tag"
+          aria-label={t("tagsTab.add")}
           sx={{ border: 1, borderColor: "divider" }}
         >
           <AddIcon />
@@ -137,7 +139,7 @@ export const TagsTab: React.FC<TagsTabProps> = ({ vertex, onVertexUpdated }) => 
       </Stack>
 
       {tags.length === 0 ? (
-        <Typography color="text.secondary">No tags yet.</Typography>
+        <Typography color="text.secondary">{t("tagsTab.empty")}</Typography>
       ) : (
         <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
           {tags.map((tag) => (

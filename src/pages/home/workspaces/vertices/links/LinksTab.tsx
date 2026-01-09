@@ -16,6 +16,7 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import type { Vertex } from "@/core/vertex";
 import type { Reference } from "@/core/common/reference";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
+import { useTranslation } from "react-i18next";
 
 type LinksTabProps = {
   vertex: Vertex;
@@ -28,6 +29,7 @@ export const LinksTab: React.FC<LinksTabProps> = ({
   vertex,
   onVertexUpdated,
 }) => {
+  const { t } = useTranslation("common");
   const [links, setLinks] = React.useState<UrlRef[]>(
     (vertex.references ?? []).filter((r): r is UrlRef => r.type === "url")
   );
@@ -66,7 +68,7 @@ export const LinksTab: React.FC<LinksTabProps> = ({
       setLinks(nextLinks);
       await onVertexUpdated?.(updated);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update links.");
+      setError(err instanceof Error ? err.message : t("linksTab.errors.update"));
     } finally {
       setSaving(false);
       focusUrl();
@@ -109,10 +111,10 @@ export const LinksTab: React.FC<LinksTabProps> = ({
     >
       <Box>
         <Typography variant="h6" sx={{ fontWeight: 900, mb: 1 }}>
-          Links
+          {t("linksTab.title")}
         </Typography>
         <Typography color="text.secondary">
-          Add and manage URL references for this vertex.
+          {t("linksTab.description")}
         </Typography>
       </Box>
 
@@ -126,6 +128,7 @@ export const LinksTab: React.FC<LinksTabProps> = ({
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
           <TextField
             label="URL"
+            label={t("linksTab.url")}
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -133,19 +136,19 @@ export const LinksTab: React.FC<LinksTabProps> = ({
             fullWidth
             size="small"
             InputLabelProps={{ shrink: true }}
-            placeholder="https://example.com"
+            placeholder={t("linksTab.urlPlaceholder")}
             disabled={saving}
             type="url"
           />
           <TextField
-            label="Title (optional)"
+            label={t("linksTab.titleLabel")}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             onKeyDown={handleKeyDown}
             fullWidth
             size="small"
             InputLabelProps={{ shrink: true }}
-            placeholder="Descriptive title"
+            placeholder={t("linksTab.titlePlaceholder")}
             disabled={saving}
           />
           <Button
@@ -160,12 +163,12 @@ export const LinksTab: React.FC<LinksTabProps> = ({
               height: 40,
             }}
           >
-            Add link
+            {t("linksTab.add")}
           </Button>
         </Stack>
 
         {links.length === 0 ? (
-          <Typography color="text.secondary">No links yet.</Typography>
+          <Typography color="text.secondary">{t("linksTab.empty")}</Typography>
         ) : (
           <Stack spacing={1}>
             {links.map((link, idx) => (

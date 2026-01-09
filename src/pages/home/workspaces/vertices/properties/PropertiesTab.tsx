@@ -21,6 +21,7 @@ import type {
 } from "@/core/vertex";
 import { ThumbnailPicker } from "../../components/VertexDialogs";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
+import { useTranslation } from "react-i18next";
 
 type RefCounts = {
   vertex: number;
@@ -47,6 +48,7 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
   onVertexUpdated,
   onSelectTab,
 }) => {
+  const { t } = useTranslation("common");
   const [title, setTitle] = React.useState(vertex.title);
   const [kind, setKind] = React.useState<VertexKind>(vertex.kind);
   const [defaultTab, setDefaultTab] = React.useState<VertexTabId>(
@@ -77,26 +79,26 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
   }, [vertex]);
 
   const tabOptions: { value: VertexTabId; label: string }[] = [
-    { value: "children", label: "Children" },
-    { value: "properties", label: "Properties" },
-    { value: "tags", label: "Tags" },
-    { value: "notes", label: "Notes" },
-    { value: "images", label: "Images" },
-    { value: "urls", label: "Links" },
+    { value: "children", label: t("vertex.tabs.children") },
+    { value: "properties", label: t("vertex.tabs.properties") },
+    { value: "tags", label: t("vertex.tabs.tags") },
+    { value: "notes", label: t("vertex.tabs.notes") },
+    { value: "images", label: t("vertex.tabs.images") },
+    { value: "urls", label: t("vertex.tabs.links") },
   ];
 
   const childDisplayOptions: { value: ChildrenDisplayHint; label: string }[] = [
-    { value: "grid", label: "Grid" },
-    { value: "list", label: "List" },
-    { value: "timeline", label: "Timeline" },
+    { value: "grid", label: t("propertiesTab.childrenDisplay.grid") },
+    { value: "list", label: t("propertiesTab.childrenDisplay.list") },
+    { value: "timeline", label: t("propertiesTab.childrenDisplay.timeline") },
   ];
 
   const kindOptions: { value: VertexKind; label: string }[] = [
-    { value: "project", label: "Project" },
-    { value: "chapter", label: "Chapter" },
-    { value: "section", label: "Section" },
-    { value: "note", label: "Note" },
-    { value: "generic", label: "Generic" },
+    { value: "project", label: t("vertexKinds.project") },
+    { value: "chapter", label: t("vertexKinds.chapter") },
+    { value: "section", label: t("vertexKinds.section") },
+    { value: "note", label: t("vertexKinds.note") },
+    { value: "generic", label: t("vertexKinds.generic") },
   ];
 
   const isDirty =
@@ -111,7 +113,7 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
 
   const handleSave = async () => {
     if (!title.trim()) {
-      setError("Title is required.");
+      setError(t("propertiesTab.errors.titleRequired"));
       return;
     }
     setSaving(true);
@@ -137,7 +139,7 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
       );
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to save properties."
+        err instanceof Error ? err.message : t("propertiesTab.errors.save")
       );
     } finally {
       setSaving(false);
@@ -157,10 +159,10 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
     >
       <Box>
         <Typography variant="h6" sx={{ fontWeight: 900, mb: 1 }}>
-          Properties
+          {t("vertex.tabs.properties")}
         </Typography>
         <Typography color="text.secondary">
-          Manage the core properties for this vertex.
+          {t("propertiesTab.subtitle")}
         </Typography>
       </Box>
 
@@ -174,7 +176,7 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
 
       <Stack spacing={2}>
         <TextField
-          label="Title"
+          label={t("vertexDialog.fields.title")}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           fullWidth
@@ -183,7 +185,7 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
 
         <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
           <TextField
-            label="Kind"
+            label={t("vertexDialog.fields.kind")}
             select
             value={kind}
             onChange={(e) => setKind(e.target.value as VertexKind)}
@@ -198,7 +200,7 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
           </TextField>
 
           <TextField
-            label="Default tab"
+            label={t("propertiesTab.defaultTab")}
             select
             value={defaultTab}
             onChange={(e) => setDefaultTab(e.target.value as VertexTabId)}
@@ -215,7 +217,7 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
 
         <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
           <TextField
-            label="Leaf node"
+            label={t("propertiesTab.leaf.label")}
             select
             value={isLeaf ? "yes" : "no"}
             onChange={(e) => setIsLeaf(e.target.value === "yes")}
@@ -223,7 +225,7 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
             InputLabelProps={{ shrink: true }}
             InputProps={{
               endAdornment: (
-                <Tooltip title="If yes, this vertex will not show a children tab.">
+                <Tooltip title={t("propertiesTab.leaf.tooltip")}>
                   <Typography component="span" sx={{ ml: 1, color: "text.secondary" }}>
                     ?
                   </Typography>
@@ -231,12 +233,12 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
               ),
             }}
           >
-            <MenuItem value="no">No</MenuItem>
-            <MenuItem value="yes">Yes</MenuItem>
+            <MenuItem value="no">{t("propertiesTab.leaf.no")}</MenuItem>
+            <MenuItem value="yes">{t("propertiesTab.leaf.yes")}</MenuItem>
           </TextField>
 
           <TextField
-            label="Children kind"
+            label={t("propertiesTab.children.kind")}
             value={childBehavior.child_kind}
             onChange={(e) =>
               setChildBehavior((prev) => ({
@@ -246,11 +248,11 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
             }
             fullWidth
             InputLabelProps={{ shrink: true }}
-            placeholder="e.g. Chapter, Task, Project, Apple"
+            placeholder={t("propertiesTab.children.placeholder")}
           />
 
           <TextField
-            label="Children display"
+            label={t("propertiesTab.children.display")}
             select
             value={childBehavior.display}
             onChange={(e) =>
@@ -283,7 +285,7 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
           onClick={handleSave}
           disabled={!isDirty || saving}
         >
-          {saving ? "Saving…" : "Save"}
+          {saving ? t("propertiesTab.saving") : t("commonActions.save")}
         </Button>
       </Box>
     </Box>

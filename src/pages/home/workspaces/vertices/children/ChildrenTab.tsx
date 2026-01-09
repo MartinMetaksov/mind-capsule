@@ -14,6 +14,7 @@ import type { Workspace } from "@/core/workspace";
 import { pluralize } from "@/utils/text";
 import { detectOperatingSystem } from "@/utils/os";
 import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
+import { useTranslation } from "react-i18next";
 
 type ChildrenTabProps = {
   label: string;
@@ -28,6 +29,7 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
   workspace,
   onOpenVertex,
 }) => {
+  const { t } = useTranslation("common");
   const fabRef = React.useRef<CreateFabHandle | null>(null);
   const os = React.useMemo(() => detectOperatingSystem(), []);
   const createShortcut = React.useMemo(
@@ -61,7 +63,7 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
     } catch (err) {
       console.error("Failed to load child vertices:", err);
       setError(
-        err instanceof Error ? err.message : "Failed to load child vertices."
+        err instanceof Error ? err.message : t("childrenTab.errors.load")
       );
       setChildren([]);
     } finally {
@@ -113,7 +115,7 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
           </Typography>
         )}
         {loading ? (
-          <Typography color="text.secondary">Loading children…</Typography>
+          <Typography color="text.secondary">{t("childrenTab.loading")}</Typography>
         ) : children.length === 0 ? (
           <Box
             sx={{
@@ -123,9 +125,9 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
               alignItems: "center",
               justifyContent: "center",
             }}
-          >
+            >
             <Typography color="text.secondary" align="center">
-              No {emptyLabel} found. Start by creating one.
+              {t("childrenTab.empty", { kind: emptyLabel })}
             </Typography>
           </Box>
         ) : (
@@ -151,7 +153,7 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
         onClick={() => {
           setCreateOpen(true);
         }}
-        title="Create child"
+        title={t("childrenTab.create")}
         sx={{ position: "absolute", bottom: 20, right: 20 }}
       />
       <CreateVertexDialog
@@ -181,14 +183,14 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
             await loadChildren();
           } catch (err) {
             setCreateError(
-              err instanceof Error ? err.message : "Failed to create child."
+              err instanceof Error ? err.message : t("childrenTab.errors.create")
             );
           }
         }}
         workspaceLabel={workspace.name}
         defaultKind={defaultKind}
-        submitLabel="Create child"
-        title="Create child"
+        submitLabel={t("childrenTab.create")}
+        title={t("childrenTab.create")}
       />
       {createError && (
         <Typography color="error" variant="body2" sx={{ px: 2, pt: 1 }}>

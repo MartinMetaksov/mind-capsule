@@ -17,6 +17,7 @@ import ZoomInIcon from "@mui/icons-material/ZoomIn";
 import type { Vertex } from "@/core/vertex";
 import type { Reference } from "@/core/common/reference";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
+import { useTranslation } from "react-i18next";
 
 type ImageRef = Extract<Reference, { type: "image" }>;
 
@@ -29,6 +30,7 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
   vertex,
   onVertexUpdated,
 }) => {
+  const { t } = useTranslation("common");
   const [images, setImages] = React.useState<ImageRef[]>(
     (vertex.references ?? []).filter((r): r is ImageRef => r.type === "image")
   );
@@ -74,7 +76,7 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
       }
       await persistImages([...images, ...newRefs]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to add images.");
+      setError(err instanceof Error ? err.message : t("imagesTab.errors.add"));
     } finally {
       setDragging(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -144,10 +146,10 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
     >
       <Box>
         <Typography variant="h6" sx={{ fontWeight: 900, mb: 1 }}>
-          Images
+          {t("imagesTab.title")}
         </Typography>
         <Typography color="text.secondary">
-          Drag and drop images to add them to this vertex.
+          {t("imagesTab.description")}
         </Typography>
       </Box>
 
@@ -170,7 +172,7 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
         onClick={() => fileInputRef.current?.click()}
       >
         <Typography>
-          Drop images here or click to select (multiple supported)
+          {t("imagesTab.dropzone")}
         </Typography>
         <input
           ref={fileInputRef}
@@ -184,7 +186,7 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
 
       {images.length === 0 ? (
         <Typography color="text.secondary" align="center" sx={{ mt: 4 }}>
-          No images yet.
+          {t("imagesTab.empty")}
         </Typography>
       ) : (
         <Box
@@ -268,7 +270,7 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
         fullWidth
         maxWidth="sm"
       >
-        <DialogTitle>Edit image</DialogTitle>
+        <DialogTitle>{t("imagesTab.editTitle")}</DialogTitle>
         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
           {selectedIdx !== null && (
             <Box
@@ -279,13 +281,13 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
             />
           )}
           <TextField
-            label="Alt text"
+            label={t("imagesTab.alt")}
             value={alt}
             onChange={(e) => setAlt(e.target.value)}
             InputLabelProps={{ shrink: true }}
           />
           <TextField
-            label="Description"
+            label={t("imagesTab.descriptionLabel")}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             multiline
@@ -294,9 +296,9 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
+          <Button onClick={() => setDialogOpen(false)}>{t("commonActions.cancel")}</Button>
           <Button variant="contained" onClick={handleDialogSave}>
-            Save
+            {t("commonActions.save")}
           </Button>
         </DialogActions>
       </Dialog>

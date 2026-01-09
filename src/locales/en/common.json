@@ -124,6 +124,7 @@
   },
   "vertex": {
     "tabs": {
+      "children": "Items",
       "properties": "Properties",
       "tags": "Tags",
       "notes": "Notes",
@@ -159,5 +160,99 @@
     "entityLabel": "project",
     "searchPlaceholder": "Search workspaces…",
     "noWorkspaces": "No workspaces found."
+  },
+  "childrenTab": {
+    "loading": "Loading items…",
+    "empty": "No {{kind}} found. Start by creating one.",
+    "create": "Create item",
+    "errors": {
+      "load": "Failed to load items.",
+      "create": "Failed to create item."
+    }
+  },
+  "filesTab": {
+    "title": "Files",
+    "description": "References of type file."
+  },
+  "referencesTab": {
+    "title": "Vertex references",
+    "description": "References of type vertex grouped by reference group."
+  },
+  "tagsTab": {
+    "title": "Tags",
+    "description": "Add keywords to organize and search this vertex.",
+    "newTag": "New tag",
+    "placeholder": "e.g. draft, idea",
+    "add": "Add tag",
+    "empty": "No tags yet.",
+    "errors": {
+      "update": "Failed to update tags."
+    }
+  },
+  "propertiesTab": {
+    "subtitle": "Manage the core properties for this vertex.",
+    "defaultTab": "Default tab",
+    "leaf": {
+      "label": "Leaf node",
+      "tooltip": "If yes, this vertex will not show a children tab.",
+      "no": "No",
+      "yes": "Yes"
+    },
+    "children": {
+      "kind": "Children kind",
+      "placeholder": "e.g. Chapter, Task, Project, Apple",
+      "display": "Children display"
+    },
+    "childrenDisplay": {
+      "grid": "Grid",
+      "list": "List",
+      "timeline": "Timeline"
+    },
+    "errors": {
+      "titleRequired": "Title is required.",
+      "save": "Failed to save properties."
+    },
+    "saving": "Saving…"
+  },
+  "linksTab": {
+    "title": "Links",
+    "description": "Add and manage URL references for this vertex.",
+    "url": "URL",
+    "urlPlaceholder": "https://example.com",
+    "titleLabel": "Title (optional)",
+    "titlePlaceholder": "Descriptive title",
+    "add": "Add link",
+    "empty": "No links yet.",
+    "errors": {
+      "update": "Failed to update links."
+    }
+  },
+  "imagesTab": {
+    "title": "Images",
+    "description": "Drag and drop images to add them to this vertex.",
+    "dropzone": "Drop images here or click to select (multiple supported)",
+    "empty": "No images yet.",
+    "editTitle": "Edit image",
+    "alt": "Alt text",
+    "descriptionLabel": "Description",
+    "errors": {
+      "add": "Failed to add images."
+    }
+  },
+  "notesTab": {
+    "title": "Notes",
+    "subtitle": "Write notes for this vertex and keep each revision accessible.",
+    "revisions": "Revisions",
+    "create": "Create new revision",
+    "empty": "No revisions yet.",
+    "noNotes": "No notes yet. Create the first revision to start writing.",
+    "preview": "Preview",
+    "edit": "Edit",
+    "placeholder": "Write in Markdown…",
+    "revisionLabel": "Revision {{number}}",
+    "selectRevision": "Select a revision on the left.",
+    "errors": {
+      "save": "Failed to save note."
+    }
   }
 }
