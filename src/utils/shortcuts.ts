@@ -28,9 +28,10 @@ const BASE_OS: OperatingSystem[] = [
 ];
 
 const makeUniformShortcuts = (def: ShortcutDefinition) =>
-  BASE_OS.reduce((acc, os) => ({ ...acc, [os]: def }), {
-    default: def,
-  } as Record<OperatingSystem | "default", ShortcutDefinition>);
+  BASE_OS.reduce(
+    (acc, os) => ({ ...acc, [os]: def }),
+    { default: def } as Record<OperatingSystem | "default", ShortcutDefinition>
+  );
 
 const SHORTCUTS: Record<
   ShortcutAction,
@@ -60,7 +61,28 @@ export function getShortcut(
   os?: OperatingSystem
 ): ShortcutDefinition {
   const currentOs = os ?? detectOperatingSystem();
-  return SHORTCUTS[action][currentOs] ?? SHORTCUTS[action].default;
+  const base = SHORTCUTS[action][currentOs] ?? SHORTCUTS[action].default;
+
+  const main = base.keys.find((k) => !["ctrl", "meta", "alt", "shift"].includes(k));
+  if (!main) return base;
+
+  const hasMeta = base.keys.includes("meta");
+  const hasCtrl = base.keys.includes("ctrl");
+  const hasAlt = base.keys.includes("alt");
+  const hasShift = base.keys.includes("shift");
+
+  const pieces: string[] = [];
+  if (main === "~") {
+    pieces.push("~");
+  } else {
+    if (hasMeta) pieces.push(currentOs === "macOS" ? "⌘" : "Ctrl");
+    else if (hasCtrl) pieces.push("Ctrl");
+    if (hasAlt) pieces.push("Alt");
+    if (hasShift) pieces.push("Shift");
+    pieces.push(main.toUpperCase());
+  }
+
+  return { ...base, display: pieces.join(" + ") };
 }
 
 export function matchesShortcut(
