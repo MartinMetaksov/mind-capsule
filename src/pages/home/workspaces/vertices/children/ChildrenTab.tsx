@@ -11,7 +11,6 @@ import {
 import { getFileSystem } from "@/integrations/fileSystem/integration";
 import type { Vertex } from "@/core/vertex";
 import type { Workspace } from "@/core/workspace";
-import { pluralize } from "@/utils/text";
 import { detectOperatingSystem } from "@/utils/os";
 import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
 import { useTranslation } from "react-i18next";
@@ -39,7 +38,7 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
   const emptyLabel = React.useMemo(() => {
     const kind = vertex.children_behavior?.child_kind?.trim();
     if (!kind) return "children";
-    return pluralize(kind);
+    return kind;
   }, [vertex.children_behavior?.child_kind]);
 
   const [children, setChildren] = React.useState<VertexItem[]>([]);

@@ -17,7 +17,6 @@ import { TagsTab } from "./tags/TagsTab";
 import { LinksTab } from "./links/LinksTab";
 import { ImagesTab } from "./images/ImagesTab";
 import { NotesTab } from "./notes/NotesTab";
-import { pluralize } from "@/utils/text";
 import { detectOperatingSystem } from "@/utils/os";
 import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -69,8 +68,7 @@ function formatChildLabel(behavior: Vertex["children_behavior"]): string {
   const raw = behavior.child_kind.startsWith("custom:")
     ? behavior.child_kind.slice("custom:".length) || "custom"
     : behavior.child_kind;
-  const plural = pluralize(raw);
-  return plural.charAt(0).toUpperCase() + plural.slice(1);
+  return raw.charAt(0).toUpperCase() + raw.slice(1);
 }
 
 export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
