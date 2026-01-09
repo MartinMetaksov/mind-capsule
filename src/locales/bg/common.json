@@ -1,0 +1,16 @@
+{
+  "appName": "Mind Capsule",
+  "settings": {
+    "title": "Настройки",
+    "theme": "Тема",
+    "themeDescription": "Изберете как да изглежда приложението.",
+    "shortcuts": "Клавишни комбинации",
+    "shortcutsDescription": "Комбинациите се адаптират според операционната система и са само за четене.",
+    "language": "Език",
+    "languageDescription": "Изберете предпочитан език."
+  },
+  "languages": {
+    "en": "Английски",
+    "bg": "Български"
+  }
+}

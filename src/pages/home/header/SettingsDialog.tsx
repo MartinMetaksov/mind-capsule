@@ -11,12 +11,19 @@ import {
   Tab,
   Divider,
   Stack,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import { ThemePreference } from "@/utils/themes/themePreference";
 import { detectOperatingSystem } from "@/utils/os";
 import { getShortcut } from "@/utils/shortcuts";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import KeyboardAltOutlinedIcon from "@mui/icons-material/KeyboardAltOutlined";
+import LanguageOutlinedIcon from "@mui/icons-material/LanguageOutlined";
+import i18n from "i18next";
+import { useTranslation } from "react-i18next";
 
 type Props = {
   open: boolean;
@@ -31,7 +38,9 @@ export const SettingsDialog: React.FC<Props> = ({
   preference,
   onChangePreference,
 }) => {
-  const [tab, setTab] = React.useState<"theme" | "shortcuts">("theme");
+  const { t } = useTranslation("common");
+  const [tab, setTab] = React.useState<"theme" | "shortcuts" | "language">("theme");
+  const [language, setLanguage] = React.useState(() => i18n.resolvedLanguage?.split("-")[0] || "en");
   const os = React.useMemo(() => detectOperatingSystem(), []);
 
   const shortcutList = React.useMemo(
@@ -51,6 +60,14 @@ export const SettingsDialog: React.FC<Props> = ({
     [os]
   );
 
+  React.useEffect(() => {
+    const handler = (lng: string) => setLanguage(lng.split("-")[0]);
+    i18n.on("languageChanged", handler);
+    return () => {
+      i18n.off("languageChanged", handler);
+    };
+  }, []);
+
   return (
     <Dialog
       open={open}
@@ -65,7 +82,7 @@ export const SettingsDialog: React.FC<Props> = ({
         },
       }}
     >
-      <DialogTitle>Settings</DialogTitle>
+      <DialogTitle>{t("settings.title")}</DialogTitle>
       <DialogContent sx={{ pt: 1, overflow: "hidden", height: "100%" }}>
         <Box
           sx={{
@@ -98,7 +115,7 @@ export const SettingsDialog: React.FC<Props> = ({
                   right: "auto",
                 },
                 "& .MuiTab-root": {
-                  alignItems: "flex-start",
+                  alignItems: "center",
                   justifyContent: "flex-start",
                   textAlign: "left",
                   minHeight: 36,
@@ -108,6 +125,11 @@ export const SettingsDialog: React.FC<Props> = ({
                     justifyContent: "flex-start",
                     alignItems: "center",
                     gap: 0.75,
+                    display: "inline-flex",
+                  },
+                  "& .MuiTab-iconWrapper": {
+                    display: "inline-flex",
+                    alignItems: "center",
                   },
                 },
               }}
@@ -116,13 +138,19 @@ export const SettingsDialog: React.FC<Props> = ({
                 value="theme"
                 icon={<SettingsOutlinedIcon fontSize="small" />}
                 iconPosition="start"
-                label="Theme"
+                label={t("settings.theme")}
               />
               <Tab
                 value="shortcuts"
                 icon={<KeyboardAltOutlinedIcon fontSize="small" />}
                 iconPosition="start"
-                label="Keyboard shortcuts"
+                label={t("settings.shortcuts")}
+              />
+              <Tab
+                value="language"
+                icon={<LanguageOutlinedIcon fontSize="small" />}
+                iconPosition="start"
+                label={t("settings.language")}
               />
             </Tabs>
           </Box>
@@ -142,10 +170,10 @@ export const SettingsDialog: React.FC<Props> = ({
             {tab === "theme" && (
               <>
                 <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                  Theme
+                  {t("settings.theme")}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Choose how the app looks.
+                  {t("settings.themeDescription")}
                 </Typography>
                 <ToggleButtonGroup
                   exclusive
@@ -164,10 +192,10 @@ export const SettingsDialog: React.FC<Props> = ({
             {tab === "shortcuts" && (
               <>
                 <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                  Keyboard shortcuts
+                  {t("settings.shortcuts")}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Shortcuts adapt to your operating system and are read-only.
+                  {t("settings.shortcutsDescription")}
                 </Typography>
                 <Divider />
                 <Stack spacing={1.25}>
@@ -199,6 +227,33 @@ export const SettingsDialog: React.FC<Props> = ({
                     </Box>
                   ))}
                 </Stack>
+              </>
+            )}
+
+            {tab === "language" && (
+              <>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                  {t("settings.language")}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {t("settings.languageDescription")}
+                </Typography>
+                <FormControl fullWidth size="small">
+                  <InputLabel id="language-select-label">{t("settings.language")}</InputLabel>
+                  <Select
+                    labelId="language-select-label"
+                    label={t("settings.language")}
+                    value={language}
+                    onChange={(e) => {
+                      const next = (e.target.value as string) || "en";
+                      setLanguage(next);
+                      void i18n.changeLanguage(next);
+                    }}
+                  >
+                    <MenuItem value="en">{t("languages.en")}</MenuItem>
+                    <MenuItem value="bg">{t("languages.bg")}</MenuItem>
+                  </Select>
+                </FormControl>
               </>
             )}
           </Box>

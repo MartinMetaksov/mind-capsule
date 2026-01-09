@@ -1,0 +1,16 @@
+{
+  "appName": "Mind Capsule",
+  "settings": {
+    "title": "Settings",
+    "theme": "Theme",
+    "themeDescription": "Choose how the app looks.",
+    "shortcuts": "Keyboard shortcuts",
+    "shortcutsDescription": "Shortcuts adapt to your operating system and are read-only.",
+    "language": "Language",
+    "languageDescription": "Choose your preferred language."
+  },
+  "languages": {
+    "en": "English",
+    "bg": "Bulgarian"
+  }
+}
