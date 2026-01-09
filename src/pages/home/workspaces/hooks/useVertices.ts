@@ -51,7 +51,7 @@ export const useVertices = (workspaces: Workspace[] | undefined) => {
     } finally {
       setLoading(false);
     }
-  }, [workspaces]);
+  }, [workspaces, t]);
 
   React.useEffect(() => {
     loadVertices();

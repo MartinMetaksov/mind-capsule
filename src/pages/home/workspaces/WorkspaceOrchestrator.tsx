@@ -97,7 +97,7 @@ export const WorkspaceOrchestrator: React.FC = () => {
       setTab(tabParam);
     }
     navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
-  }, [location.pathname, location.search, navigate]);
+  }, [location.pathname, location.search, navigate, rootTabs]);
 
   React.useEffect(() => {
     const shortcuts = [getShortcut("tab1", os), getShortcut("tab2", os)];
@@ -111,7 +111,7 @@ export const WorkspaceOrchestrator: React.FC = () => {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [os]);
+  }, [os, rootTabs]);
 
   const error = workspacesError ?? verticesError;
 

@@ -69,7 +69,7 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [vertex.id, workspace]);
+  }, [t, vertex.id, workspace]);
 
   React.useEffect(() => {
     loadChildren();

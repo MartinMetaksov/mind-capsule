@@ -127,7 +127,6 @@ export const LinksTab: React.FC<LinksTabProps> = ({
       <Stack spacing={1.5}>
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
           <TextField
-            label="URL"
             label={t("linksTab.url")}
             value={url}
             onChange={(e) => setUrl(e.target.value)}

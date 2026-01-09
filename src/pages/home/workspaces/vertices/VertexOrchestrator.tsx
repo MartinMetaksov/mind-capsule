@@ -170,7 +170,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
       //   icon: <HubOutlinedIcon />,
       // },
     ],
-    [childrenLabel, currentVertex.is_leaf]
+    [childrenLabel, currentVertex.is_leaf, t]
   );
   const availableTabValues = React.useMemo(
     () => vertexTabs.map((t) => t.value),

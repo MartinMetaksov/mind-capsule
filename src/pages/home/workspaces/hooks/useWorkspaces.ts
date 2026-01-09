@@ -24,7 +24,7 @@ export const useWorkspaces = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   React.useEffect(() => {
     refreshWorkspaces();
