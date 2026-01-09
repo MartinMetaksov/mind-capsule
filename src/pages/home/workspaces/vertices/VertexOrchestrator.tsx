@@ -21,6 +21,7 @@ import { pluralize } from "@/utils/text";
 import { detectOperatingSystem } from "@/utils/os";
 import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 type VertexTab =
   | "children"
@@ -64,7 +65,7 @@ function countReferences(vertex: Vertex): RefCounts {
 }
 
 function formatChildLabel(behavior: Vertex["children_behavior"]): string {
-  if (!behavior?.child_kind) return "Children";
+  if (!behavior?.child_kind) return "Items";
   const raw = behavior.child_kind.startsWith("custom:")
     ? behavior.child_kind.slice("custom:".length) || "custom"
     : behavior.child_kind;
@@ -81,6 +82,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
   onOpenVertex,
   onVertexUpdated,
 }) => {
+  const { t } = useTranslation("common");
   const location = useLocation();
   const navigate = useNavigate();
   const [currentVertex, setCurrentVertex] = React.useState<Vertex>(vertex);
@@ -142,21 +144,21 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
         : []),
       {
         value: "properties" as const,
-        label: "Properties",
+        label: t("vertex.tabs.properties"),
         icon: <TuneOutlined />,
       },
-      { value: "tags" as const, label: "Tags", icon: <TagOutlinedIcon /> },
+      { value: "tags" as const, label: t("vertex.tabs.tags"), icon: <TagOutlinedIcon /> },
       {
         value: "notes" as const,
-        label: "Notes",
+        label: t("vertex.tabs.notes"),
         icon: <CommentOutlinedIcon />,
       },
       {
         value: "images" as const,
-        label: "Images",
+        label: t("vertex.tabs.images"),
         icon: <ImageOutlinedIcon />,
       },
-      { value: "urls" as const, label: "Links", icon: <LinkOutlinedIcon /> },
+      { value: "urls" as const, label: t("vertex.tabs.links"), icon: <LinkOutlinedIcon /> },
       // {
       //   value: "files" as const,
       //   label: "Files",

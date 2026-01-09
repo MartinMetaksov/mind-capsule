@@ -1,11 +1,13 @@
 import { Workspace } from "@/core/workspace";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 export const useWorkspaces = () => {
   const [workspaces, setWorkspaces] = React.useState<Workspace[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const { t } = useTranslation("common");
 
   const refreshWorkspaces = React.useCallback(async () => {
     setLoading(true);
@@ -17,9 +19,7 @@ export const useWorkspaces = () => {
       setWorkspaces(list);
     } catch (err) {
       console.error("Failed to load workspaces:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to load workspaces.",
-      );
+      setError(err instanceof Error ? err.message : t("errors.loadWorkspaces"));
       setWorkspaces([]);
     } finally {
       setLoading(false);

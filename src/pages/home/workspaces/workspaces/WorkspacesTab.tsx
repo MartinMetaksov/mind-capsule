@@ -22,6 +22,7 @@ import { getFileSystem } from "@/integrations/fileSystem/integration";
 import { CreateFab, type CreateFabHandle } from "../components/CreateFab";
 import { detectOperatingSystem } from "@/utils/os";
 import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
+import { useTranslation } from "react-i18next";
 
 type WorkspacesTabProps = {
   workspaces: Workspace[];
@@ -34,6 +35,7 @@ export const WorkspacesTab: React.FC<WorkspacesTabProps> = ({
   workspaces,
   onChanged,
 }) => {
+  const { t } = useTranslation("common");
   const fabRef = React.useRef<CreateFabHandle | null>(null);
   const [editorOpen, setEditorOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<EditingWorkspace>({});
@@ -83,7 +85,7 @@ export const WorkspacesTab: React.FC<WorkspacesTabProps> = ({
       setError(null);
       const fs = await getFileSystem();
       if (!editing.name || !editing.path) {
-        setError("Name and path are required.");
+        setError(t("workspaces.errors.required"));
         return;
       }
 
@@ -111,7 +113,7 @@ export const WorkspacesTab: React.FC<WorkspacesTabProps> = ({
       closeEditor();
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to save workspace."
+        err instanceof Error ? err.message : t("workspaces.errors.save")
       );
     }
   };
@@ -125,7 +127,7 @@ export const WorkspacesTab: React.FC<WorkspacesTabProps> = ({
       await onChanged();
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to delete workspace."
+        err instanceof Error ? err.message : t("workspaces.errors.delete")
       );
     }
   };
@@ -161,10 +163,10 @@ export const WorkspacesTab: React.FC<WorkspacesTabProps> = ({
       >
         <Box>
           <Typography variant="h6" sx={{ fontWeight: 900 }}>
-            Workspaces
+            {t("workspaces.title")}
           </Typography>
           <Typography color="text.secondary">
-            Create, rename, change paths, or remove workspaces.
+            {t("workspaces.subtitle")}
           </Typography>
         </Box>
         <Box sx={{ height: 40, width: 40 }} />
@@ -190,20 +192,20 @@ export const WorkspacesTab: React.FC<WorkspacesTabProps> = ({
               </Typography>
             </Box>
             <Stack direction="row" spacing={1}>
-              <Tooltip title="Edit">
+              <Tooltip title={t("workspaces.actions.edit")}>
                 <IconButton
                   size="small"
                   onClick={() => openEdit(ws)}
-                  aria-label="edit workspace"
+                  aria-label={t("workspaces.actions.edit")}
                 >
                   <EditRoundedIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
-              <Tooltip title="Delete">
+              <Tooltip title={t("workspaces.actions.delete")}>
                 <IconButton
                   size="small"
                   onClick={() => setConfirmDelete(ws)}
-                  aria-label="delete workspace"
+                  aria-label={t("workspaces.actions.delete")}
                 >
                   <DeleteOutlineRoundedIcon fontSize="small" />
                 </IconButton>
@@ -215,7 +217,7 @@ export const WorkspacesTab: React.FC<WorkspacesTabProps> = ({
 
       <Dialog open={editorOpen} onClose={closeEditor} fullWidth maxWidth="sm">
         <DialogTitle>
-          {editing.id ? "Edit workspace" : "Create workspace"}
+          {editing.id ? t("workspaces.editTitle") : t("workspaces.createTitle")}
         </DialogTitle>
         <DialogContent>
           <Box
@@ -228,7 +230,7 @@ export const WorkspacesTab: React.FC<WorkspacesTabProps> = ({
             }}
           >
             <TextField
-              label="Name"
+              label={t("workspaces.fields.name")}
               fullWidth
               value={editing.name ?? ""}
               onChange={(e) =>
@@ -237,7 +239,7 @@ export const WorkspacesTab: React.FC<WorkspacesTabProps> = ({
               InputLabelProps={{ shrink: true }}
             />
             <TextField
-              label="Purpose"
+              label={t("workspaces.fields.purpose")}
               fullWidth
               value={editing.purpose ?? ""}
               onChange={(e) =>
@@ -247,7 +249,7 @@ export const WorkspacesTab: React.FC<WorkspacesTabProps> = ({
             />
             <Stack direction="row" spacing={1} alignItems="center">
               <TextField
-                label="Path"
+                label={t("workspaces.fields.path")}
                 fullWidth
                 value={editing.path ?? ""}
                 onChange={(e) =>
@@ -255,7 +257,7 @@ export const WorkspacesTab: React.FC<WorkspacesTabProps> = ({
                 }
                 InputLabelProps={{ shrink: true }}
               />
-              <Tooltip title="Select directory">
+              <Tooltip title={t("workspaces.actions.selectDirectory")}>
                 <IconButton onClick={handlePickPath}>
                   <FolderOpenRoundedIcon />
                 </IconButton>
@@ -269,9 +271,9 @@ export const WorkspacesTab: React.FC<WorkspacesTabProps> = ({
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={closeEditor}>Cancel</Button>
+          <Button onClick={closeEditor}>{t("commonActions.cancel")}</Button>
           <Button variant="contained" onClick={saveWorkspace}>
-            {editing.id ? "Save" : "Create"}
+            {editing.id ? t("commonActions.save") : t("commonActions.create")}
           </Button>
         </DialogActions>
       </Dialog>
@@ -282,17 +284,20 @@ export const WorkspacesTab: React.FC<WorkspacesTabProps> = ({
         fullWidth
         maxWidth="xs"
       >
-        <DialogTitle>Delete workspace</DialogTitle>
+        <DialogTitle>{t("workspaces.deleteTitle")}</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete{" "}
-            <strong>{confirmDelete?.name ?? "this workspace"}</strong>?
+            {t("workspaces.deleteConfirm", {
+              name: confirmDelete?.name ?? t("workspaces.deleteFallback"),
+            })}
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setConfirmDelete(null)}>Cancel</Button>
+          <Button onClick={() => setConfirmDelete(null)}>
+            {t("commonActions.cancel")}
+          </Button>
           <Button color="error" variant="contained" onClick={removeWorkspace}>
-            Delete
+            {t("commonActions.delete")}
           </Button>
         </DialogActions>
       </Dialog>
@@ -300,7 +305,7 @@ export const WorkspacesTab: React.FC<WorkspacesTabProps> = ({
       <CreateFab
         ref={fabRef}
         onClick={openCreate}
-        title="Create workspace"
+        title={t("workspaces.createTitle")}
         sx={{ position: "absolute", bottom: 20, right: 20 }}
       />
     </Box>

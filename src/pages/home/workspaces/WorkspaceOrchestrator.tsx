@@ -21,6 +21,7 @@ import { VertexNotFound } from "./components/VertexNotFound";
 import { VertexOrchestrator } from "./vertices/VertexOrchestrator";
 import { detectOperatingSystem } from "@/utils/os";
 import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
+import { useTranslation } from "react-i18next";
 
 type RootTab = "projects" | "workspaces";
 
@@ -33,20 +34,8 @@ type NotFoundState = {
   missingId: string | null;
 };
 
-const rootTabs = [
-  {
-    value: "projects" as const,
-    label: "Projects",
-    icon: <AccountTreeOutlinedIcon />,
-  },
-  {
-    value: "workspaces" as const,
-    label: "Workspaces",
-    icon: <WorkspacesOutlinedIcon />,
-  },
-];
-
 export const WorkspaceOrchestrator: React.FC = () => {
+  const { t } = useTranslation("common");
   const {
     workspaces,
     loading: workspacesLoading,
@@ -71,6 +60,21 @@ export const WorkspaceOrchestrator: React.FC = () => {
     missingId: null,
   });
   const os = React.useMemo(() => detectOperatingSystem(), []);
+  const rootTabs = React.useMemo(
+    () => [
+      {
+        value: "projects" as const,
+        label: t("workspace.tabs.projects"),
+        icon: <AccountTreeOutlinedIcon />,
+      },
+      {
+        value: "workspaces" as const,
+        label: t("workspace.tabs.workspaces"),
+        icon: <WorkspacesOutlinedIcon />,
+      },
+    ],
+    [t]
+  );
 
   const active = trail.length > 0 ? trail[trail.length - 1] : null;
 
@@ -339,7 +343,7 @@ export const WorkspaceOrchestrator: React.FC = () => {
           {/* PROJECTS TAB */}
           {tab === "projects" && (
             <>
-              <BreadcrumbsTrail rootLabel="Workspaces" />
+              <BreadcrumbsTrail rootLabel={t("workspace.rootLabel")} />
               {error && (
                 <Box sx={{ px: 2, pt: 7 }}>
                   <Typography color="error" variant="body2">
@@ -353,7 +357,7 @@ export const WorkspaceOrchestrator: React.FC = () => {
                 </Box>
               )}
               <ProjectsTab
-                title="Projects"
+                title={t("workspace.tabs.projects")}
                 items={vertexItems}
                 workspaces={workspaces}
                 onOpenVertex={openVertex}

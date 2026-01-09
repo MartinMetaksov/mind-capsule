@@ -14,6 +14,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import type { Vertex } from "@/core/vertex";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
+import { useTranslation } from "react-i18next";
 
 type Props = {
   open: boolean;
@@ -28,6 +29,7 @@ export const SearchDialog: React.FC<Props> = ({ open, onClose }) => {
   const [allVertices, setAllVertices] = React.useState<Vertex[]>([]);
   const inputRef = React.useRef<HTMLInputElement | null>(null);
   const navigate = useNavigate();
+  const { t } = useTranslation("common");
 
   React.useEffect(() => {
     if (!open) return;
@@ -134,12 +136,12 @@ export const SearchDialog: React.FC<Props> = ({ open, onClose }) => {
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-      <DialogTitle>Search</DialogTitle>
+      <DialogTitle>{t("search.title")}</DialogTitle>
       <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
         <TextField
           autoFocus
           inputRef={inputRef}
-          placeholder="Search…"
+          placeholder={t("search.placeholder")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           fullWidth
@@ -150,12 +152,12 @@ export const SearchDialog: React.FC<Props> = ({ open, onClose }) => {
           variant="scrollable"
           scrollButtons="auto"
         >
-          <Tab label={`Vertices (${filtered.vertices.length})`} />
-          <Tab label={`Properties (${filtered.properties.length})`} />
-          <Tab label={`Tags (${filtered.tags.length})`} />
-          <Tab label={`Notes (${filtered.notes.length})`} />
-          <Tab label={`Images (${filtered.images.length})`} />
-          <Tab label={`Links (${filtered.links.length})`} />
+          <Tab label={t("search.tabs.vertices", { count: filtered.vertices.length })} />
+          <Tab label={t("search.tabs.properties", { count: filtered.properties.length })} />
+          <Tab label={t("search.tabs.tags", { count: filtered.tags.length })} />
+          <Tab label={t("search.tabs.notes", { count: filtered.notes.length })} />
+          <Tab label={t("search.tabs.images", { count: filtered.images.length })} />
+          <Tab label={t("search.tabs.links", { count: filtered.links.length })} />
         </Tabs>
         {search ? (
           <List dense>
@@ -170,18 +172,18 @@ export const SearchDialog: React.FC<Props> = ({ open, onClose }) => {
                     onClose();
                   }}
                 >
-                  <ListItemText primary={v.title} secondary={`/${tabName}`} />
+                  <ListItemText primary={v.title} secondary={`/${t(`search.tabNames.${tabName}`)}`} />
                 </ListItemButton>
               );
             })}
             {resultSets[searchTab].length === 0 && (
               <Typography color="text.secondary" sx={{ px: 1, py: 2 }}>
-                No results.
+                {t("search.noResults")}
               </Typography>
             )}
           </List>
         ) : (
-          <Typography color="text.secondary">Start typing to see results.</Typography>
+          <Typography color="text.secondary">{t("search.emptyState")}</Typography>
         )}
       </DialogContent>
     </Dialog>

@@ -5,6 +5,7 @@ import { Workspace } from "@/core/workspace";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
 import { Box, Button, Stack, Tooltip, Typography } from "@mui/material";
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 type WorkspaceSetupProps = {
   workspaces?: Workspace[];
@@ -15,6 +16,7 @@ export const WorkspaceSetup: React.FC<WorkspaceSetupProps> = ({
   workspaces = [],
   onChanged,
 }) => {
+  const { t } = useTranslation("common");
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -32,9 +34,9 @@ export const WorkspaceSetup: React.FC<WorkspaceSetupProps> = ({
 
       const workspace: Workspace = {
         id: crypto.randomUUID(),
-        name: "New workspace",
+        name: t("workspaceSetup.newWorkspaceName"),
         path: selectedDir,
-        purpose: "Selected workspace directory",
+        purpose: t("workspaceSetup.selectedPurpose"),
         created_at: now,
         updated_at: now,
         tags: [],
@@ -64,9 +66,9 @@ export const WorkspaceSetup: React.FC<WorkspaceSetupProps> = ({
 
       const workspace: Workspace = {
         id: crypto.randomUUID(),
-        name: "Default workspace",
+        name: t("workspaceSetup.defaultWorkspaceName"),
         path: defaultPath,
-        purpose: `Created by ${APP_NAME}`,
+        purpose: t("workspaceSetup.defaultPurpose", { app: APP_NAME }),
         created_at: now,
         updated_at: now,
         tags: [],
@@ -89,25 +91,22 @@ export const WorkspaceSetup: React.FC<WorkspaceSetupProps> = ({
       <Stack spacing={2} sx={{ maxWidth: 420 }}>
         <Logo width={180} />
 
-        <Typography variant="h5">Welcome to {APP_NAME}</Typography>
+        <Typography variant="h5">{t("workspaceSetup.welcome", { app: APP_NAME })}</Typography>
 
         <Typography color="text.secondary">
-          {APP_NAME} helps you capture and organize ideas, story beats, lore,
-          inspiration, and world-building notes — all in one place.
+          {t("workspaceSetup.description", { app: APP_NAME })}
         </Typography>
 
         <Typography color="text.secondary">
-          {APP_NAME} requires a{" "}
+          {t("workspaceSetup.requires")}{" "}
           <Tooltip
             title={
               <Stack spacing={1.5}>
                 <Typography variant="body2">
-                  A workspace is a folder on your computer where {APP_NAME}
-                  stores your projects, notes, and files.
+                  {t("workspaceSetup.tooltip.line1", { app: APP_NAME })}
                 </Typography>
                 <Typography variant="body2">
-                  Tip: If you place your workspace in iCloud, Dropbox, or
-                  OneDrive, it can sync across your devices automatically.
+                  {t("workspaceSetup.tooltip.line2")}
                 </Typography>
               </Stack>
             }
@@ -130,10 +129,10 @@ export const WorkspaceSetup: React.FC<WorkspaceSetupProps> = ({
               component="span"
               sx={{ textDecoration: "underline dotted", cursor: "help" }}
             >
-              workspace
+              {t("workspaceSetup.workspace")}
             </Box>
           </Tooltip>{" "}
-          to get started.
+          {t("workspaceSetup.toGetStarted")}
         </Typography>
 
         <Button
@@ -141,18 +140,16 @@ export const WorkspaceSetup: React.FC<WorkspaceSetupProps> = ({
           onClick={handlePickWorkspace}
           disabled={loading}
         >
-          {loading ? "Setting up workspace…" : "Choose workspace folder"}
+          {loading ? t("workspaceSetup.settingUp") : t("workspaceSetup.chooseFolder")}
         </Button>
 
         <Box visibility={loading ? "hidden" : "visible"}>
           <Typography color="text.secondary">
-            Prefer a quick start? {APP_NAME} can create a{" "}
+            {t("workspaceSetup.quickStart", { app: APP_NAME })}{" "}
             <Tooltip
               title={
                 <Typography variant="body2">
-                  Creates a folder named{" "}
-                  <code>.{APP_NAME_TECHNICAL}Workspace</code> in your home
-                  directory.
+                  {t("workspaceSetup.quickStartTooltip", { technical: APP_NAME_TECHNICAL })}
                 </Typography>
               }
               arrow
@@ -174,10 +171,10 @@ export const WorkspaceSetup: React.FC<WorkspaceSetupProps> = ({
                 component="span"
                 sx={{ textDecoration: "underline dotted", cursor: "help" }}
               >
-                default
+                {t("workspaceSetup.default")}
               </Box>
             </Tooltip>{" "}
-            workspace for you.
+            {t("workspaceSetup.workspaceLower")}
           </Typography>
         </Box>
 
@@ -186,11 +183,11 @@ export const WorkspaceSetup: React.FC<WorkspaceSetupProps> = ({
           onClick={createDefaultWorkspace}
           disabled={loading}
         >
-          Create default workspace
+          {t("workspaceSetup.createDefault")}
         </Button>
 
         <Typography color="text.secondary">
-          You can change your workspace later in Settings.
+          {t("workspaceSetup.changeLater")}
         </Typography>
 
         {loading && <Loading />}
@@ -203,7 +200,7 @@ export const WorkspaceSetup: React.FC<WorkspaceSetupProps> = ({
 
         {workspaces.length > 0 && (
           <>
-            <Typography variant="subtitle1">Workspaces</Typography>
+            <Typography variant="subtitle1">{t("workspaces.title")}</Typography>
             <ul>
               {workspaces.map((w) => (
                 <li key={w.id}>{w.name}</li>

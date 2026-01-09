@@ -15,6 +15,7 @@ import {
 import type { VertexKind } from "@/core/common/vertexKind";
 import { detectOperatingSystem } from "@/utils/os";
 import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
+import { useTranslation } from "react-i18next";
 
 export type CreateVertexForm = {
   title: string;
@@ -130,6 +131,7 @@ export const CreateVertexDialog: React.FC<CreateVertexDialogProps> = ({
   submitLabel = "Create",
   title = "Create item",
 }) => {
+  const { t } = useTranslation("common");
   const [form, setForm] = React.useState<CreateVertexForm>({
     title: "",
     kind: defaultKind,
@@ -157,19 +159,19 @@ export const CreateVertexDialog: React.FC<CreateVertexDialogProps> = ({
       <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 2, pb: 1 }}>
         {workspaceLabel && (
           <Typography variant="body2" color="text.secondary">
-            Workspace: {workspaceLabel}
+            {t("vertexDialog.workspaceLabel", { workspace: workspaceLabel })}
           </Typography>
         )}
         <Box sx={{ pt: 1, display: "flex", flexDirection: "column", gap: 2 }}>
           <TextField
-            label="Title"
+            label={t("vertexDialog.fields.title")}
             fullWidth
             value={form.title}
             onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
             InputLabelProps={{ shrink: true }}
           />
           <TextField
-            label="Kind"
+            label={t("vertexDialog.fields.kind")}
             select
             fullWidth
             value={form.kind}
@@ -178,11 +180,11 @@ export const CreateVertexDialog: React.FC<CreateVertexDialogProps> = ({
             }
             InputLabelProps={{ shrink: true }}
           >
-            <MenuItem value="project">Project</MenuItem>
-            <MenuItem value="chapter">Chapter</MenuItem>
-            <MenuItem value="section">Section</MenuItem>
-            <MenuItem value="note">Note</MenuItem>
-            <MenuItem value="generic">Generic</MenuItem>
+            <MenuItem value="project">{t("vertexKinds.project")}</MenuItem>
+            <MenuItem value="chapter">{t("vertexKinds.chapter")}</MenuItem>
+            <MenuItem value="section">{t("vertexKinds.section")}</MenuItem>
+            <MenuItem value="note">{t("vertexKinds.note")}</MenuItem>
+            <MenuItem value="generic">{t("vertexKinds.generic")}</MenuItem>
           </TextField>
           <ThumbnailPicker
             value={form.thumbnail}
@@ -196,7 +198,7 @@ export const CreateVertexDialog: React.FC<CreateVertexDialogProps> = ({
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onClose}>{t("commonActions.cancel")}</Button>
         <Button variant="contained" onClick={handleSubmit}>
           {submitLabel}
         </Button>
@@ -220,6 +222,7 @@ export const DeleteVertexDialog: React.FC<DeleteVertexDialogProps> = ({
   onConfirm,
   entityLabel = "item",
 }) => {
+  const { t } = useTranslation("common");
   const os = React.useMemo(() => detectOperatingSystem(), []);
   const confirmShortcut = React.useMemo(
     () => getShortcut("confirmDelete", os),
@@ -247,16 +250,18 @@ export const DeleteVertexDialog: React.FC<DeleteVertexDialogProps> = ({
 
   return (
     <Dialog open={open} onClose={onCancel} fullWidth maxWidth="xs">
-      <DialogTitle>Delete {entityLabel}</DialogTitle>
+      <DialogTitle>{t("vertexDialog.deleteTitle", { entity: entityLabel })}</DialogTitle>
       <DialogContent>
         <DialogContentText>
-          Are you sure you want to delete <strong>{name ?? `this ${entityLabel}`}</strong>?
+          {t("vertexDialog.deletePrompt", {
+            name: name ?? t("vertexDialog.deleteFallback", { entity: entityLabel }),
+          })}
         </DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onCancel}>Cancel</Button>
+        <Button onClick={onCancel}>{t("commonActions.cancel")}</Button>
         <Button color="error" variant="contained" onClick={onConfirm}>
-          Delete
+          {t("commonActions.delete")}
         </Button>
       </DialogActions>
     </Dialog>

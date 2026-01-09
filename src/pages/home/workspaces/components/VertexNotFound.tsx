@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Box, Typography } from "@mui/material";
 import ErrorOutlineOutlinedIcon from "@mui/icons-material/ErrorOutlineOutlined";
+import { useTranslation } from "react-i18next";
 
 type VertexNotFoundProps = {
   missingId: string;
@@ -11,6 +12,7 @@ export const VertexNotFound: React.FC<VertexNotFoundProps> = ({
   missingId,
   onBack,
 }) => {
+  const { t } = useTranslation("common");
   return (
     <Box
       sx={{
@@ -33,14 +35,14 @@ export const VertexNotFound: React.FC<VertexNotFoundProps> = ({
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <ErrorOutlineOutlinedIcon color="error" />
           <Typography variant="h6" color="error">
-            Vertex not found
+            {t("vertexNotFound.title")}
           </Typography>
         </Box>
         <Typography color="text.secondary">
-          No vertex exists for id: <code>{missingId}</code>
+          {t("vertexNotFound.subtitle")} <code>{missingId}</code>
         </Typography>
         <Typography color="primary" sx={{ cursor: "pointer" }} onClick={onBack}>
-          Go back to projects
+          {t("vertexNotFound.back")}
         </Typography>
       </Box>
     </Box>

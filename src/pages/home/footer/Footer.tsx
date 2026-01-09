@@ -1,8 +1,10 @@
 import * as React from "react";
 import { Box, Typography, Stack, Link } from "@mui/material";
 import { APP_NAME, GITHUB_URL, LICENSE_URL } from "@/constants/appConstants";
+import { useTranslation } from "react-i18next";
 
 export const Footer: React.FC = () => {
+  const { t } = useTranslation("common");
   const year = new Date().getFullYear();
 
   return (
@@ -39,7 +41,7 @@ export const Footer: React.FC = () => {
             target="_blank"
             rel="noreferrer"
           >
-            GitHub
+            {t("footer.github")}
           </Link>
 
           <Link
@@ -49,7 +51,7 @@ export const Footer: React.FC = () => {
             target="_blank"
             rel="noreferrer"
           >
-            License
+            {t("footer.license")}
           </Link>
         </Stack>
       </Stack>

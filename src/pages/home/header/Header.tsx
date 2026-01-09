@@ -10,8 +10,10 @@ import { detectOperatingSystem } from "@/utils/os";
 import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
 import { SearchDialog } from "./SearchDialog";
 import { SettingsDialog } from "./SettingsDialog";
+import { useTranslation } from "react-i18next";
 
 export const Header: React.FC = () => {
+  const { t } = useTranslation("common");
   const { preference, setPreference } = useThemeMode();
   const [searchOpen, setSearchOpen] = React.useState(false);
   const [settingsOpen, setSettingsOpen] = React.useState(false);
@@ -82,9 +84,9 @@ export const Header: React.FC = () => {
           </Typography>
         </Box>
 
-        <Tooltip title="Search">
+        <Tooltip title={t("header.search")}>
           <IconButton
-            aria-label="open search menu"
+            aria-label={t("header.search")}
             onClick={() => setSearchOpen(true)}
             sx={(theme) => ({
               color:
@@ -106,10 +108,10 @@ export const Header: React.FC = () => {
             <SearchOutlined />
           </IconButton>
         </Tooltip>
-        <Tooltip title="Settings">
+        <Tooltip title={t("header.settings")}>
           <IconButton
             onClick={() => setSettingsOpen(true)}
-            aria-label="open settings"
+            aria-label={t("header.settings")}
             sx={(theme) => ({
               color:
                 theme.palette.mode === "light"

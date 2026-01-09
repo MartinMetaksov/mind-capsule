@@ -45,19 +45,19 @@ export const SettingsDialog: React.FC<Props> = ({
 
   const shortcutList = React.useMemo(
     () => [
-      { label: "Search", key: getShortcut("openSearch", os).display },
-      { label: "Open Settings", key: getShortcut("openSettings", os).display },
-      { label: "Create", key: getShortcut("createVertex", os).display },
-      { label: "Tab 1", key: getShortcut("tab1", os).display },
-      { label: "Tab 2", key: getShortcut("tab2", os).display },
-      { label: "Tab 3", key: getShortcut("tab3", os).display },
-      { label: "Tab 4", key: getShortcut("tab4", os).display },
-      { label: "Tab 5", key: getShortcut("tab5", os).display },
-      { label: "Tab 6", key: getShortcut("tab6", os).display },
-      { label: "Confirm delete", key: getShortcut("confirmDelete", os).display },
-      { label: "Cancel delete", key: getShortcut("cancelDelete", os).display },
+      { label: t("shortcuts.search"), key: getShortcut("openSearch", os).display },
+      { label: t("shortcuts.settings"), key: getShortcut("openSettings", os).display },
+      { label: t("shortcuts.create"), key: getShortcut("createVertex", os).display },
+      { label: t("shortcuts.tab", { number: 1 }), key: getShortcut("tab1", os).display },
+      { label: t("shortcuts.tab", { number: 2 }), key: getShortcut("tab2", os).display },
+      { label: t("shortcuts.tab", { number: 3 }), key: getShortcut("tab3", os).display },
+      { label: t("shortcuts.tab", { number: 4 }), key: getShortcut("tab4", os).display },
+      { label: t("shortcuts.tab", { number: 5 }), key: getShortcut("tab5", os).display },
+      { label: t("shortcuts.tab", { number: 6 }), key: getShortcut("tab6", os).display },
+      { label: t("shortcuts.confirmDelete"), key: getShortcut("confirmDelete", os).display },
+      { label: t("shortcuts.cancelDelete"), key: getShortcut("cancelDelete", os).display },
     ],
-    [os]
+    [os, t]
   );
 
   React.useEffect(() => {
@@ -182,9 +182,9 @@ export const SettingsDialog: React.FC<Props> = ({
                   onChange={(_, val) => val && onChangePreference(val)}
                   size="small"
                 >
-                  <ToggleButton value="system">Auto</ToggleButton>
-                  <ToggleButton value="light">Light</ToggleButton>
-                  <ToggleButton value="dark">Dark</ToggleButton>
+                  <ToggleButton value="system">{t("settings.themeAuto")}</ToggleButton>
+                  <ToggleButton value="light">{t("settings.themeLight")}</ToggleButton>
+                  <ToggleButton value="dark">{t("settings.themeDark")}</ToggleButton>
                 </ToggleButtonGroup>
               </>
             )}

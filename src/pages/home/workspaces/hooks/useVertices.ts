@@ -3,6 +3,7 @@ import { Id } from "@/core/common/id";
 import { Vertex } from "@/core/vertex";
 import { Workspace } from "@/core/workspace";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
+import { useTranslation } from "react-i18next";
 
 export type WorkspaceByVertexId = Record<Id, Workspace>;
 
@@ -12,6 +13,7 @@ export const useVertices = (workspaces: Workspace[] | undefined) => {
     React.useState<WorkspaceByVertexId>({});
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const { t } = useTranslation("common");
 
   const loadVertices = React.useCallback(async () => {
     if (!workspaces || workspaces.length === 0) {
@@ -43,7 +45,7 @@ export const useVertices = (workspaces: Workspace[] | undefined) => {
       setWorkspaceByVertexId(nextWorkspaceByVertexId);
     } catch (err) {
       console.error("Failed to load vertices:", err);
-      setError(err instanceof Error ? err.message : "Failed to load vertices.");
+      setError(err instanceof Error ? err.message : t("errors.loadVertices"));
       setVertices([]);
       setWorkspaceByVertexId({});
     } finally {

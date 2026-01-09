@@ -17,6 +17,7 @@ import type { Workspace } from "@/core/workspace";
 import type { Vertex } from "@/core/vertex";
 import type { VertexKind } from "@/core/common/vertexKind";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
+import { useTranslation } from "react-i18next";
 import {
   CreateVertexDialog,
   DeleteVertexDialog,
@@ -40,6 +41,7 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
   onDeleteProject,
   onChanged,
 }) => {
+  const { t } = useTranslation("common");
   const [fabAnchor, setFabAnchor] = React.useState<HTMLElement | null>(null);
   const popoverOpen = Boolean(fabAnchor);
   const fabRef = React.useRef<CreateFabHandle | null>(null);
@@ -92,7 +94,7 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
 
   const handleCreate = async (data: CreateVertexForm) => {
     if (!selectedWorkspace) {
-      setError("Select a workspace first.");
+      setError(t("projects.errors.selectWorkspace"));
       return;
     }
     try {
@@ -116,7 +118,7 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
       setSelectedWorkspace(null);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to create project."
+        err instanceof Error ? err.message : t("projects.errors.create")
       );
     }
   };
@@ -147,7 +149,7 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
             }}
           >
             <Typography color="text.secondary" align="center">
-              No projects yet. Create one to get started.
+              {t("projects.empty")}
             </Typography>
           </Box>
         ) : (
@@ -166,7 +168,7 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
       <CreateFab
         ref={fabRef}
         onClick={openPopover}
-        title="Create project"
+        title={t("projects.create")}
         sx={{ position: "absolute", bottom: 20, right: 20 }}
       />
 
@@ -180,8 +182,8 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
         onSubmit={handleCreate}
         workspaceLabel={selectedWorkspace?.name}
         defaultKind={defaultKind}
-        submitLabel="Create project"
-        title="Create project"
+        submitLabel={t("projects.create")}
+        title={t("projects.create")}
       />
       {error && (
         <Typography color="error" variant="body2" sx={{ px: 2, pt: 1 }}>
@@ -197,7 +199,7 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
           if (confirmDelete) onDeleteProject(confirmDelete.vertex.id);
           setConfirmDelete(null);
         }}
-        entityLabel="project"
+        entityLabel={t("projects.entityLabel")}
       />
 
       <Popover
@@ -224,7 +226,7 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
             fullWidth
             value={workspaceQuery}
             onChange={(e) => setWorkspaceQuery(e.target.value)}
-            placeholder="Search workspaces…"
+            placeholder={t("projects.searchPlaceholder")}
             autoFocus
           />
         </Box>
@@ -236,7 +238,7 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
             {filteredWorkspaces.length === 0 ? (
               <Box sx={{ p: 1.5 }}>
                 <Typography variant="body2" color="text.secondary">
-                  No workspaces found.
+                  {t("projects.noWorkspaces")}
                 </Typography>
               </Box>
             ) : (
