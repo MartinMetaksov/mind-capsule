@@ -78,24 +78,30 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
             label={t("workspaces.fields.name")}
             fullWidth
             value={data.name}
-            onChange={(e) => setData((prev) => ({ ...prev, name: e.target.value }))}
-            InputLabelProps={{ shrink: true }}
+            onChange={(e) =>
+              setData((prev) => ({ ...prev, name: e.target.value }))
+            }
+            slotProps={{ inputLabel: { shrink: true } }}
           />
           <TextField
             label={t("workspaces.fields.purpose")}
             fullWidth
             value={data.purpose}
-            onChange={(e) => setData((prev) => ({ ...prev, purpose: e.target.value }))}
-            InputLabelProps={{ shrink: true }}
+            onChange={(e) =>
+              setData((prev) => ({ ...prev, purpose: e.target.value }))
+            }
+            slotProps={{ inputLabel: { shrink: true } }}
           />
           <TextField
             label={t("workspaces.fields.path")}
             fullWidth
             value={data.path}
-            onChange={(e) => setData((prev) => ({ ...prev, path: e.target.value }))}
-            InputLabelProps={{ shrink: true }}
-            InputProps={
-              onPickPath
+            onChange={(e) =>
+              setData((prev) => ({ ...prev, path: e.target.value }))
+            }
+            slotProps={{
+              inputLabel: { shrink: true },
+              input: onPickPath
                 ? {
                     endAdornment: (
                       <Button
@@ -111,8 +117,8 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
                       </Button>
                     ),
                   }
-                : undefined
-            }
+                : undefined,
+            }}
           />
           {(formError || error) && (
             <Typography color="error" variant="body2">

@@ -74,11 +74,13 @@ export const SettingsDialog: React.FC<Props> = ({
       onClose={onClose}
       fullWidth
       maxWidth="md"
-      PaperProps={{
-        sx: {
-          minHeight: "60vh",
-          maxHeight: "70vh",
-          height: "70vh",
+      slotProps={{
+        paper: {
+          sx: {
+            minHeight: "60vh",
+            maxHeight: "70vh",
+            height: "70vh",
+          },
         },
       }}
     >

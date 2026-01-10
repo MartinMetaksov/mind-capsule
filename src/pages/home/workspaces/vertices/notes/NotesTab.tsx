@@ -180,8 +180,10 @@ export const NotesTab: React.FC<NotesTabProps> = ({
               <ListItemText
                 primary={t("notesTab.revisionLabel", { number: idx + 1 })}
                 secondary={created}
-                primaryTypographyProps={{ noWrap: true }}
-                secondaryTypographyProps={{ noWrap: true }}
+                slotProps={{
+                  primary: { noWrap: true },
+                  secondary: { noWrap: true },
+                }}
               />
               <IconButton
                 edge="end"
@@ -349,14 +351,9 @@ export const NotesTab: React.FC<NotesTabProps> = ({
                 onChange={(e) => setDraft(e.target.value)}
                 onBlur={handleAutoSave}
                 placeholder={t("notesTab.placeholder")}
-                InputLabelProps={{ shrink: true }}
+                slotProps={{ inputLabel: { shrink: true }, input: { sx: { alignItems: "flex-start" } } }}
                 minRows={12}
                 sx={{ flex: 1 }}
-                InputProps={{
-                  sx: {
-                    alignItems: "flex-start",
-                  },
-                }}
               />
             )}
           </Box>

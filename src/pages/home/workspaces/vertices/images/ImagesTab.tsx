@@ -171,9 +171,7 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
         }}
         onClick={() => fileInputRef.current?.click()}
       >
-        <Typography>
-          {t("imagesTab.dropzone")}
-        </Typography>
+        <Typography>{t("imagesTab.dropzone")}</Typography>
         <input
           ref={fileInputRef}
           type="file"
@@ -271,7 +269,9 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
         maxWidth="sm"
       >
         <DialogTitle>{t("imagesTab.editTitle")}</DialogTitle>
-        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        <DialogContent
+          sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+        >
           {selectedIdx !== null && (
             <Box
               component="img"
@@ -284,7 +284,7 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
             label={t("imagesTab.alt")}
             value={alt}
             onChange={(e) => setAlt(e.target.value)}
-            InputLabelProps={{ shrink: true }}
+            slotProps={{ inputLabel: { shrink: true } }}
           />
           <TextField
             label={t("imagesTab.descriptionLabel")}
@@ -292,11 +292,13 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
             onChange={(e) => setDescription(e.target.value)}
             multiline
             minRows={2}
-            InputLabelProps={{ shrink: true }}
+            slotProps={{ inputLabel: { shrink: true } }}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>{t("commonActions.cancel")}</Button>
+          <Button onClick={() => setDialogOpen(false)}>
+            {t("commonActions.cancel")}
+          </Button>
           <Button variant="contained" onClick={handleDialogSave}>
             {t("commonActions.save")}
           </Button>

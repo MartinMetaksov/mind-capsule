@@ -180,7 +180,7 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           fullWidth
-          InputLabelProps={{ shrink: true }}
+          slotProps={{ inputLabel: { shrink: true } }}
         />
 
         <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
@@ -190,7 +190,7 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
             value={kind}
             onChange={(e) => setKind(e.target.value as VertexKind)}
             fullWidth
-            InputLabelProps={{ shrink: true }}
+            slotProps={{ inputLabel: { shrink: true } }}
           >
             {kindOptions.map((opt) => (
               <MenuItem key={opt.value} value={opt.value}>
@@ -205,7 +205,7 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
             value={defaultTab}
             onChange={(e) => setDefaultTab(e.target.value as VertexTabId)}
             fullWidth
-            InputLabelProps={{ shrink: true }}
+            slotProps={{ inputLabel: { shrink: true } }}
           >
             {tabOptions.map((opt) => (
               <MenuItem key={opt.value} value={opt.value}>
@@ -222,15 +222,17 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
             value={isLeaf ? "yes" : "no"}
             onChange={(e) => setIsLeaf(e.target.value === "yes")}
             fullWidth
-            InputLabelProps={{ shrink: true }}
-            InputProps={{
-              endAdornment: (
-                <Tooltip title={t("propertiesTab.leaf.tooltip")}>
-                  <Typography component="span" sx={{ ml: 1, color: "text.secondary" }}>
-                    ?
-                  </Typography>
-                </Tooltip>
-              ),
+            slotProps={{
+              inputLabel: { shrink: true },
+              input: {
+                endAdornment: (
+                  <Tooltip title={t("propertiesTab.leaf.tooltip")}>
+                    <Typography component="span" sx={{ ml: 1, color: "text.secondary" }}>
+                      ?
+                    </Typography>
+                  </Tooltip>
+                ),
+              },
             }}
           >
             <MenuItem value="no">{t("propertiesTab.leaf.no")}</MenuItem>
@@ -247,7 +249,7 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
               }))
             }
             fullWidth
-            InputLabelProps={{ shrink: true }}
+            slotProps={{ inputLabel: { shrink: true } }}
             placeholder={t("propertiesTab.children.placeholder")}
           />
 
@@ -262,7 +264,7 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
               }))
             }
             fullWidth
-            InputLabelProps={{ shrink: true }}
+            slotProps={{ inputLabel: { shrink: true } }}
           >
             {childDisplayOptions.map((opt) => (
               <MenuItem key={opt.value} value={opt.value}>

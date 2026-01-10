@@ -155,6 +155,7 @@
       "selectWorkspace": "Select a workspace first.",
       "create": "Failed to create project."
     },
+    "addToWorkspace": "Add project to workspace",
     "empty": "No projects yet. Create one to get started.",
     "create": "Create project",
     "entityLabel": "project",

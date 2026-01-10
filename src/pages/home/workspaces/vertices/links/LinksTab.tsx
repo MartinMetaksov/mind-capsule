@@ -134,7 +134,7 @@ export const LinksTab: React.FC<LinksTabProps> = ({
             inputRef={urlRef}
             fullWidth
             size="small"
-            InputLabelProps={{ shrink: true }}
+            slotProps={{ inputLabel: { shrink: true } }}
             placeholder={t("linksTab.urlPlaceholder")}
             disabled={saving}
             type="url"
@@ -146,7 +146,7 @@ export const LinksTab: React.FC<LinksTabProps> = ({
             onKeyDown={handleKeyDown}
             fullWidth
             size="small"
-            InputLabelProps={{ shrink: true }}
+            slotProps={{ inputLabel: { shrink: true } }}
             placeholder={t("linksTab.titlePlaceholder")}
             disabled={saving}
           />
