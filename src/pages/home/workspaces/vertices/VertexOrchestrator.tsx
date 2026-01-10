@@ -175,9 +175,21 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
     [vertexTabs]
   );
 
+  const resolveToAvailable = React.useCallback(
+    (preferred?: VertexTabId | null): VertexTab => {
+      if (preferred && availableTabValues.includes(preferred as VertexTab)) {
+        return preferred as VertexTab;
+      }
+      return availableTabValues[0] ?? "properties";
+    },
+    [availableTabValues]
+  );
+
+  const safeTab = React.useMemo(() => resolveToAvailable(tab), [resolveToAvailable, tab]);
+
   React.useEffect(() => {
-    setTab(resolveInitialTab());
-  }, [resolveInitialTab, currentVertex.id]);
+    setTab(resolveToAvailable(resolveInitialTab()));
+  }, [currentVertex.id, resolveInitialTab, resolveToAvailable]);
 
   // Apply tab query param once (then strip it)
   React.useEffect(() => {
@@ -187,14 +199,12 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
       return;
     }
     params.delete("tab");
-    if (availableTabValues.includes(queryTab as VertexTab)) {
-      setTab(queryTab as VertexTab);
-    }
+    setTab(resolveToAvailable(queryTab));
     navigate(
       { pathname: location.pathname, search: params.toString() },
       { replace: true }
     );
-  }, [availableTabValues, location.pathname, location.search, navigate]);
+  }, [availableTabValues, location.pathname, location.search, navigate, resolveToAvailable]);
 
   React.useEffect(() => {
     const shortcuts = [
@@ -269,7 +279,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
             overflow: "hidden",
           })}
         >
-          <VerticalTabs value={tab} onChange={setTab} items={vertexTabs} />
+          <VerticalTabs value={safeTab} onChange={setTab} items={vertexTabs} />
         </Box>
 
         {/* MAIN CANVAS */}
@@ -306,7 +316,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
               }}
             >
               {/* TAB CONTENTS (no big rounded wrapper) */}
-              {tab === "children" && (
+              {safeTab === "children" && (
                 <ChildrenTab
                   label={childrenLabel}
                   vertex={currentVertex}
@@ -315,7 +325,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
                 />
               )}
 
-              {tab === "properties" && (
+              {safeTab === "properties" && (
                 <PropertiesTab
                   vertex={currentVertex}
                   workspace={workspace}
@@ -331,7 +341,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
                 />
               )}
 
-              {tab === "tags" && (
+              {safeTab === "tags" && (
                 <TagsTab
                   vertex={currentVertex}
                   onVertexUpdated={(v) => {
@@ -341,7 +351,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
                 />
               )}
 
-              {tab === "notes" && (
+              {safeTab === "notes" && (
                 <NotesTab
                   vertex={currentVertex}
                   onVertexUpdated={(v) => {
@@ -351,7 +361,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
                 />
               )}
 
-              {tab === "images" && (
+              {safeTab === "images" && (
                 <ImagesTab
                   vertex={currentVertex}
                   onVertexUpdated={(v) => {
@@ -361,7 +371,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
                 />
               )}
 
-              {tab === "urls" && (
+              {safeTab === "urls" && (
                 <LinksTab
                   vertex={currentVertex}
                   onVertexUpdated={(v) => {
