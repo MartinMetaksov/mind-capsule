@@ -19,7 +19,9 @@ export default function App() {
     >
       <I18nextProvider i18n={i18n}>
         <ThemeModeProvider>
-          <BrowserRouter>
+          <BrowserRouter
+            future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+          >
             <Routes>
               <Route path="/" element={<Home />}>
                 <Route index element={<WorkspaceOrchestrator />} />
