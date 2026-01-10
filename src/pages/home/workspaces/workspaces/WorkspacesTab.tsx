@@ -6,16 +6,9 @@ import {
   Stack,
   IconButton,
   Tooltip,
-  TextField,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
 } from "@mui/material";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
-import FolderOpenRoundedIcon from "@mui/icons-material/FolderOpenRounded";
 
 import type { Workspace } from "@/core/workspace";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
@@ -23,6 +16,11 @@ import { CreateFab, type CreateFabHandle } from "../components/CreateFab";
 import { detectOperatingSystem } from "@/utils/os";
 import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
 import { useTranslation } from "react-i18next";
+import {
+  WorkspaceDialog,
+  DeleteWorkspaceDialog,
+  WorkspaceFormData,
+} from "../components/WorkspaceDialogs";
 
 type WorkspacesTabProps = {
   workspaces: Workspace[];
@@ -71,37 +69,34 @@ export const WorkspacesTab: React.FC<WorkspacesTabProps> = ({
     try {
       const fs = await getFileSystem();
       const selected = await fs.selectWorkspaceDirectory();
-      if (!selected) return;
-      setEditing((prev) => ({ ...prev, path: selected }));
+      return selected;
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to select directory."
+        err instanceof Error ? err.message : t("workspaces.errors.selectDirectory")
       );
+      return null;
     }
   };
 
-  const saveWorkspace = async () => {
+  const saveWorkspace = async (data: WorkspaceFormData) => {
     try {
       setError(null);
       const fs = await getFileSystem();
-      if (!editing.name || !editing.path) {
-        setError(t("workspaces.errors.required"));
-        return;
-      }
-
       const now = new Date().toISOString();
-      if (editing.id) {
+      if (data.id) {
         const ws: Workspace = {
-          ...(editing as Workspace),
+          ...(data as Workspace),
           updated_at: now,
+          created_at: editing.created_at ?? now,
+          tags: editing.tags ?? [],
         };
         await fs.updateWorkspace(ws);
       } else {
         const ws: Workspace = {
           id: crypto.randomUUID(),
-          name: editing.name,
-          path: editing.path,
-          purpose: editing.purpose ?? "",
+          name: data.name,
+          path: data.path,
+          purpose: data.purpose ?? "",
           created_at: now,
           updated_at: now,
           tags: [],
@@ -215,92 +210,30 @@ export const WorkspacesTab: React.FC<WorkspacesTabProps> = ({
         ))}
       </Box>
 
-      <Dialog open={editorOpen} onClose={closeEditor} fullWidth maxWidth="sm">
-        <DialogTitle>
-          {editing.id ? t("workspaces.editTitle") : t("workspaces.createTitle")}
-        </DialogTitle>
-        <DialogContent>
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 2,
-              pt: 2,
-              pb: 1,
-            }}
-          >
-            <TextField
-              label={t("workspaces.fields.name")}
-              fullWidth
-              value={editing.name ?? ""}
-              onChange={(e) =>
-                setEditing((prev) => ({ ...prev, name: e.target.value }))
-              }
-              InputLabelProps={{ shrink: true }}
-            />
-            <TextField
-              label={t("workspaces.fields.purpose")}
-              fullWidth
-              value={editing.purpose ?? ""}
-              onChange={(e) =>
-                setEditing((prev) => ({ ...prev, purpose: e.target.value }))
-              }
-              InputLabelProps={{ shrink: true }}
-            />
-            <Stack direction="row" spacing={1} alignItems="center">
-              <TextField
-                label={t("workspaces.fields.path")}
-                fullWidth
-                value={editing.path ?? ""}
-                onChange={(e) =>
-                  setEditing((prev) => ({ ...prev, path: e.target.value }))
-                }
-                InputLabelProps={{ shrink: true }}
-              />
-              <Tooltip title={t("workspaces.actions.selectDirectory")}>
-                <IconButton onClick={handlePickPath}>
-                  <FolderOpenRoundedIcon />
-                </IconButton>
-              </Tooltip>
-            </Stack>
-            {error && (
-              <Typography color="error" variant="body2">
-                {error}
-              </Typography>
-            )}
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeEditor}>{t("commonActions.cancel")}</Button>
-          <Button variant="contained" onClick={saveWorkspace}>
-            {editing.id ? t("commonActions.save") : t("commonActions.create")}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <WorkspaceDialog
+        open={editorOpen}
+        initial={
+          editing.name && editing.path
+            ? {
+              id: editing.id,
+              name: editing.name,
+              path: editing.path,
+              purpose: editing.purpose ?? "",
+            }
+            : undefined
+        }
+        error={error}
+        onClose={closeEditor}
+        onSubmit={saveWorkspace}
+        onPickPath={handlePickPath}
+      />
 
-      <Dialog
+      <DeleteWorkspaceDialog
         open={Boolean(confirmDelete)}
-        onClose={() => setConfirmDelete(null)}
-        fullWidth
-        maxWidth="xs"
-      >
-        <DialogTitle>{t("workspaces.deleteTitle")}</DialogTitle>
-        <DialogContent>
-          <Typography>
-            {t("workspaces.deleteConfirm", {
-              name: confirmDelete?.name ?? t("workspaces.deleteFallback"),
-            })}
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfirmDelete(null)}>
-            {t("commonActions.cancel")}
-          </Button>
-          <Button color="error" variant="contained" onClick={removeWorkspace}>
-            {t("commonActions.delete")}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        name={confirmDelete?.name}
+        onCancel={() => setConfirmDelete(null)}
+        onConfirm={removeWorkspace}
+      />
 
       <CreateFab
         ref={fabRef}

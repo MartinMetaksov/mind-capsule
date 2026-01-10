@@ -42,14 +42,8 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
   onChanged,
 }) => {
   const { t } = useTranslation("common");
-  const [fabAnchor, setFabAnchor] = React.useState<HTMLElement | null>(null);
-  const popoverOpen = Boolean(fabAnchor);
   const fabRef = React.useRef<CreateFabHandle | null>(null);
-  const openPopover = (e: React.MouseEvent<HTMLElement>) =>
-    setFabAnchor(e.currentTarget);
-  const closePopover = () => setFabAnchor(null);
-
-  const [workspaceQuery, setWorkspaceQuery] = React.useState("");
+  const [fabAnchor, setFabAnchor] = React.useState<HTMLElement | null>(null);
   const [editorOpen, setEditorOpen] = React.useState(false);
   const [selectedWorkspace, setSelectedWorkspace] =
     React.useState<Workspace | null>(null);
@@ -57,16 +51,13 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
   const [confirmDelete, setConfirmDelete] = React.useState<VertexItem | null>(
     null,
   );
+  const [workspaceQuery, setWorkspaceQuery] = React.useState("");
   const defaultKind: VertexKind = "project";
   const os = React.useMemo(() => detectOperatingSystem(), []);
   const createShortcut = React.useMemo(
     () => getShortcut("createVertex", os),
     [os],
   );
-
-  React.useEffect(() => {
-    if (!popoverOpen) setWorkspaceQuery("");
-  }, [popoverOpen]);
 
   const filteredWorkspaces = React.useMemo(() => {
     const q = workspaceQuery.trim().toLowerCase();
@@ -78,14 +69,15 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
     setSelectedWorkspace(ws);
     setEditorOpen(true);
     setError(null);
-    closePopover();
+    setFabAnchor(null);
   };
 
   React.useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (matchesShortcut(e, createShortcut)) {
         e.preventDefault();
-        fabRef.current?.click();
+        const buttonEl = fabRef.current?.button;
+        setFabAnchor(buttonEl ?? document.body);
       }
     };
     window.addEventListener("keydown", handler);
@@ -167,7 +159,7 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
 
       <CreateFab
         ref={fabRef}
-        onClick={openPopover}
+        onClick={(e) => setFabAnchor(e.currentTarget)}
         title={t("projects.create")}
         sx={{ position: "absolute", bottom: 20, right: 20 }}
       />
@@ -201,11 +193,10 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
         }}
         entityLabel={t("projects.entityLabel")}
       />
-
       <Popover
-        open={popoverOpen}
+        open={Boolean(fabAnchor)}
         anchorEl={fabAnchor}
-        onClose={closePopover}
+        onClose={() => setFabAnchor(null)}
         anchorOrigin={{ vertical: "top", horizontal: "left" }}
         transformOrigin={{ vertical: "bottom", horizontal: "right" }}
         PaperProps={{
@@ -218,7 +209,7 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
       >
         <Box sx={{ p: 1.25 }}>
           <Typography sx={{ fontWeight: 900, mb: 1 }}>
-            Add project to workspace
+            {t("projects.addToWorkspace")}
           </Typography>
 
           <TextField

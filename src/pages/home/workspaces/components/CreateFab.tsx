@@ -4,6 +4,7 @@ import AddRoundedIcon from "@mui/icons-material/AddRounded";
 
 export type CreateFabHandle = {
   click: () => void;
+  button: HTMLButtonElement | null;
 };
 
 type CreateFabProps = {
@@ -18,6 +19,7 @@ export const CreateFab = React.forwardRef<CreateFabHandle, CreateFabProps>(
 
     React.useImperativeHandle(ref, () => ({
       click: () => buttonRef.current?.click(),
+      button: buttonRef.current,
     }));
 
     return (

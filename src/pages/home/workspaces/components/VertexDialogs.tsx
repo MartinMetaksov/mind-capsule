@@ -5,7 +5,6 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogContentText,
   DialogTitle,
   MenuItem,
   Paper,
@@ -13,8 +12,7 @@ import {
   Typography,
 } from "@mui/material";
 import type { VertexKind } from "@/core/common/vertexKind";
-import { detectOperatingSystem } from "@/utils/os";
-import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
+import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
 import { useTranslation } from "react-i18next";
 
 export type CreateVertexForm = {
@@ -156,7 +154,9 @@ export const CreateVertexDialog: React.FC<CreateVertexDialogProps> = ({
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>{title}</DialogTitle>
-      <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 2, pb: 1 }}>
+      <DialogContent
+        sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 2, pb: 1 }}
+      >
         {workspaceLabel && (
           <Typography variant="body2" color="text.secondary">
             {t("vertexDialog.workspaceLabel", { workspace: workspaceLabel })}
@@ -167,7 +167,9 @@ export const CreateVertexDialog: React.FC<CreateVertexDialogProps> = ({
             label={t("vertexDialog.fields.title")}
             fullWidth
             value={form.title}
-            onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
+            onChange={(e) =>
+              setForm((prev) => ({ ...prev, title: e.target.value }))
+            }
             InputLabelProps={{ shrink: true }}
           />
           <TextField
@@ -176,7 +178,10 @@ export const CreateVertexDialog: React.FC<CreateVertexDialogProps> = ({
             fullWidth
             value={form.kind}
             onChange={(e) =>
-              setForm((prev) => ({ ...prev, kind: e.target.value as VertexKind }))
+              setForm((prev) => ({
+                ...prev,
+                kind: e.target.value as VertexKind,
+              }))
             }
             InputLabelProps={{ shrink: true }}
           >
@@ -188,7 +193,9 @@ export const CreateVertexDialog: React.FC<CreateVertexDialogProps> = ({
           </TextField>
           <ThumbnailPicker
             value={form.thumbnail}
-            onChange={(thumb) => setForm((prev) => ({ ...prev, thumbnail: thumb }))}
+            onChange={(thumb) =>
+              setForm((prev) => ({ ...prev, thumbnail: thumb }))
+            }
           />
         </Box>
         {error && (
@@ -223,47 +230,18 @@ export const DeleteVertexDialog: React.FC<DeleteVertexDialogProps> = ({
   entityLabel = "item",
 }) => {
   const { t } = useTranslation("common");
-  const os = React.useMemo(() => detectOperatingSystem(), []);
-  const confirmShortcut = React.useMemo(
-    () => getShortcut("confirmDelete", os),
-    [os]
-  );
-  const cancelShortcut = React.useMemo(
-    () => getShortcut("cancelDelete", os),
-    [os]
-  );
-
-  React.useEffect(() => {
-    if (!open) return;
-    const handler = (e: KeyboardEvent) => {
-      if (matchesShortcut(e, confirmShortcut)) {
-        e.preventDefault();
-        onConfirm();
-      } else if (matchesShortcut(e, cancelShortcut)) {
-        e.preventDefault();
-        onCancel();
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [cancelShortcut, confirmShortcut, open, onCancel, onConfirm]);
+  const title = t("vertexDialog.deleteTitle", { entity: entityLabel });
+  const message = t("vertexDialog.deletePrompt", {
+    name: name ?? t("vertexDialog.deleteFallback", { entity: entityLabel }),
+  });
 
   return (
-    <Dialog open={open} onClose={onCancel} fullWidth maxWidth="xs">
-      <DialogTitle>{t("vertexDialog.deleteTitle", { entity: entityLabel })}</DialogTitle>
-      <DialogContent>
-        <DialogContentText>
-          {t("vertexDialog.deletePrompt", {
-            name: name ?? t("vertexDialog.deleteFallback", { entity: entityLabel }),
-          })}
-        </DialogContentText>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onCancel}>{t("commonActions.cancel")}</Button>
-        <Button color="error" variant="contained" onClick={onConfirm}>
-          {t("commonActions.delete")}
-        </Button>
-      </DialogActions>
-    </Dialog>
+    <DeleteConfirmDialog
+      open={open}
+      title={title}
+      message={message}
+      onCancel={onCancel}
+      onConfirm={onConfirm}
+    />
   );
 };
