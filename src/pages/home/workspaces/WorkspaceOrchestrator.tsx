@@ -92,10 +92,11 @@ export const WorkspaceOrchestrator: React.FC = () => {
     const params = new URLSearchParams(location.search);
     const tabParam = params.get("tab") as RootTab | null;
     if (!tabParam) return;
+    const isRootTab = rootTabs.some((t) => t.value === tabParam);
+    if (!isRootTab) return;
+
+    setTab(tabParam);
     params.delete("tab");
-    if (rootTabs.some((t) => t.value === tabParam)) {
-      setTab(tabParam);
-    }
     navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
   }, [location.pathname, location.search, navigate, rootTabs]);
 
