@@ -18,7 +18,4 @@ export interface FileSystem {
   getVertex(vertex_id: Id): Promise<Vertex | null>;
   updateVertex(new_vertex: Vertex): Promise<void>;
   removeVertex(new_vertex: Vertex): Promise<void>;
-
-  // references
-  // TODO: implement
 }
