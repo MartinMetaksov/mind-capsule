@@ -8,8 +8,8 @@ import { APP_NAME } from "@/constants/appConstants";
 import { useThemeMode } from "@/utils/themes/hooks/useThemeMode";
 import { detectOperatingSystem } from "@/utils/os";
 import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
-import { SearchDialog } from "./SearchDialog";
-import { SettingsDialog } from "./SettingsDialog";
+import { SearchDialog } from "./search-dialog/SearchDialog";
+import { SettingsDialog } from "./settings-dialog/SettingsDialog";
 import { useTranslation } from "react-i18next";
 
 export const Header: React.FC = () => {

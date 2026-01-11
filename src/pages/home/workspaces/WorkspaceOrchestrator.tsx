@@ -4,19 +4,19 @@ import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
 import WorkspacesOutlinedIcon from "@mui/icons-material/WorkspacesOutlined";
 
 import { Loading } from "@/common/loading/Loading";
-import { useWorkspaces } from "./hooks/useWorkspaces";
+import { useWorkspaces } from "./hooks/use-workspaces/useWorkspaces";
 import { WorkspaceSetup } from "./workspace-setup/WorkspaceSetup";
-import { useVertices } from "./hooks/useVertices";
-import type { VertexItem } from "./vertices/VertexGrid";
+import { useVertices } from "./hooks/use-vertices/useVertices";
+import type { VertexItem } from "./vertices/vertex-grid/VertexGrid";
 import type { Workspace } from "@/core/workspace";
 import type { Vertex } from "@/core/vertex";
-import { BreadcrumbsTrail } from "./components/BreadcrumbsTrail";
-import { VerticalTabs } from "./components/VerticalTabs";
+import { BreadcrumbsTrail } from "./components/breadcrumbs-trail/BreadcrumbsTrail";
+import { VerticalTabs } from "./components/vertical-tabs/VerticalTabs";
 import { ProjectsTab } from "./projects/ProjectsTab";
 import { WorkspacesTab } from "./workspaces/WorkspacesTab";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
 import { useLocation, useNavigate } from "react-router-dom";
-import { VertexNotFound } from "./components/VertexNotFound";
+import { VertexNotFound } from "./components/vertex-not-found/VertexNotFound";
 
 import { VertexOrchestrator } from "./vertices/VertexOrchestrator";
 import { detectOperatingSystem } from "@/utils/os";

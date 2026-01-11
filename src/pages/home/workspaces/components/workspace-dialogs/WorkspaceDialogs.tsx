@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 import type { Workspace } from "@/core/workspace";
 import { useTranslation } from "react-i18next";
-import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
+import { DeleteConfirmDialog } from "../delete-confirm-dialog/DeleteConfirmDialog";
 
 export type WorkspaceFormData = Pick<Workspace, "name" | "path" | "purpose"> & {
   id?: string;

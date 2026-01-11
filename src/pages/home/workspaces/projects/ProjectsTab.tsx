@@ -9,8 +9,8 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { VertexGrid, VertexItem } from "../vertices/VertexGrid";
-import { CreateFab, type CreateFabHandle } from "../components/CreateFab";
+import { VertexGrid, VertexItem } from "../vertices/vertex-grid/VertexGrid";
+import { CreateFab, type CreateFabHandle } from "../components/create-fab/CreateFab";
 import { detectOperatingSystem } from "@/utils/os";
 import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
 import type { Workspace } from "@/core/workspace";
@@ -22,7 +22,7 @@ import {
   CreateVertexDialog,
   DeleteVertexDialog,
   CreateVertexForm,
-} from "../components/VertexDialogs";
+} from "../components/vertex-dialogs/VertexDialogs";
 
 type ProjectsTabProps = {
   title?: string;

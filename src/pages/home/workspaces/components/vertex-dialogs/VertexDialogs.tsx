@@ -12,7 +12,7 @@ import {
   Typography,
 } from "@mui/material";
 import type { VertexKind } from "@/core/common/vertexKind";
-import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
+import { DeleteConfirmDialog } from "../delete-confirm-dialog/DeleteConfirmDialog";
 import { useTranslation } from "react-i18next";
 
 export type CreateVertexForm = {

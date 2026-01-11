@@ -6,7 +6,7 @@ import {
   VertexNode,
   VERTEX_NODE_HEIGHT,
   VERTEX_NODE_WIDTH,
-} from "./VertexNode";
+} from "../vertex-node/VertexNode";
 
 export type VertexItem = {
   vertex: Vertex;

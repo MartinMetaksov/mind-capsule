@@ -1,13 +1,13 @@
 import * as React from "react";
 import { Box, Typography } from "@mui/material";
 
-import { VertexGrid, VertexItem } from "../VertexGrid";
-import { CreateFab, type CreateFabHandle } from "../../components/CreateFab";
+import { VertexGrid, VertexItem } from "../vertex-grid/VertexGrid";
+import { CreateFab, type CreateFabHandle } from "../../components/create-fab/CreateFab";
 import {
   CreateVertexDialog,
   DeleteVertexDialog,
   CreateVertexForm,
-} from "../../components/VertexDialogs";
+} from "../../components/vertex-dialogs/VertexDialogs";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
 import type { Vertex } from "@/core/vertex";
 import type { Workspace } from "@/core/workspace";

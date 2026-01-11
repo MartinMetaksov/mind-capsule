@@ -1,4 +1,3 @@
-import * as React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 import { I18nextProvider } from "react-i18next";
@@ -31,7 +30,10 @@ vi.mock("@/integrations/fileSystem/integration", () => ({
 
 // Seed localStorage the way the dialog expects
 const seedLocalStorage = () => {
-  localStorage.setItem("vertices:seed", JSON.stringify({ [vertex.id]: vertex }));
+  localStorage.setItem(
+    "vertices:seed",
+    JSON.stringify({ [vertex.id]: vertex })
+  );
 };
 
 const renderDialog = () =>
@@ -57,7 +59,9 @@ describe("SearchDialog", () => {
 
   it("shows empty state before typing", () => {
     renderDialog();
-    expect(screen.getByText(/Start typing to see results/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Start typing to see results/i)
+    ).toBeInTheDocument();
   });
 
   it("displays matching vertex and navigates on click", async () => {

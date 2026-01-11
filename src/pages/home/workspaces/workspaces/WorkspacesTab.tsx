@@ -12,7 +12,7 @@ import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 
 import type { Workspace } from "@/core/workspace";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
-import { CreateFab, type CreateFabHandle } from "../components/CreateFab";
+import { CreateFab, type CreateFabHandle } from "../components/create-fab/CreateFab";
 import { detectOperatingSystem } from "@/utils/os";
 import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
 import { useTranslation } from "react-i18next";
@@ -20,7 +20,7 @@ import {
   WorkspaceDialog,
   DeleteWorkspaceDialog,
   WorkspaceFormData,
-} from "../components/WorkspaceDialogs";
+} from "../components/workspace-dialogs/WorkspaceDialogs";
 
 type WorkspacesTabProps = {
   workspaces: Workspace[];

@@ -19,7 +19,7 @@ import type {
   ChildrenDisplayHint,
   VertexTabId,
 } from "@/core/vertex";
-import { ThumbnailPicker } from "../../components/VertexDialogs";
+import { ThumbnailPicker } from "../../components/vertex-dialogs/VertexDialogs";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
 import { useTranslation } from "react-i18next";
 

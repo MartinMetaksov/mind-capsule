@@ -13,13 +13,15 @@ vi.mock("@/utils/themes/hooks/useThemeMode", () => ({
   }),
 }));
 
-// Mock heavy child dialogs
-vi.mock("./SearchDialog", () => ({
-  SearchDialog: ({ open }: { open: boolean }) => (open ? <div>Search Dialog</div> : null),
+// Mock heavy child dialogs (note: path reflects header folder structure)
+vi.mock("./search-dialog/SearchDialog", () => ({
+  SearchDialog: ({ open }: { open: boolean }) => (
+    <div data-testid="search-dialog">{open ? "search-open" : "search-closed"}</div>
+  ),
 }));
-vi.mock("./SettingsDialog", () => ({
+vi.mock("./settings-dialog/SettingsDialog", () => ({
   SettingsDialog: ({ open }: { open: boolean }) =>
-    open ? <div>Settings Dialog</div> : null,
+    open ? <div>Settings Dialog</div> : <div data-testid="settings-dialog">settings-closed</div>,
 }));
 
 describe("Header", () => {
@@ -35,7 +37,7 @@ describe("Header", () => {
     expect(screen.getByText(/Mind Capsule/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /Search/i }));
-    expect(screen.getByText(/Search Dialog/i)).toBeInTheDocument();
+    expect(screen.getByTestId("search-dialog")).toHaveTextContent("search-open");
 
     fireEvent.click(screen.getByRole("button", { name: /Settings/i }));
     expect(screen.getByText(/Settings Dialog/i)).toBeInTheDocument();
