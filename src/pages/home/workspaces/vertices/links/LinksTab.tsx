@@ -206,6 +206,7 @@ export const LinksTab: React.FC<LinksTabProps> = ({
                 <IconButton
                   size="small"
                   color="error"
+                  aria-label={t("commonActions.delete")}
                   onClick={() => handleRemove(idx)}
                   disabled={saving}
                 >

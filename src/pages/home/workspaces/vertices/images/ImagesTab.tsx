@@ -241,6 +241,7 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
                 <IconButton
                   size="small"
                   sx={{ color: "error.light" }}
+                  aria-label={t("commonActions.delete")}
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDelete(idx);

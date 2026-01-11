@@ -45,6 +45,7 @@ export const VertexNode: React.FC<VertexNodeProps> = ({
         <Paper
           onClick={handleClick}
           role="button"
+          aria-label={vertex.title}
           tabIndex={0}
           elevation={selected ? 6 : 1}
           sx={(theme) => ({
@@ -107,6 +108,7 @@ export const VertexNode: React.FC<VertexNodeProps> = ({
                 right: 8,
                 bgcolor: "background.paper",
               }}
+              aria-label="delete"
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete(vertex);

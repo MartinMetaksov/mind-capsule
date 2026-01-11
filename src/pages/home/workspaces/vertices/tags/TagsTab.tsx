@@ -149,7 +149,13 @@ export const TagsTab: React.FC<TagsTabProps> = ({ vertex, onVertexUpdated }) => 
               size="small"
               variant="outlined"
               onDelete={saving ? undefined : () => handleRemove(tag)}
-              deleteIcon={<ClearIcon fontSize="small" />}
+              deleteIcon={
+                <ClearIcon
+                  fontSize="small"
+                  data-testid={`delete-tag-${tag}`}
+                  aria-label={`delete-tag-${tag}`}
+                />
+              }
             />
           ))}
         </Box>
