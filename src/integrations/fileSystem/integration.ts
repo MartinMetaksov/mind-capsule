@@ -11,9 +11,8 @@ export async function getFileSystem(): Promise<FileSystem> {
   try {
     const { isTauri } = await import("@tauri-apps/api/core");
     if (isTauri()) {
-      // const mod = await import("./tauri/fileSystem");
-      // return mod.fileSystem;
-      throw Error("Not implemented yet.");
+      const mod = await import("./tauri/fileSystem");
+      return mod.fileSystem;
     }
   } catch {
     // ignore; not running in Tauri

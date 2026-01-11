@@ -6,11 +6,16 @@ pub fn run() {
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
-            commands::workspace_init_if_missing,
-            commands::projects_list,
-            commands::project_create,
-            commands::note_read,
-            commands::note_write
+            commands::fs_create_workspace,
+            commands::fs_update_workspace,
+            commands::fs_remove_workspace,
+            commands::fs_pick_workspace_dir,
+            commands::fs_create_vertex,
+            commands::fs_get_vertices,
+            commands::fs_get_root_vertices,
+            commands::fs_get_vertex,
+            commands::fs_update_vertex,
+            commands::fs_remove_vertex
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {
