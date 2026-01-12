@@ -6,18 +6,15 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  MenuItem,
   Paper,
   TextField,
   Typography,
 } from "@mui/material";
-import type { VertexKind } from "@/core/common/vertexKind";
 import { DeleteConfirmDialog } from "../delete-confirm-dialog/DeleteConfirmDialog";
 import { useTranslation } from "react-i18next";
 
 export type CreateVertexForm = {
   title: string;
-  kind: VertexKind;
   thumbnail?: string;
 };
 
@@ -26,7 +23,6 @@ type CreateVertexDialogProps = {
   onClose: () => void;
   onSubmit: (data: CreateVertexForm) => void;
   workspaceLabel?: string;
-  defaultKind?: VertexKind;
   submitLabel?: string;
   title?: string;
 };
@@ -125,23 +121,21 @@ export const CreateVertexDialog: React.FC<CreateVertexDialogProps> = ({
   onClose,
   onSubmit,
   workspaceLabel,
-  defaultKind = "project",
   submitLabel = "Create",
   title = "Create item",
 }) => {
   const { t } = useTranslation("common");
   const [form, setForm] = React.useState<CreateVertexForm>({
     title: "",
-    kind: defaultKind,
   });
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (open) {
-      setForm({ title: "", kind: defaultKind });
+      setForm({ title: "" });
       setError(null);
     }
-  }, [defaultKind, open]);
+  }, [open]);
 
   const handleSubmit = () => {
     if (!form.title.trim()) {
@@ -172,25 +166,6 @@ export const CreateVertexDialog: React.FC<CreateVertexDialogProps> = ({
             }
             InputLabelProps={{ shrink: true }}
           />
-          <TextField
-            label={t("vertexDialog.fields.kind")}
-            select
-            fullWidth
-            value={form.kind}
-            onChange={(e) =>
-              setForm((prev) => ({
-                ...prev,
-                kind: e.target.value as VertexKind,
-              }))
-            }
-            InputLabelProps={{ shrink: true }}
-          >
-            <MenuItem value="project">{t("vertexKinds.project")}</MenuItem>
-            <MenuItem value="chapter">{t("vertexKinds.chapter")}</MenuItem>
-            <MenuItem value="section">{t("vertexKinds.section")}</MenuItem>
-            <MenuItem value="note">{t("vertexKinds.note")}</MenuItem>
-            <MenuItem value="generic">{t("vertexKinds.generic")}</MenuItem>
-          </TextField>
           <ThumbnailPicker
             value={form.thumbnail}
             onChange={(thumb) =>

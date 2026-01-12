@@ -63,11 +63,9 @@ describe("inMemoryFileSystemMock", () => {
       title: "Root",
       parent_id: undefined,
       workspace_id: ws.id,
-      kind: "project",
       created_at: "2024-01-01T00:00:00.000Z",
       updated_at: "2024-01-01T00:00:00.000Z",
       tags: [],
-      references: [],
       children_behavior: { child_kind: "item", display: "grid" },
     };
     await fs.createVertex(vertex);

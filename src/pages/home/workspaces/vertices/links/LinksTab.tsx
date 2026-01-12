@@ -15,23 +15,24 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 
 import type { Vertex } from "@/core/vertex";
 import type { Reference } from "@/core/common/reference";
-import { getFileSystem } from "@/integrations/fileSystem/integration";
 import { useTranslation } from "react-i18next";
 
 type LinksTabProps = {
   vertex: Vertex;
-  onVertexUpdated?: (vertex: Vertex) => Promise<void> | void;
+  references?: Reference[];
+  onReferencesUpdated?: (references: Reference[]) => Promise<void> | void;
 };
 
 type UrlRef = Extract<Reference, { type: "url" }>;
 
 export const LinksTab: React.FC<LinksTabProps> = ({
   vertex,
-  onVertexUpdated,
+  references = [],
+  onReferencesUpdated,
 }) => {
   const { t } = useTranslation("common");
   const [links, setLinks] = React.useState<UrlRef[]>(
-    (vertex.references ?? []).filter((r): r is UrlRef => r.type === "url")
+    references.filter((r): r is UrlRef => r.type === "url")
   );
   const [url, setUrl] = React.useState("");
   const [title, setTitle] = React.useState("");
@@ -47,26 +48,20 @@ export const LinksTab: React.FC<LinksTabProps> = ({
 
   React.useEffect(() => {
     setLinks(
-      (vertex.references ?? []).filter((r): r is UrlRef => r.type === "url")
+      references.filter((r): r is UrlRef => r.type === "url")
     );
     setError(null);
     focusUrl();
-  }, [vertex, focusUrl]);
+  }, [references, vertex, focusUrl]);
 
   const persistLinks = async (nextLinks: UrlRef[]) => {
     setSaving(true);
     setError(null);
     try {
-      const others = (vertex.references ?? []).filter((r) => r.type !== "url");
-      const updated: Vertex = {
-        ...vertex,
-        references: [...others, ...nextLinks],
-        updated_at: new Date().toISOString(),
-      };
-      const fs = await getFileSystem();
-      await fs.updateVertex(updated);
+      const others = references.filter((r) => r.type !== "url");
+      const updated = [...others, ...nextLinks];
+      await onReferencesUpdated?.(updated);
       setLinks(nextLinks);
-      await onVertexUpdated?.(updated);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("linksTab.errors.update"));
     } finally {

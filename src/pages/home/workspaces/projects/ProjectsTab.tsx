@@ -15,7 +15,6 @@ import { detectOperatingSystem } from "@/utils/os";
 import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
 import type { Workspace } from "@/core/workspace";
 import type { Vertex } from "@/core/vertex";
-import type { VertexKind } from "@/core/common/vertexKind";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
 import { useTranslation } from "react-i18next";
 import {
@@ -52,7 +51,6 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
     null,
   );
   const [workspaceQuery, setWorkspaceQuery] = React.useState("");
-  const defaultKind: VertexKind = "project";
   const os = React.useMemo(() => detectOperatingSystem(), []);
   const createShortcut = React.useMemo(
     () => getShortcut("createVertex", os),
@@ -97,7 +95,6 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
         title: data.title,
         parent_id: undefined,
         workspace_id: selectedWorkspace.id,
-        kind: data.kind,
         default_tab: "children",
         created_at: now,
         updated_at: now,
@@ -173,7 +170,6 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
         }}
         onSubmit={handleCreate}
         workspaceLabel={selectedWorkspace?.name}
-        defaultKind={defaultKind}
         submitLabel={t("projects.create")}
         title={t("projects.create")}
       />

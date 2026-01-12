@@ -16,23 +16,24 @@ import ZoomInIcon from "@mui/icons-material/ZoomIn";
 
 import type { Vertex } from "@/core/vertex";
 import type { Reference } from "@/core/common/reference";
-import { getFileSystem } from "@/integrations/fileSystem/integration";
 import { useTranslation } from "react-i18next";
 
 type ImageRef = Extract<Reference, { type: "image" }>;
 
 type ImagesTabProps = {
   vertex: Vertex;
-  onVertexUpdated?: (vertex: Vertex) => Promise<void> | void;
+  references?: Reference[];
+  onReferencesUpdated?: (references: Reference[]) => Promise<void> | void;
 };
 
 export const ImagesTab: React.FC<ImagesTabProps> = ({
   vertex,
-  onVertexUpdated,
+  references = [],
+  onReferencesUpdated,
 }) => {
   const { t } = useTranslation("common");
   const [images, setImages] = React.useState<ImageRef[]>(
-    (vertex.references ?? []).filter((r): r is ImageRef => r.type === "image")
+    references.filter((r): r is ImageRef => r.type === "image")
   );
   const [dragging, setDragging] = React.useState(false);
   const [dialogOpen, setDialogOpen] = React.useState(false);
@@ -43,26 +44,18 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
   React.useEffect(() => {
-    const imgs = (vertex.references ?? []).filter(
-      (r): r is ImageRef => r.type === "image"
-    );
+    const imgs = references.filter((r): r is ImageRef => r.type === "image");
     setImages(imgs);
     setSelectedIdx(null);
     setDialogOpen(false);
     setError(null);
-  }, [vertex]);
+  }, [references, vertex]);
 
   const persistImages = async (next: ImageRef[]) => {
-    const others = (vertex.references ?? []).filter((r) => r.type !== "image");
-    const updated: Vertex = {
-      ...vertex,
-      references: [...others, ...next],
-      updated_at: new Date().toISOString(),
-    };
-    const fs = await getFileSystem();
-    await fs.updateVertex(updated);
+    const others = references.filter((r) => r.type !== "image");
+    const updated = [...others, ...next];
+    await onReferencesUpdated?.(updated);
     setImages(next);
-    await onVertexUpdated?.(updated);
   };
 
   const handleFiles = async (files: FileList | null) => {

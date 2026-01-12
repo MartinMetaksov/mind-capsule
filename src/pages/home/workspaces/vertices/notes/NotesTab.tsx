@@ -23,13 +23,13 @@ import { useTranslation } from "react-i18next";
 
 import type { Vertex } from "@/core/vertex";
 import type { Reference } from "@/core/common/reference";
-import { getFileSystem } from "@/integrations/fileSystem/integration";
 
 type NoteRef = Extract<Reference, { type: "note" }>;
 
 type NotesTabProps = {
   vertex: Vertex;
-  onVertexUpdated?: (vertex: Vertex) => Promise<void> | void;
+  references?: Reference[];
+  onReferencesUpdated?: (references: Reference[]) => Promise<void> | void;
 };
 
 type Mode = "preview" | "edit";
@@ -57,15 +57,16 @@ const renderMarkdown = (text: string): string => {
 
 export const NotesTab: React.FC<NotesTabProps> = ({
   vertex,
-  onVertexUpdated,
+  references = [],
+  onReferencesUpdated,
 }) => {
   const { t } = useTranslation("common");
   const [notes, setNotes] = React.useState<NoteRef[]>(
-    (vertex.references ?? []).filter((r): r is NoteRef => r.type === "note")
+    references.filter((r): r is NoteRef => r.type === "note")
   );
   const [selectedIdx, setSelectedIdx] = React.useState(
     Math.max(
-      (vertex.references ?? []).filter((r) => r.type === "note").length - 1,
+      references.filter((r) => r.type === "note").length - 1,
       0
     )
   );
@@ -75,39 +76,31 @@ export const NotesTab: React.FC<NotesTabProps> = ({
   const [saving, setSaving] = React.useState(false);
 
   React.useEffect(() => {
-    const noteRefs = (vertex.references ?? []).filter(
-      (r): r is NoteRef => r.type === "note"
-    );
+    const noteRefs = references.filter((r): r is NoteRef => r.type === "note");
     setNotes(noteRefs);
     const nextIdx = noteRefs.length > 0 ? noteRefs.length - 1 : 0;
     setSelectedIdx(nextIdx);
     setDraft(noteRefs[nextIdx]?.text ?? "");
     setMode("preview");
     setError(null);
-  }, [vertex]);
+  }, [references, vertex]);
 
   const saveNotes = React.useCallback(
     async (nextNotes: NoteRef[]) => {
       setSaving(true);
       setError(null);
       try {
-        const others = (vertex.references ?? []).filter((r) => r.type !== "note");
-        const updated: Vertex = {
-          ...vertex,
-          references: [...others, ...nextNotes],
-          updated_at: new Date().toISOString(),
-        };
-        const fs = await getFileSystem();
-        await fs.updateVertex(updated);
+        const others = references.filter((r) => r.type !== "note");
+        const updated = [...others, ...nextNotes];
+        await onReferencesUpdated?.(updated);
         setNotes(nextNotes);
-        await onVertexUpdated?.(updated);
       } catch (err) {
         setError(err instanceof Error ? err.message : t("notesTab.errors.save"));
       } finally {
         setSaving(false);
       }
     },
-    [onVertexUpdated, vertex, t]
+    [onReferencesUpdated, references, t]
   );
 
   const handleCreateVersion = async () => {

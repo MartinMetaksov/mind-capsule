@@ -9,7 +9,6 @@ use tauri_plugin_dialog::DialogExt;
 const WORKSPACE_META: &str = "workspace.json";
 const VERTEX_META: &str = "vertex.json";
 const CHILDREN_DIR: &str = "children";
-const REFERENCES_DIR: &str = "references";
 const REGISTRY_FILE: &str = "workspace_registry.json";
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -45,47 +44,14 @@ pub enum VertexLayout {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(tag = "type")]
-pub enum Reference {
-  #[serde(rename = "vertex")]
-  Vertex {
-    vertex_id: String,
-    reference_description: Option<String>,
-  },
-  #[serde(rename = "url")]
-  Url { url: String, title: Option<String> },
-  #[serde(rename = "image")]
-  Image {
-    path: String,
-    alt: Option<String>,
-    description: Option<String>,
-  },
-  #[serde(rename = "file")]
-  File {
-    path: String,
-    alt: Option<String>,
-    extension: Option<String>,
-    #[serde(rename = "iconPath")]
-    icon_path: Option<String>,
-  },
-  #[serde(rename = "note")]
-  Note {
-    text: String,
-    created_at: Option<String>,
-  },
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Vertex {
   pub id: String,
   pub title: String,
   pub parent_id: Option<String>,
   pub workspace_id: Option<String>,
-  pub kind: String,
   pub created_at: String,
   pub updated_at: String,
   pub tags: Vec<String>,
-  pub references: Option<Vec<Reference>>,
   pub children_behavior: Option<ChildrenBehavior>,
   pub children_layout: Option<VertexLayout>,
   pub default_tab: Option<String>,
@@ -149,141 +115,18 @@ fn vertex_children_dir(root: &Path) -> PathBuf {
   root.join(CHILDREN_DIR)
 }
 
-fn vertex_refs_dir(root: &Path) -> PathBuf {
-  root.join(REFERENCES_DIR)
-}
-
 fn ensure_workspace_meta(root: &Path, workspace: &Workspace) -> Result<(), String> {
   fs::create_dir_all(root).map_err(|e| e.to_string())?;
   write_json(&workspace_meta_path(root), workspace)
 }
 
-fn write_reference_files(vertex_root: &Path, references: &[Reference]) -> Result<(), String> {
-  let refs_dir = vertex_refs_dir(vertex_root);
-  if refs_dir.exists() {
-    fs::remove_dir_all(&refs_dir).map_err(|e| e.to_string())?;
-  }
-  fs::create_dir_all(&refs_dir).map_err(|e| e.to_string())?;
-
-  for (idx, reference) in references.iter().enumerate() {
-    let meta_path = refs_dir.join(format!("reference_{idx}.json"));
-    write_json(&meta_path, reference)?;
-
-    match reference {
-      Reference::Note { text, .. } => {
-        let note_path = refs_dir.join(format!("note_{idx}.md"));
-        fs::write(note_path, text).map_err(|e| e.to_string())?;
-      }
-      Reference::Url { url, .. } => {
-        let url_path = refs_dir.join(format!("url_{idx}.txt"));
-        fs::write(url_path, url).map_err(|e| e.to_string())?;
-      }
-      Reference::Image { path, .. } => {
-        write_reference_asset(&refs_dir, idx, "image", path)?;
-      }
-      Reference::File { path, .. } => {
-        write_reference_asset(&refs_dir, idx, "file", path)?;
-      }
-      Reference::Vertex { .. } => {}
-    }
-  }
-
-  Ok(())
-}
-
-fn write_reference_asset(
-  refs_dir: &Path,
-  idx: usize,
-  label: &str,
-  source_path: &str,
-) -> Result<(), String> {
-  let source = Path::new(source_path);
-  if source.is_file() {
-    let ext = source
-      .extension()
-      .and_then(|s| s.to_str())
-      .unwrap_or("bin");
-    let dest = refs_dir.join(format!("{label}_{idx}.{ext}"));
-    fs::copy(source, dest).map_err(|e| e.to_string())?;
-  } else {
-    let dest = refs_dir.join(format!("{label}_{idx}.txt"));
-    fs::write(dest, source_path).map_err(|e| e.to_string())?;
-  }
-  Ok(())
-}
-
-fn hydrate_reference_files(vertex_root: &Path, references: &mut [Reference]) -> Result<(), String> {
-  let refs_dir = vertex_refs_dir(vertex_root);
-  if !refs_dir.exists() {
-    return Ok(());
-  }
-
-  for (idx, reference) in references.iter_mut().enumerate() {
-    match reference {
-      Reference::Note { text, .. } => {
-        let note_path = refs_dir.join(format!("note_{idx}.md"));
-        if note_path.exists() {
-          *text = fs::read_to_string(note_path).map_err(|e| e.to_string())?;
-        }
-      }
-      Reference::Url { url, .. } => {
-        let url_path = refs_dir.join(format!("url_{idx}.txt"));
-        if url_path.exists() {
-          *url = fs::read_to_string(url_path).map_err(|e| e.to_string())?.trim().to_string();
-        }
-      }
-      Reference::Image { path, .. } => {
-        if let Some(asset) = find_reference_asset(&refs_dir, idx, "image") {
-          *path = asset;
-        }
-      }
-      Reference::File { path, .. } => {
-        if let Some(asset) = find_reference_asset(&refs_dir, idx, "file") {
-          *path = asset;
-        }
-      }
-      Reference::Vertex { .. } => {}
-    }
-  }
-
-  Ok(())
-}
-
-fn find_reference_asset(refs_dir: &Path, idx: usize, label: &str) -> Option<String> {
-  let prefix = format!("{label}_{idx}");
-  let entries = fs::read_dir(refs_dir).ok()?;
-  for entry in entries.flatten() {
-    let path = entry.path();
-    if !path.is_file() {
-      continue;
-    }
-    let file_name = path.file_name()?.to_string_lossy();
-    if file_name.starts_with(&prefix) && file_name != format!("reference_{idx}.json") {
-      return Some(path.to_string_lossy().to_string());
-    }
-  }
-  None
-}
-
 fn read_vertex_at_dir(dir: &Path) -> Result<Vertex, String> {
-  let mut vertex: Vertex = read_json(&vertex_meta_path(dir))?;
-  if let Some(refs) = vertex.references.as_mut() {
-    hydrate_reference_files(dir, refs)?;
-  }
-  Ok(vertex)
+  read_json(&vertex_meta_path(dir))
 }
 
 fn write_vertex_at_dir(dir: &Path, vertex: &Vertex) -> Result<(), String> {
   fs::create_dir_all(dir).map_err(|e| e.to_string())?;
   fs::create_dir_all(vertex_children_dir(dir)).map_err(|e| e.to_string())?;
-  if let Some(references) = vertex.references.as_ref() {
-    write_reference_files(dir, references)?;
-  } else {
-    let refs_dir = vertex_refs_dir(dir);
-    if refs_dir.exists() {
-      fs::remove_dir_all(refs_dir).map_err(|e| e.to_string())?;
-    }
-  }
   write_json(&vertex_meta_path(dir), vertex)?;
   Ok(())
 }
@@ -298,9 +141,6 @@ fn collect_vertex_dirs(root: &Path, out: &mut Vec<PathBuf>) -> Result<(), String
     let entry = entry.map_err(|e| e.to_string())?;
     let path = entry.path();
     if !path.is_dir() {
-      continue;
-    }
-    if path.file_name().and_then(|n| n.to_str()) == Some(REFERENCES_DIR) {
       continue;
     }
     if vertex_meta_path(&path).exists() {

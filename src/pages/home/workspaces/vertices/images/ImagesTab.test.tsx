@@ -6,13 +6,7 @@ import { ImagesTab } from "./ImagesTab";
 import type { Vertex } from "@/core/vertex";
 import { Reference } from "@/core/common/reference";
 
-const mockUpdateVertex = vi.fn();
-
-vi.mock("@/integrations/fileSystem/integration", () => ({
-  getFileSystem: async () => ({
-    updateVertex: mockUpdateVertex,
-  }),
-}));
+const mockUpdateReferences = vi.fn();
 
 // Mock FileReader for data URLs
 class MockFileReader {
@@ -30,13 +24,9 @@ const vertex: Vertex = {
   id: "v-1",
   title: "Vertex",
   workspace_id: "ws-1",
-  kind: "project",
   created_at: "2024-01-01T00:00:00.000Z",
   updated_at: "2024-01-02T00:00:00.000Z",
   tags: [],
-  references: [
-    { type: "image", path: "data://img1", alt: "Alt1", description: "Desc1" } as Reference,
-  ],
   children_behavior: { child_kind: "item", display: "grid" },
 };
 
@@ -48,7 +38,18 @@ describe("ImagesTab", () => {
   const renderTab = (override?: Partial<React.ComponentProps<typeof ImagesTab>>) =>
     render(
       <I18nextProvider i18n={i18n}>
-        <ImagesTab vertex={{ ...vertex, ...(override?.vertex ?? {}) }} />
+        <ImagesTab
+          vertex={{ ...vertex, ...(override?.vertex ?? {}) }}
+          references={[
+            {
+              type: "image",
+              path: "data://img1",
+              alt: "Alt1",
+              description: "Desc1",
+            } as Reference,
+          ]}
+          onReferencesUpdated={mockUpdateReferences}
+        />
       </I18nextProvider>
     );
 
@@ -67,6 +68,6 @@ describe("ImagesTab", () => {
   it("deletes an image", async () => {
     renderTab();
     fireEvent.click(screen.getByRole("button", { name: /Delete/i }));
-    await waitFor(() => expect(mockUpdateVertex).toHaveBeenCalled());
+    await waitFor(() => expect(mockUpdateReferences).toHaveBeenCalled());
   });
 });

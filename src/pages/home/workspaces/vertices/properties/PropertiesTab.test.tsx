@@ -28,11 +28,9 @@ const vertex: Vertex = {
   id: "v-1",
   title: "Vertex One",
   workspace_id: workspace.id,
-  kind: "project",
   created_at: "2024-01-01T00:00:00.000Z",
   updated_at: "2024-01-02T00:00:00.000Z",
   tags: [],
-  references: [],
   children_behavior: { child_kind: "chapter", display: "grid" },
 };
 
@@ -48,7 +46,6 @@ describe("PropertiesTab", () => {
           vertex={vertex}
           workspace={workspace}
           hasChildren={false}
-          refCounts={{ vertex: 0, url: 0, image: 0, file: 0, note: 0 }}
           onSelectTab={vi.fn()}
           {...override}
         />

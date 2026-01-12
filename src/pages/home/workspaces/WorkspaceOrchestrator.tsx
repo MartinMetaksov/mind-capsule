@@ -273,7 +273,7 @@ export const WorkspaceOrchestrator: React.FC = () => {
               )
             );
             await reloadVertices();
-            // refresh the active vertex from storage to keep references in sync across tabs
+            // refresh the active vertex from storage to keep it in sync
             const fs = await getFileSystem();
             const fresh = await fs.getVertex(updated.id);
             if (fresh) {

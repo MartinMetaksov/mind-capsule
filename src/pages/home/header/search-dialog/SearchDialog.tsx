@@ -100,27 +100,11 @@ export const SearchDialog: React.FC<Props> = ({ open, onClose }) => {
     if (!q) return byTab;
 
     for (const v of allVertices) {
-      const refs = v.references ?? [];
       if (match(v.title)) byTab.vertices.push(v);
-      if (match(v.kind) || match(v.children_behavior?.child_kind)) {
+      if (match(v.children_behavior?.child_kind)) {
         byTab.properties.push(v);
       }
       if (v.tags?.some((t) => match(t))) byTab.tags.push(v);
-      if (refs.some((r) => r.type === "note" && match(r.text))) {
-        byTab.notes.push(v);
-      }
-      if (
-        refs.some(
-          (r) =>
-            r.type === "image" &&
-            (match(r.alt) || match((r as { description?: string }).description) || match(r.path))
-        )
-      ) {
-        byTab.images.push(v);
-      }
-      if (refs.some((r) => r.type === "url" && (match(r.url) || match((r as { title?: string }).title)))) {
-        byTab.links.push(v);
-      }
     }
     return byTab;
   }, [allVertices, search]);

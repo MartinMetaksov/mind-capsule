@@ -6,25 +6,15 @@ import { NotesTab } from "./NotesTab";
 import type { Vertex } from "@/core/vertex";
 import { Reference } from "@/core/common/reference";
 
-const mockUpdateVertex = vi.fn();
-
-vi.mock("@/integrations/fileSystem/integration", () => ({
-  getFileSystem: async () => ({
-    updateVertex: mockUpdateVertex,
-  }),
-}));
+const mockUpdateReferences = vi.fn();
 
 const vertex: Vertex = {
   id: "v-1",
   title: "Vertex One",
   workspace_id: "ws-1",
-  kind: "project",
   created_at: "2024-01-01T00:00:00.000Z",
   updated_at: "2024-01-02T00:00:00.000Z",
   tags: [],
-  references: [
-    { type: "note", text: "First note", created_at: "2024-01-02T00:00:00.000Z" } as Reference,
-  ],
   children_behavior: { child_kind: "item", display: "grid" },
 };
 
@@ -36,7 +26,17 @@ describe("NotesTab", () => {
   const renderTab = (override?: Partial<React.ComponentProps<typeof NotesTab>>) =>
     render(
       <I18nextProvider i18n={i18n}>
-        <NotesTab vertex={{ ...vertex, ...(override?.vertex ?? {}) }} />
+        <NotesTab
+          vertex={{ ...vertex, ...(override?.vertex ?? {}) }}
+          references={[
+            {
+              type: "note",
+              text: "First note",
+              created_at: "2024-01-02T00:00:00.000Z",
+            } as Reference,
+          ]}
+          onReferencesUpdated={mockUpdateReferences}
+        />
       </I18nextProvider>
     );
 
@@ -49,7 +49,7 @@ describe("NotesTab", () => {
   it("creates a new revision", async () => {
     renderTab();
     fireEvent.click(screen.getByRole("button", { name: /Create new revision/i }));
-    await waitFor(() => expect(mockUpdateVertex).toHaveBeenCalled());
+    await waitFor(() => expect(mockUpdateReferences).toHaveBeenCalled());
   });
 
   it("switches to edit mode and auto-saves on blur", async () => {
@@ -58,6 +58,6 @@ describe("NotesTab", () => {
     const textarea = screen.getByRole("textbox");
     fireEvent.change(textarea, { target: { value: "Updated note" } });
     fireEvent.blur(textarea);
-    await waitFor(() => expect(mockUpdateVertex).toHaveBeenCalled());
+    await waitFor(() => expect(mockUpdateReferences).toHaveBeenCalled());
   });
 });

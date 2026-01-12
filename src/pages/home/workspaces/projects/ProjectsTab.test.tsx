@@ -33,11 +33,9 @@ const vertex: Vertex = {
   title: "Project One",
   parent_id: undefined,
   workspace_id: workspace.id,
-  kind: "project",
   created_at: "2024-01-01T00:00:00.000Z",
   updated_at: "2024-01-02T00:00:00.000Z",
   tags: [],
-  references: [],
   children_behavior: { child_kind: "item", display: "grid" },
 };
 

@@ -13,7 +13,6 @@ import {
 
 import type { Vertex } from "@/core/vertex";
 import type { Workspace } from "@/core/workspace";
-import type { VertexKind } from "@/core/common/vertexKind";
 import type {
   ChildrenBehavior,
   ChildrenDisplayHint,
@@ -23,19 +22,10 @@ import { ThumbnailPicker } from "../../components/vertex-dialogs/VertexDialogs";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
 import { useTranslation } from "react-i18next";
 
-type RefCounts = {
-  vertex: number;
-  url: number;
-  image: number;
-  file: number;
-  note: number;
-};
-
 type PropertiesTabProps = {
   vertex: Vertex;
   workspace: Workspace;
   hasChildren: boolean;
-  refCounts: RefCounts;
   onVertexUpdated?: (vertex: Vertex) => Promise<void> | void;
   onSelectTab: (tab: VertexTabId) => void;
 };
@@ -44,13 +34,11 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
   vertex,
   workspace: _workspace,
   hasChildren: _hasChildren,
-  refCounts: _refCounts,
   onVertexUpdated,
   onSelectTab,
 }) => {
   const { t } = useTranslation("common");
   const [title, setTitle] = React.useState(vertex.title);
-  const [kind, setKind] = React.useState<VertexKind>(vertex.kind);
   const [defaultTab, setDefaultTab] = React.useState<VertexTabId>(
     vertex.default_tab ?? "children"
   );
@@ -67,7 +55,6 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
 
   React.useEffect(() => {
     setTitle(vertex.title);
-    setKind(vertex.kind);
     setDefaultTab(vertex.default_tab ?? "children");
     setChildBehavior({
       child_kind: vertex.children_behavior?.child_kind ?? "generic",
@@ -93,17 +80,8 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
     { value: "timeline", label: t("propertiesTab.childrenDisplay.timeline") },
   ];
 
-  const kindOptions: { value: VertexKind; label: string }[] = [
-    { value: "project", label: t("vertexKinds.project") },
-    { value: "chapter", label: t("vertexKinds.chapter") },
-    { value: "section", label: t("vertexKinds.section") },
-    { value: "note", label: t("vertexKinds.note") },
-    { value: "generic", label: t("vertexKinds.generic") },
-  ];
-
   const isDirty =
     title !== vertex.title ||
-    kind !== vertex.kind ||
     defaultTab !== (vertex.default_tab ?? "children") ||
     childBehavior.child_kind !==
       (vertex.children_behavior?.child_kind ?? "generic") ||
@@ -123,7 +101,6 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
       const updated: Vertex = {
         ...vertex,
         title: title.trim(),
-        kind,
         default_tab: defaultTab,
         children_behavior: childBehavior,
         thumbnail_path: thumbnail,
@@ -183,37 +160,20 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
           slotProps={{ inputLabel: { shrink: true } }}
         />
 
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-          <TextField
-            label={t("vertexDialog.fields.kind")}
-            select
-            value={kind}
-            onChange={(e) => setKind(e.target.value as VertexKind)}
-            fullWidth
-            slotProps={{ inputLabel: { shrink: true } }}
-          >
-            {kindOptions.map((opt) => (
-              <MenuItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </MenuItem>
-            ))}
-          </TextField>
-
-          <TextField
-            label={t("propertiesTab.defaultTab")}
-            select
-            value={defaultTab}
-            onChange={(e) => setDefaultTab(e.target.value as VertexTabId)}
-            fullWidth
-            slotProps={{ inputLabel: { shrink: true } }}
-          >
-            {tabOptions.map((opt) => (
-              <MenuItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </MenuItem>
-            ))}
-          </TextField>
-        </Stack>
+        <TextField
+          label={t("propertiesTab.defaultTab")}
+          select
+          value={defaultTab}
+          onChange={(e) => setDefaultTab(e.target.value as VertexTabId)}
+          fullWidth
+          slotProps={{ inputLabel: { shrink: true } }}
+        >
+          {tabOptions.map((opt) => (
+            <MenuItem key={opt.value} value={opt.value}>
+              {opt.label}
+            </MenuItem>
+          ))}
+        </TextField>
 
         <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
           <TextField

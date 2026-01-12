@@ -10,14 +10,9 @@ const vertex: Vertex = {
   title: "Test Vertex",
   parent_id: undefined,
   workspace_id: "ws-1",
-  kind: "project",
   created_at: "2024-01-01T00:00:00.000Z",
   updated_at: "2024-01-02T00:00:00.000Z",
   tags: ["tagged"],
-  references: [
-    { type: "note", text: "note text" },
-    { type: "url", url: "https://example.com", title: "Example" },
-  ],
   children_behavior: { child_kind: "item", display: "grid" },
 };
 

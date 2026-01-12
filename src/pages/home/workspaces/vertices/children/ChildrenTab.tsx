@@ -49,8 +49,6 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
   );
   const [createOpen, setCreateOpen] = React.useState(false);
   const [createError, setCreateError] = React.useState<string | null>(null);
-  const defaultKind =
-    (vertex.children_behavior?.child_kind as Vertex["kind"]) ?? "generic";
 
   const loadChildren = React.useCallback(async () => {
     setLoading(true);
@@ -170,7 +168,6 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
               title: data.title,
               parent_id: vertex.id,
               workspace_id: workspace.id,
-              kind: data.kind,
               default_tab: "children",
               created_at: now,
               updated_at: now,
@@ -187,7 +184,6 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
           }
         }}
         workspaceLabel={workspace.name}
-        defaultKind={defaultKind}
         submitLabel={t("childrenTab.create")}
         title={t("childrenTab.create")}
       />
