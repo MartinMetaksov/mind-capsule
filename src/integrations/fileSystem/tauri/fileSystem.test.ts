@@ -7,6 +7,8 @@ const storeMock = {
   set: vi.fn(),
   get: vi.fn(),
   save: vi.fn(),
+  keys: vi.fn(async () => [] as string[]),
+  delete: vi.fn(async () => true),
 };
 const loadSpy = vi.fn(async () => storeMock);
 const invokeMock = vi.fn();
@@ -26,6 +28,8 @@ const loadFs = async (): Promise<FileSystem> => {
   storeMock.set.mockClear();
   storeMock.get.mockClear();
   storeMock.save.mockClear();
+  storeMock.keys.mockClear();
+  storeMock.delete.mockClear();
   invokeMock.mockReset();
   // default empty store
   storeMock.get.mockResolvedValue(undefined);
@@ -62,12 +66,9 @@ describe("tauri fileSystem bridge", () => {
   it("persists workspaces and invokes create command", async () => {
     const fs = await loadFs();
     await fs.createWorkspace(ws);
-    expect(storeMock.set).toHaveBeenCalledWith(
-      "tauri.workspaces",
-      expect.objectContaining({ [ws.id]: expect.objectContaining({ id: ws.id }) })
-    );
+    expect(storeMock.set).toHaveBeenCalledWith(`ws-${ws.id}.json`, ws);
     expect(storeMock.save).toHaveBeenCalled();
-    expect(invokeMock).toHaveBeenCalledWith("fs_create_workspace", { workspace: expect.any(Object) });
+    expect(invokeMock).toHaveBeenCalledWith("fs_create_workspace", { workspacePath: ws.path });
   });
 
   it("selectWorkspaceDirectory returns value or null on error", async () => {
@@ -78,27 +79,28 @@ describe("tauri fileSystem bridge", () => {
     expect(await fs.selectWorkspaceDirectory()).toBeNull();
   });
 
-  it("delegates vertex operations to invoke", async () => {
+  it("persists vertices and invokes directory commands", async () => {
     const fs = await loadFs();
     await fs.createVertex(vertex);
-    expect(invokeMock).toHaveBeenCalledWith("fs_create_vertex", { vertex });
-
-    invokeMock.mockResolvedValueOnce([vertex]);
-    expect(await fs.getVertices("parent")).toEqual([vertex]);
-    expect(invokeMock).toHaveBeenCalledWith("fs_get_vertices", { parentId: "parent" });
-
-    invokeMock.mockResolvedValueOnce([vertex]);
-    expect(await fs.getWorkspaceRootVertices(ws.id)).toEqual([vertex]);
-    expect(invokeMock).toHaveBeenCalledWith("fs_get_root_vertices", { workspaceId: ws.id });
-
-    invokeMock.mockResolvedValueOnce(vertex);
+    expect(invokeMock).toHaveBeenCalledWith("fs_create_vertex_dir", {
+      workspacePath: ws.path,
+      vertexId: vertex.id,
+    });
+    expect(storeMock.set).toHaveBeenCalledWith(`vert-${vertex.id}.json`, vertex);
     expect(await fs.getVertex(vertex.id)).toEqual(vertex);
-    expect(invokeMock).toHaveBeenCalledWith("fs_get_vertex", { vertexId: vertex.id });
+    expect(await fs.getWorkspaceRootVertices(ws.id)).toEqual([vertex]);
 
-    await fs.updateVertex(vertex);
-    expect(invokeMock).toHaveBeenCalledWith("fs_update_vertex", { vertex });
+    await fs.updateVertex({ ...vertex, title: "Updated" });
+    expect(storeMock.set).toHaveBeenCalledWith(
+      `vert-${vertex.id}.json`,
+      expect.objectContaining({ title: "Updated" })
+    );
 
     await fs.removeVertex(vertex);
-    expect(invokeMock).toHaveBeenCalledWith("fs_remove_vertex", { vertexId: vertex.id });
+    expect(invokeMock).toHaveBeenCalledWith("fs_remove_vertex_dir", {
+      workspacePath: ws.path,
+      vertexId: vertex.id,
+    });
+    expect(storeMock.delete).toHaveBeenCalledWith(`vert-${vertex.id}.json`);
   });
 });

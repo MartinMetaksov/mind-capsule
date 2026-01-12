@@ -19,17 +19,10 @@ const vertex: Vertex = {
 vi.mock("@/integrations/fileSystem/integration", () => ({
   getFileSystem: async () => ({
     getVertex: async (id: string) => (id === vertex.id ? vertex : null),
+    getAllVertices: async () => [vertex],
     getWorkspaces: vi.fn(),
   }),
 }));
-
-// Seed localStorage the way the dialog expects
-const seedLocalStorage = () => {
-  localStorage.setItem(
-    "vertices:seed",
-    JSON.stringify({ [vertex.id]: vertex })
-  );
-};
 
 const renderDialog = () =>
   render(
@@ -44,7 +37,6 @@ describe("SearchDialog", () => {
   beforeEach(() => {
     window.history.pushState({}, "", "/");
     localStorage.clear();
-    seedLocalStorage();
   });
 
   afterEach(() => {

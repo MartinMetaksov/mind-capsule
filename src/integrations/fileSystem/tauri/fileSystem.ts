@@ -7,21 +7,48 @@ import { invoke } from "@tauri-apps/api/core";
 
 const store = await Store.load("settings.json");
 
-const WORKSPACE_KEY = "tauri.workspaces";
+const WORKSPACE_KEY_PREFIX = "ws-";
+const VERTEX_KEY_PREFIX = "vert-";
+const KEY_SUFFIX = ".json";
 
 type WorkspaceMap = Record<Id, Workspace>;
+type VertexMap = Record<Id, Vertex>;
 
 async function persist(key: string, value: unknown) {
   await store.set(key, value);
   await store.save();
 }
 
-async function loadMap<T>(key: string): Promise<Record<Id, T>> {
-  const raw = await store.get<Record<Id, T>>(key);
-  return raw ?? {};
+function workspaceKey(id: Id): string {
+  return `${WORKSPACE_KEY_PREFIX}${id}${KEY_SUFFIX}`;
 }
 
-const workspaces: WorkspaceMap = await loadMap<Workspace>(WORKSPACE_KEY);
+function vertexKey(id: Id): string {
+  return `${VERTEX_KEY_PREFIX}${id}${KEY_SUFFIX}`;
+}
+
+function parseMetadataId(prefix: string, key: string): Id | null {
+  if (!key.startsWith(prefix) || !key.endsWith(KEY_SUFFIX)) return null;
+  const id = key.slice(prefix.length, -KEY_SUFFIX.length);
+  return id || null;
+}
+
+async function loadMetadata<T>(prefix: string): Promise<Record<Id, T>> {
+  const map: Record<Id, T> = {};
+  const keys = await store.keys();
+  for (const key of keys) {
+    const id = parseMetadataId(prefix, key);
+    if (!id) continue;
+    const value = await store.get<T>(key);
+    if (value) {
+      map[id] = value;
+    }
+  }
+  return map;
+}
+
+const workspaces: WorkspaceMap = await loadMetadata<Workspace>(WORKSPACE_KEY_PREFIX);
+const vertices: VertexMap = await loadMetadata<Vertex>(VERTEX_KEY_PREFIX);
 
 export const fileSystem: FileSystem = {
   async createWorkspace(workspace: Workspace): Promise<void> {
@@ -34,8 +61,8 @@ export const fileSystem: FileSystem = {
       created_at: workspace.created_at ?? now,
       updated_at: workspace.updated_at ?? now,
     };
-    await invoke("fs_create_workspace", { workspace: workspaces[workspace.id] });
-    await persist(WORKSPACE_KEY, workspaces);
+    await invoke("fs_create_workspace", { workspacePath: workspaces[workspace.id].path });
+    await persist(workspaceKey(workspace.id), workspaces[workspace.id]);
   },
   async selectWorkspaceDirectory(): Promise<string | null> {
     try {
@@ -60,30 +87,85 @@ export const fileSystem: FileSystem = {
       ...new_workspace,
       updated_at: new Date().toISOString(),
     };
-    await invoke("fs_update_workspace", { workspace: workspaces[new_workspace.id] });
-    await persist(WORKSPACE_KEY, workspaces);
+    await invoke("fs_update_workspace", { workspacePath: workspaces[new_workspace.id].path });
+    await persist(workspaceKey(new_workspace.id), workspaces[new_workspace.id]);
   },
   async removeWorkspace(workspace_id: Id): Promise<void> {
-    await invoke("fs_remove_workspace", { workspaceId: workspace_id });
+    const workspace = workspaces[workspace_id];
+    if (!workspace) {
+      throw new Error(`Workspace ${workspace_id} does not exist.`);
+    }
+    await invoke("fs_remove_workspace", { workspacePath: workspace.path });
+    for (const vertex of Object.values(vertices)) {
+      if (vertex.workspace_id === workspace_id) {
+        delete vertices[vertex.id];
+        await store.delete(vertexKey(vertex.id));
+      }
+    }
     delete workspaces[workspace_id];
-    await persist(WORKSPACE_KEY, workspaces);
+    await store.delete(workspaceKey(workspace_id));
+    await store.save();
   },
   async createVertex(vertex: Vertex): Promise<void> {
-    await invoke("fs_create_vertex", { vertex });
+    const workspaceId = vertex.workspace_id;
+    if (!workspaceId) {
+      throw new Error("Vertex is missing workspace_id.");
+    }
+    const workspace = workspaces[workspaceId];
+    if (!workspace) {
+      throw new Error(`Workspace ${workspaceId} does not exist.`);
+    }
+    const now = new Date().toISOString();
+    vertices[vertex.id] = {
+      ...vertex,
+      created_at: vertex.created_at ?? now,
+      updated_at: vertex.updated_at ?? now,
+    };
+    await invoke("fs_create_vertex_dir", {
+      workspacePath: workspace.path,
+      vertexId: vertex.id,
+    });
+    await persist(vertexKey(vertex.id), vertices[vertex.id]);
   },
   async getVertices(parent_id: Id): Promise<Vertex[]> {
-    return await invoke<Vertex[]>("fs_get_vertices", { parentId: parent_id });
+    return Object.values(vertices).filter((v) => v.parent_id === parent_id);
+  },
+  async getAllVertices(): Promise<Vertex[]> {
+    return Object.values(vertices);
   },
   async getWorkspaceRootVertices(workspace_id: Id): Promise<Vertex[]> {
-    return await invoke<Vertex[]>("fs_get_root_vertices", { workspaceId: workspace_id });
+    return Object.values(vertices).filter(
+      (v) => v.parent_id === null || v.parent_id === undefined
+    ).filter((v) => v.workspace_id === workspace_id);
   },
   async getVertex(vertex_id: Id): Promise<Vertex | null> {
-    return await invoke<Vertex | null>("fs_get_vertex", { vertexId: vertex_id });
+    return vertices[vertex_id] ?? null;
   },
   async updateVertex(new_vertex: Vertex): Promise<void> {
-    await invoke("fs_update_vertex", { vertex: new_vertex });
+    if (!vertices[new_vertex.id]) {
+      throw new Error(`Vertex ${new_vertex.id} does not exist.`);
+    }
+    vertices[new_vertex.id] = {
+      ...new_vertex,
+      updated_at: new Date().toISOString(),
+    };
+    await persist(vertexKey(new_vertex.id), vertices[new_vertex.id]);
   },
   async removeVertex(new_vertex: Vertex): Promise<void> {
-    await invoke("fs_remove_vertex", { vertexId: new_vertex.id });
+    const workspaceId = new_vertex.workspace_id;
+    if (!workspaceId) {
+      throw new Error("Vertex is missing workspace_id.");
+    }
+    const workspace = workspaces[workspaceId];
+    if (!workspace) {
+      throw new Error(`Workspace ${workspaceId} does not exist.`);
+    }
+    await invoke("fs_remove_vertex_dir", {
+      workspacePath: workspace.path,
+      vertexId: new_vertex.id,
+    });
+    delete vertices[new_vertex.id];
+    await store.delete(vertexKey(new_vertex.id));
+    await store.save();
   },
 };

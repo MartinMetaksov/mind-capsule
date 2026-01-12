@@ -3,10 +3,13 @@ import { Vertex } from "@/core/vertex";
 import type { FileSystem } from "../fileSystem";
 import { Id } from "@/core/common/id";
 import seed from "./mock/seed-data.json";
-
-const WORKSPACE_KEY = "mind-capsule.workspaces";
-const VERTEX_KEY = "mind-capsule.vertices";
-const SEEDED_KEY = "mind-capsule.seeded";
+import {
+  SEEDED_KEY,
+  VERTEX_KEY_PREFIX,
+  WORKSPACE_KEY_PREFIX,
+  vertexStorageKey,
+  workspaceStorageKey,
+} from "./storageKeys";
 
 /* ---------- helpers ---------- */
 
@@ -18,14 +21,28 @@ function persist(key: string, value: unknown) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
-function loadMap<T>(key: string): Record<Id, T> {
+function loadJson<T>(key: string): T | null {
   try {
     const raw = localStorage.getItem(key);
-    if (!raw) return {};
-    return JSON.parse(raw);
+    if (!raw) return null;
+    return JSON.parse(raw) as T;
   } catch {
-    return {};
+    return null;
   }
+}
+
+function loadEntries<T>(prefix: string): Record<Id, T> {
+  const map: Record<Id, T> = {};
+  Object.keys(localStorage).forEach((key) => {
+    if (!key.startsWith(prefix) || !key.endsWith(".json")) return;
+    const id = key.slice(prefix.length, -".json".length);
+    if (!id) return;
+    const value = loadJson<T>(key);
+    if (value) {
+      map[id] = value;
+    }
+  });
+  return map;
 }
 
 function seedIfRequested() {
@@ -36,15 +53,12 @@ function seedIfRequested() {
   const alreadySeeded = localStorage.getItem(SEEDED_KEY) === "true";
   if (alreadySeeded) return;
 
-  const wsMap = Object.fromEntries(
-    (seed.workspaces as Workspace[]).map((w) => [w.id, w]),
-  );
-  const vMap = Object.fromEntries(
-    (seed.vertices as Vertex[]).map((v) => [v.id, v]),
-  );
-
-  persist(WORKSPACE_KEY, wsMap);
-  persist(VERTEX_KEY, vMap);
+  (seed.workspaces as Workspace[]).forEach((workspace) => {
+    persist(workspaceStorageKey(workspace.id), workspace);
+  });
+  (seed.vertices as Vertex[]).forEach((vertex) => {
+    persist(vertexStorageKey(vertex.id), vertex);
+  });
   localStorage.setItem(SEEDED_KEY, "true");
 }
 
@@ -52,8 +66,8 @@ seedIfRequested();
 
 /* ---------- in-memory state ---------- */
 
-const workspaces: Record<Id, Workspace> = loadMap(WORKSPACE_KEY);
-const vertices: Record<Id, Vertex> = loadMap(VERTEX_KEY);
+const workspaces: Record<Id, Workspace> = loadEntries(WORKSPACE_KEY_PREFIX);
+const vertices: Record<Id, Vertex> = loadEntries(VERTEX_KEY_PREFIX);
 
 /* ---------- mock filesystem ---------- */
 
@@ -71,7 +85,7 @@ export const inMemoryFileSystemMock: FileSystem = {
       updated_at: workspace.updated_at ?? now(),
     };
 
-    persist(WORKSPACE_KEY, workspaces);
+    persist(workspaceStorageKey(workspace.id), workspaces[workspace.id]);
   },
 
   async selectWorkspaceDirectory(): Promise<string | null> {
@@ -96,12 +110,18 @@ export const inMemoryFileSystemMock: FileSystem = {
       updated_at: now(),
     };
 
-    persist(WORKSPACE_KEY, workspaces);
+    persist(workspaceStorageKey(new_workspace.id), workspaces[new_workspace.id]);
   },
 
   async removeWorkspace(workspace_id: Id): Promise<void> {
+    Object.values(vertices).forEach((vertex) => {
+      if (vertex.workspace_id === workspace_id) {
+        delete vertices[vertex.id];
+        localStorage.removeItem(vertexStorageKey(vertex.id));
+      }
+    });
     delete workspaces[workspace_id];
-    persist(WORKSPACE_KEY, workspaces);
+    localStorage.removeItem(workspaceStorageKey(workspace_id));
   },
 
   /* ===== Vertices ===== */
@@ -117,11 +137,15 @@ export const inMemoryFileSystemMock: FileSystem = {
       updated_at: vertex.updated_at ?? now(),
     };
 
-    persist(VERTEX_KEY, vertices);
+    persist(vertexStorageKey(vertex.id), vertices[vertex.id]);
   },
 
   async getVertices(parent_id: Id): Promise<Vertex[]> {
     return Object.values(vertices).filter((v) => v.parent_id === parent_id);
+  },
+
+  async getAllVertices(): Promise<Vertex[]> {
+    return Object.values(vertices);
   },
 
   async getWorkspaceRootVertices(workspace_id: Id): Promise<Vertex[]> {
@@ -144,11 +168,11 @@ export const inMemoryFileSystemMock: FileSystem = {
       updated_at: now(),
     };
 
-    persist(VERTEX_KEY, vertices);
+    persist(vertexStorageKey(new_vertex.id), vertices[new_vertex.id]);
   },
 
   async removeVertex(vertex: Vertex): Promise<void> {
     delete vertices[vertex.id];
-    persist(VERTEX_KEY, vertices);
+    localStorage.removeItem(vertexStorageKey(vertex.id));
   },
 };

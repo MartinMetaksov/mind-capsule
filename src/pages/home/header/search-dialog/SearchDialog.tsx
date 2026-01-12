@@ -37,26 +37,7 @@ export const SearchDialog: React.FC<Props> = ({ open, onClose }) => {
     setSearchTab(0);
     (async () => {
       const fs = await getFileSystem();
-      // load all vertices present in storage
-      const ids: string[] = [];
-      Object.keys(localStorage)
-        .filter((k) => k.includes("vertices"))
-        .forEach((k) => {
-          try {
-            const val = localStorage.getItem(k);
-            if (!val) return;
-            const parsed = JSON.parse(val) as Record<string, Vertex>;
-            ids.push(...Object.keys(parsed));
-          } catch {
-            /* ignore */
-          }
-        });
-      const unique = Array.from(new Set(ids));
-      const verts: Vertex[] = [];
-      for (const id of unique) {
-        const v = await fs.getVertex(id);
-        if (v) verts.push(v);
-      }
+      const verts = await fs.getAllVertices();
       setAllVertices(verts);
       // defer focus to ensure dialog is painted
       requestAnimationFrame(() => {

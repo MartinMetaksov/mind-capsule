@@ -10,12 +10,8 @@ pub fn run() {
             commands::fs_update_workspace,
             commands::fs_remove_workspace,
             commands::fs_pick_workspace_dir,
-            commands::fs_create_vertex,
-            commands::fs_get_vertices,
-            commands::fs_get_root_vertices,
-            commands::fs_get_vertex,
-            commands::fs_update_vertex,
-            commands::fs_remove_vertex
+            commands::fs_create_vertex_dir,
+            commands::fs_remove_vertex_dir
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {
