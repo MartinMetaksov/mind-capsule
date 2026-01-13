@@ -125,15 +125,33 @@ export const WorkspaceOrchestrator: React.FC = () => {
     await reloadVertices();
   };
 
+  const resolveWorkspaceForVertex = React.useCallback(
+    async (vertex: Vertex): Promise<Workspace | undefined> => {
+      if (vertex.workspace_id) {
+        return workspaces.find((w) => w.id === vertex.workspace_id);
+      }
+
+      const fs = await getFileSystem();
+      let cursor: Vertex | null = vertex;
+      while (cursor?.parent_id) {
+        const parent = await fs.getVertex(cursor.parent_id);
+        if (!parent) break;
+        if (parent.workspace_id) {
+          return workspaces.find((w) => w.id === parent.workspace_id);
+        }
+        cursor = parent;
+      }
+      return undefined;
+    },
+    [workspaces]
+  );
+
   const openVertex = React.useCallback(
     async (vertexId: string) => {
       const fs = await getFileSystem();
 
       let v = vertices.find((x) => x.id === vertexId) ?? null;
-      let ws = v
-        ? (workspaceByVertexId[v.id] ??
-          workspaces.find((w) => w.id === v!.workspace_id))
-        : undefined;
+      let ws = v ? workspaceByVertexId[v.id] : undefined;
 
       if (!v) {
         v = (await fs.getVertex(vertexId)) ?? null;
@@ -142,7 +160,7 @@ export const WorkspaceOrchestrator: React.FC = () => {
       if (!v) return;
 
       if (!ws) {
-        ws = workspaces.find((w) => w.id === v.workspace_id);
+        ws = await resolveWorkspaceForVertex(v);
       }
 
       if (!ws) return;
@@ -155,7 +173,7 @@ export const WorkspaceOrchestrator: React.FC = () => {
         return nextTrail;
       });
     },
-    [navigate, vertices, workspaceByVertexId, workspaces]
+    [navigate, resolveWorkspaceForVertex, vertices, workspaceByVertexId]
   );
 
   const jumpToTrailIndex = (index: number) => {
@@ -196,7 +214,7 @@ export const WorkspaceOrchestrator: React.FC = () => {
         }
 
         if (i === 0) {
-          currentWorkspace = workspaces.find((w) => w.id === v.workspace_id);
+          currentWorkspace = await resolveWorkspaceForVertex(v);
           if (!currentWorkspace) break;
         }
 
@@ -209,7 +227,7 @@ export const WorkspaceOrchestrator: React.FC = () => {
     };
 
     syncTrailFromPath();
-  }, [location.pathname, workspaces, workspacesLoading]);
+  }, [location.pathname, resolveWorkspaceForVertex, workspaces, workspacesLoading]);
 
   if (workspacesLoading || !workspaces) {
     return (

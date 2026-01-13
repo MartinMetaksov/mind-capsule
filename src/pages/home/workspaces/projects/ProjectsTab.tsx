@@ -10,7 +10,10 @@ import {
   Typography,
 } from "@mui/material";
 import { VertexGrid, VertexItem } from "../vertices/vertex-grid/VertexGrid";
-import { CreateFab, type CreateFabHandle } from "../components/create-fab/CreateFab";
+import {
+  CreateFab,
+  type CreateFabHandle,
+} from "../components/create-fab/CreateFab";
 import { detectOperatingSystem } from "@/utils/os";
 import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
 import type { Workspace } from "@/core/workspace";
@@ -48,13 +51,13 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
     React.useState<Workspace | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = React.useState<VertexItem | null>(
-    null,
+    null
   );
   const [workspaceQuery, setWorkspaceQuery] = React.useState("");
   const os = React.useMemo(() => detectOperatingSystem(), []);
   const createShortcut = React.useMemo(
     () => getShortcut("createVertex", os),
-    [os],
+    [os]
   );
 
   const filteredWorkspaces = React.useMemo(() => {
@@ -93,7 +96,6 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
       const vertex: Vertex = {
         id: crypto.randomUUID(),
         title: data.title,
-        parent_id: undefined,
         workspace_id: selectedWorkspace.id,
         default_tab: "children",
         created_at: now,

@@ -27,6 +27,18 @@ function vertexKey(id: Id): string {
   return `${VERTEX_KEY_PREFIX}${id}${KEY_SUFFIX}`;
 }
 
+function resolveWorkspaceId(vertex: Vertex): Id | null {
+  if (vertex.workspace_id) return vertex.workspace_id;
+  let cursor: Vertex | undefined = vertex;
+  while (cursor?.parent_id) {
+    const parent: Vertex = vertices[cursor.parent_id];
+    if (!parent) return null;
+    if (parent.workspace_id) return parent.workspace_id;
+    cursor = parent;
+  }
+  return null;
+}
+
 function parseMetadataId(prefix: string, key: string): Id | null {
   if (!key.startsWith(prefix) || !key.endsWith(KEY_SUFFIX)) return null;
   const id = key.slice(prefix.length, -KEY_SUFFIX.length);
@@ -107,7 +119,7 @@ export const fileSystem: FileSystem = {
     await store.save();
   },
   async createVertex(vertex: Vertex): Promise<void> {
-    const workspaceId = vertex.workspace_id;
+    const workspaceId = resolveWorkspaceId(vertex);
     if (!workspaceId) {
       throw new Error("Vertex is missing workspace_id.");
     }
@@ -152,7 +164,7 @@ export const fileSystem: FileSystem = {
     await persist(vertexKey(new_vertex.id), vertices[new_vertex.id]);
   },
   async removeVertex(new_vertex: Vertex): Promise<void> {
-    const workspaceId = new_vertex.workspace_id;
+    const workspaceId = resolveWorkspaceId(new_vertex);
     if (!workspaceId) {
       throw new Error("Vertex is missing workspace_id.");
     }
