@@ -247,6 +247,7 @@
     "subtitle": "Write notes for this vertex and keep each revision accessible.",
     "revisions": "Revisions",
     "create": "Create new revision",
+    "loading": "Loading notes…",
     "empty": "No revisions yet.",
     "noNotes": "No notes yet. Create the first revision to start writing.",
     "preview": "Preview",

@@ -1,10 +1,10 @@
 import { Id } from "@/core/common/id";
 import { Vertex } from "@/core/vertex";
 import { Workspace } from "@/core/workspace";
-import type { FileSystem, ImageEntry, ImageMetadata } from "../fileSystem";
+import type { FileSystem, ImageEntry, ImageMetadata, NoteEntry } from "../fileSystem";
 import { Store } from "@tauri-apps/plugin-store";
 import { invoke } from "@tauri-apps/api/core";
-import { create, readDir, readFile, remove, writeFile } from "@tauri-apps/plugin-fs";
+import { readDir, readFile, remove, writeFile } from "@tauri-apps/plugin-fs";
 import { join } from "@tauri-apps/api/path";
 
 const store = await Store.load("settings.json");
@@ -14,6 +14,7 @@ const VERTEX_KEY_PREFIX = "vert-";
 const KEY_SUFFIX = ".json";
 const IMAGE_META_FILE = "images.meta.json";
 const IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg"];
+const NOTE_EXTENSION = ".md";
 
 type WorkspaceMap = Record<Id, Workspace>;
 type VertexMap = Record<Id, Vertex>;
@@ -85,6 +86,19 @@ function mimeForExtension(ext: string | null): string {
   if (ext === "png") return "image/png";
   if (ext === "jpg" || ext === "jpeg") return "image/jpeg";
   return "application/octet-stream";
+}
+
+function isNoteFile(name: string): boolean {
+  return name.toLowerCase().endsWith(NOTE_EXTENSION);
+}
+
+function sanitizeNoteName(name: string): string {
+  return name.replace(/[^\w.-]+/g, "-");
+}
+
+function createNoteName(): string {
+  const stamp = new Date().toISOString().replace(/[:]/g, "-");
+  return sanitizeNoteName(`note-${stamp}${NOTE_EXTENSION}`);
 }
 
 function bytesToBase64(bytes: Uint8Array): string {
@@ -322,7 +336,6 @@ export const fileSystem: FileSystem = {
 
   async createImage(vertex: Vertex, file: File): Promise<ImageEntry> {
     const dir = vertex.asset_directory;
-    await create(dir);
     const name = createImageName(file);
     const filePath = await join(dir, name);
     const data = new Uint8Array(await file.arrayBuffer());
@@ -367,6 +380,67 @@ export const fileSystem: FileSystem = {
         path: toDataUrl(data, name),
         ...(meta.images[name] ?? {}),
       };
+    } catch {
+      return null;
+    }
+  },
+
+  /* ===== Notes ===== */
+
+  async listNotes(vertex: Vertex): Promise<NoteEntry[]> {
+    const dir = vertex.asset_directory;
+    const entries = await readDir(dir);
+    const results: NoteEntry[] = [];
+    for (const entry of entries) {
+      if (!entry.name) continue;
+      if (!isNoteFile(entry.name)) continue;
+      const filePath = await join(dir, entry.name);
+      try {
+        const data = await readFile(filePath);
+        const text = new TextDecoder().decode(data);
+        results.push({ name: entry.name, text });
+      } catch {
+        // skip entries that cannot be read
+      }
+    }
+    results.sort((a, b) => a.name.localeCompare(b.name));
+    return results;
+  },
+
+  async getNote(vertex: Vertex, name: string): Promise<NoteEntry | null> {
+    const dir = vertex.asset_directory;
+    const filePath = await join(dir, name);
+    try {
+      const data = await readFile(filePath);
+      const text = new TextDecoder().decode(data);
+      return { name, text };
+    } catch {
+      return null;
+    }
+  },
+
+  async createNote(vertex: Vertex, text: string): Promise<NoteEntry> {
+    const dir = vertex.asset_directory;
+    const name = createNoteName();
+    const filePath = await join(dir, name);
+    const encoded = new TextEncoder().encode(text);
+    await writeFile(filePath, encoded);
+    return { name, text };
+  },
+
+  async deleteNote(vertex: Vertex, name: string): Promise<void> {
+    const dir = vertex.asset_directory;
+    const filePath = await join(dir, name);
+    await remove(filePath);
+  },
+
+  async updateNote(vertex: Vertex, name: string, text: string): Promise<NoteEntry | null> {
+    const dir = vertex.asset_directory;
+    const filePath = await join(dir, name);
+    try {
+      const encoded = new TextEncoder().encode(text);
+      await writeFile(filePath, encoded);
+      return { name, text };
     } catch {
       return null;
     }

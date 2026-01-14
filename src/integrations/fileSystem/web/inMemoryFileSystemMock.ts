@@ -1,6 +1,6 @@
 import { Workspace } from "@/core/workspace";
 import { Vertex } from "@/core/vertex";
-import type { FileSystem, ImageEntry, ImageMetadata } from "../fileSystem";
+import type { FileSystem, ImageEntry, ImageMetadata, NoteEntry } from "../fileSystem";
 import { Id } from "@/core/common/id";
 import type { Reference } from "@/core/common/reference";
 import seed from "./mock/seed-data.json";
@@ -50,7 +50,7 @@ function loadEntries<T>(prefix: string): Record<Id, T> {
 type AssetStore = {
   images: Record<string, string>;
   image_meta: Record<string, ImageMetadata>;
-  notes: Reference[];
+  notes: Record<string, string>;
   urls: Reference[];
 };
 
@@ -64,9 +64,24 @@ function guessExtensionFromDataUrl(dataUrl: string): string | null {
 
 function normalizeAssetStore(stored: unknown): AssetStore | null {
   if (!stored || typeof stored !== "object") return null;
-  const raw = stored as Partial<AssetStore> & { images?: unknown };
-  const notes = Array.isArray(raw.notes) ? raw.notes : [];
+  const raw = stored as Partial<AssetStore> & { images?: unknown; notes?: unknown };
+  let notes: Record<string, string> =
+    raw.notes && typeof raw.notes === "object" && !Array.isArray(raw.notes)
+      ? (raw.notes as Record<string, string>)
+      : {};
   const urls = Array.isArray(raw.urls) ? raw.urls : [];
+
+  if (Array.isArray(raw.notes)) {
+    const converted: Record<string, string> = {};
+    raw.notes.forEach((entry, idx) => {
+      const ref = entry as Reference | undefined;
+      if (!ref || ref.type !== "note") return;
+      const stamp = ref.created_at ?? `rev-${idx + 1}`;
+      const name = sanitizeNoteName(`note-${stamp}.md`);
+      converted[name] = ref.text ?? "";
+    });
+    notes = converted;
+  }
 
   if (raw.images && typeof raw.images === "object" && !Array.isArray(raw.images)) {
     const images = raw.images as Record<string, string>;
@@ -98,11 +113,22 @@ function normalizeAssetStore(stored: unknown): AssetStore | null {
 
 function needsAssetStoreUpgrade(stored: unknown): boolean {
   if (!stored || typeof stored !== "object") return false;
-  const raw = stored as { images?: unknown; image_meta?: unknown };
+  const raw = stored as { images?: unknown; image_meta?: unknown; notes?: unknown };
   if (Array.isArray(raw.images)) return true;
   if (!raw.images || typeof raw.images !== "object") return true;
   if (!raw.image_meta || typeof raw.image_meta !== "object") return true;
+  if (Array.isArray(raw.notes)) return true;
+  if (!raw.notes || typeof raw.notes !== "object") return true;
   return false;
+}
+
+function sanitizeNoteName(name: string): string {
+  return name.replace(/[^\w.-]+/g, "-");
+}
+
+function createNoteName(prefix = "note"): string {
+  const stamp = new Date().toISOString().replace(/[:]/g, "-");
+  return sanitizeNoteName(`${prefix}-${stamp}.md`);
 }
 
 function loadAssetStore(vertex: Vertex): AssetStore | null {
@@ -165,7 +191,7 @@ function seedIfRequested() {
     persist(assetStorageKey(vertex.id), {
       images: {},
       image_meta: {},
-      notes: [],
+      notes: {},
       urls: [],
     });
   });
@@ -263,7 +289,7 @@ export const inMemoryFileSystemMock: FileSystem = {
     };
 
     persist(vertexStorageKey(vertex.id), vertices[vertex.id]);
-    saveAssetStore(vertex, { images: {}, image_meta: {}, notes: [], urls: [] });
+    saveAssetStore(vertex, { images: {}, image_meta: {}, notes: {}, urls: [] });
   },
 
   async getVertices(parent_id: Id): Promise<Vertex[]> {
@@ -335,7 +361,7 @@ export const inMemoryFileSystemMock: FileSystem = {
       throw new Error(`Assets for vertex ${vertex.id} are missing.`);
     }
     const path = await fileToDataUrl(file);
-    let store = loadAssetStore(vertex);
+    const store = loadAssetStore(vertex);
     if (!store) {
       throw new Error(`Assets for vertex ${vertex.id} are missing.`);
     }
@@ -380,5 +406,61 @@ export const inMemoryFileSystemMock: FileSystem = {
     }
     saveAssetStore(vertex, store);
     return { name, path, ...(store.image_meta[name] ?? {}) };
+  },
+
+  /* ===== Notes ===== */
+
+  async listNotes(vertex: Vertex): Promise<NoteEntry[]> {
+    const store = loadAssetStore(vertex);
+    if (!store) {
+      throw new Error(`Assets for vertex ${vertex.id} are missing.`);
+    }
+    return Object.entries(store.notes)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([name, text]) => ({ name, text }));
+  },
+
+  async getNote(vertex: Vertex, name: string): Promise<NoteEntry | null> {
+    const store = loadAssetStore(vertex);
+    if (!store) {
+      throw new Error(`Assets for vertex ${vertex.id} are missing.`);
+    }
+    const text = store.notes[name];
+    if (text === undefined) return null;
+    return { name, text };
+  },
+
+  async createNote(vertex: Vertex, text: string): Promise<NoteEntry> {
+    const store = loadAssetStore(vertex);
+    if (!store) {
+      throw new Error(`Assets for vertex ${vertex.id} are missing.`);
+    }
+    let name = createNoteName();
+    while (store.notes[name]) {
+      name = createNoteName("note");
+    }
+    store.notes[name] = text;
+    saveAssetStore(vertex, store);
+    return { name, text };
+  },
+
+  async deleteNote(vertex: Vertex, name: string): Promise<void> {
+    const store = loadAssetStore(vertex);
+    if (!store) {
+      throw new Error(`Assets for vertex ${vertex.id} are missing.`);
+    }
+    delete store.notes[name];
+    saveAssetStore(vertex, store);
+  },
+
+  async updateNote(vertex: Vertex, name: string, text: string): Promise<NoteEntry | null> {
+    const store = loadAssetStore(vertex);
+    if (!store) {
+      throw new Error(`Assets for vertex ${vertex.id} are missing.`);
+    }
+    if (!(name in store.notes)) return null;
+    store.notes[name] = text;
+    saveAssetStore(vertex, store);
+    return { name, text };
   },
 };

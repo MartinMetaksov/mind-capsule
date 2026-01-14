@@ -12,6 +12,11 @@ export type ImageEntry = ImageMetadata & {
   path: string;
 };
 
+export type NoteEntry = {
+  name: string;
+  text: string;
+};
+
 export interface FileSystem {
   // workspaces
   createWorkspace(workspace: Workspace): Promise<void>;
@@ -40,4 +45,11 @@ export interface FileSystem {
     name: string,
     metadata: ImageMetadata
   ): Promise<ImageEntry | null>;
+
+  // notes
+  listNotes(vertex: Vertex): Promise<NoteEntry[]>;
+  getNote(vertex: Vertex, name: string): Promise<NoteEntry | null>;
+  createNote(vertex: Vertex, text: string): Promise<NoteEntry>;
+  deleteNote(vertex: Vertex, name: string): Promise<void>;
+  updateNote(vertex: Vertex, name: string, text: string): Promise<NoteEntry | null>;
 }

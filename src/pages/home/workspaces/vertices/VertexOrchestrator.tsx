@@ -336,8 +336,6 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
               {safeTab === "notes" && (
                 <NotesTab
                   vertex={currentVertex}
-                  references={references}
-                  onReferencesUpdated={(next) => setReferences(next)}
                 />
               )}
 

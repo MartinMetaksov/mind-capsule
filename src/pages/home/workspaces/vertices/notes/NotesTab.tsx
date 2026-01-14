@@ -22,14 +22,11 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { useTranslation } from "react-i18next";
 
 import type { Vertex } from "@/core/vertex";
-import type { Reference } from "@/core/common/reference";
-
-type NoteRef = Extract<Reference, { type: "note" }>;
+import type { NoteEntry } from "@/integrations/fileSystem/fileSystem";
+import { getFileSystem } from "@/integrations/fileSystem/integration";
 
 type NotesTabProps = {
   vertex: Vertex;
-  references?: Reference[];
-  onReferencesUpdated?: (references: Reference[]) => Promise<void> | void;
 };
 
 type Mode = "preview" | "edit";
@@ -55,63 +52,54 @@ const renderMarkdown = (text: string): string => {
   return html;
 };
 
-export const NotesTab: React.FC<NotesTabProps> = ({
-  vertex,
-  references = [],
-  onReferencesUpdated,
-}) => {
+export const NotesTab: React.FC<NotesTabProps> = ({ vertex }) => {
   const { t } = useTranslation("common");
-  const [notes, setNotes] = React.useState<NoteRef[]>(
-    references.filter((r): r is NoteRef => r.type === "note")
-  );
-  const [selectedIdx, setSelectedIdx] = React.useState(
-    Math.max(
-      references.filter((r) => r.type === "note").length - 1,
-      0
-    )
-  );
+  const [notes, setNotes] = React.useState<NoteEntry[]>([]);
+  const [selectedIdx, setSelectedIdx] = React.useState(0);
   const [mode, setMode] = React.useState<Mode>("preview");
   const [draft, setDraft] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
+  const [loading, setLoading] = React.useState(false);
 
   React.useEffect(() => {
-    const noteRefs = references.filter((r): r is NoteRef => r.type === "note");
-    setNotes(noteRefs);
-    const nextIdx = noteRefs.length > 0 ? noteRefs.length - 1 : 0;
-    setSelectedIdx(nextIdx);
-    setDraft(noteRefs[nextIdx]?.text ?? "");
-    setMode("preview");
-    setError(null);
-  }, [references, vertex]);
-
-  const saveNotes = React.useCallback(
-    async (nextNotes: NoteRef[]) => {
-      setSaving(true);
+    const loadNotes = async () => {
+      setLoading(true);
       setError(null);
       try {
-        const others = references.filter((r) => r.type !== "note");
-        const updated = [...others, ...nextNotes];
-        await onReferencesUpdated?.(updated);
-        setNotes(nextNotes);
+        const fs = await getFileSystem();
+        const list = await fs.listNotes(vertex);
+        setNotes(list);
+        const nextIdx = list.length > 0 ? list.length - 1 : 0;
+        setSelectedIdx(nextIdx);
+        setDraft(list[nextIdx]?.text ?? "");
+        setMode("preview");
       } catch (err) {
         setError(err instanceof Error ? err.message : t("notesTab.errors.save"));
+        setNotes([]);
       } finally {
-        setSaving(false);
+        setLoading(false);
       }
-    },
-    [onReferencesUpdated, references, t]
-  );
+    };
+    loadNotes();
+  }, [t, vertex]);
 
   const handleCreateVersion = async () => {
-    const now = new Date().toISOString();
-    const newNote: NoteRef = { type: "note", text: "", created_at: now };
-    const nextNotes: NoteRef[] = [...notes, newNote];
-    await saveNotes(nextNotes);
-    const idx = nextNotes.length - 1;
-    setSelectedIdx(idx);
-    setDraft("");
-    setMode("edit");
+    setSaving(true);
+    setError(null);
+    try {
+      const fs = await getFileSystem();
+      const created = await fs.createNote(vertex, "");
+      setNotes((prev) => [...prev, created]);
+      const idx = notes.length;
+      setSelectedIdx(idx);
+      setDraft("");
+      setMode("edit");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("notesTab.errors.save"));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleSelectVersion = (idx: number) => {
@@ -127,20 +115,43 @@ export const NotesTab: React.FC<NotesTabProps> = ({
       setMode("preview");
       return;
     }
-    const next = notes.map((n, i) =>
-      i === selectedIdx ? { ...n, text: draft } : n
-    );
-    await saveNotes(next);
-    setMode("preview");
-  }, [draft, notes, saveNotes, selectedIdx]);
+    setSaving(true);
+    setError(null);
+    try {
+      const fs = await getFileSystem();
+      const updated = await fs.updateNote(vertex, current.name, draft);
+      if (updated) {
+        setNotes((prev) =>
+          prev.map((n, i) => (i === selectedIdx ? updated : n))
+        );
+      }
+      setMode("preview");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("notesTab.errors.save"));
+    } finally {
+      setSaving(false);
+    }
+  }, [draft, notes, selectedIdx, t, vertex]);
 
   const handleDelete = async (idx: number) => {
-    const next = notes.filter((_, i) => i !== idx);
-    await saveNotes(next);
-    const nextIdx = next.length === 0 ? 0 : Math.min(idx, next.length - 1);
-    setSelectedIdx(nextIdx);
-    setDraft(next[nextIdx]?.text ?? "");
-    setMode("preview");
+    const target = notes[idx];
+    if (!target) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const fs = await getFileSystem();
+      await fs.deleteNote(vertex, target.name);
+      const next = notes.filter((_, i) => i !== idx);
+      setNotes(next);
+      const nextIdx = next.length === 0 ? 0 : Math.min(idx, next.length - 1);
+      setSelectedIdx(nextIdx);
+      setDraft(next[nextIdx]?.text ?? "");
+      setMode("preview");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("notesTab.errors.save"));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleModeChange = React.useCallback(
@@ -160,11 +171,9 @@ export const NotesTab: React.FC<NotesTabProps> = ({
   const revisionsList = (
     <List dense disablePadding sx={{ width: "100%" }}>
       {notes.map((n, idx) => {
-        const created = n.created_at
-          ? new Date(n.created_at).toLocaleString()
-          : t("notesTab.revisionLabel", { number: idx + 1 });
+        const created = n.name;
         return (
-          <ListItem key={`${n.created_at ?? idx}`} disablePadding>
+          <ListItem key={n.name} disablePadding>
             <ListItemButton
               selected={idx === selectedIdx}
               onClick={() => handleSelectVersion(idx)}
@@ -256,7 +265,20 @@ export const NotesTab: React.FC<NotesTabProps> = ({
               <AddIcon fontSize="small" />
             </IconButton>
           </Stack>
-          {notes.length === 0 ? (
+          {loading ? (
+            <Box
+              sx={{
+                flex: 1,
+                minHeight: 120,
+                display: "flex",
+                alignItems: "center",
+              }}
+            >
+              <Typography color="text.secondary">
+                {t("notesTab.loading")}
+              </Typography>
+            </Box>
+          ) : notes.length === 0 ? (
             <Box
               sx={{
                 flex: 1,
