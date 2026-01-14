@@ -8,7 +8,6 @@ import TagOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import { TuneOutlined } from "@mui/icons-material";
 import type { Vertex, VertexTabId } from "@/core/vertex";
 import type { Workspace } from "@/core/workspace";
-import type { Reference } from "@/core/common/reference";
 import { BreadcrumbsTrail } from "../components/breadcrumbs-trail/BreadcrumbsTrail";
 import { VerticalTabs } from "../components/vertical-tabs/VerticalTabs";
 import { ChildrenTab } from "./children/ChildrenTab";
@@ -48,20 +47,6 @@ export type VertexOrchestratorProps = {
   onOpenVertex?: (vertexId: string) => void;
   onVertexUpdated?: (vertex: Vertex) => Promise<void> | void;
 };
-
-type RefCounts = Record<Reference["type"], number>;
-
-function countReferences(vertex: Vertex): RefCounts {
-  const counts: RefCounts = {
-    vertex: 0,
-    url: 0,
-    image: 0,
-    file: 0,
-    note: 0,
-  };
-  for (const r of vertex.references ?? []) counts[r.type] += 1;
-  return counts;
-}
 
 function formatChildLabel(behavior: Vertex["children_behavior"]): string {
   if (!behavior?.child_kind) return "Items";
@@ -113,11 +98,6 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
   }, [tabOrder, currentVertex.default_tab, currentVertex.is_leaf]);
 
   const [tab, setTab] = React.useState<VertexTab>(() => resolveInitialTab());
-
-  const refCounts = React.useMemo(
-    () => countReferences(currentVertex),
-    [currentVertex]
-  );
   const hasChildren = false;
   const childrenLabel = React.useMemo(
     () => formatChildLabel(currentVertex.children_behavior),
@@ -330,7 +310,6 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
                   vertex={currentVertex}
                   workspace={workspace}
                   hasChildren={hasChildren}
-                  refCounts={refCounts}
                   onVertexUpdated={(v) => {
                     setCurrentVertex(v);
                     return onVertexUpdated?.(v);
@@ -354,30 +333,18 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
               {safeTab === "notes" && (
                 <NotesTab
                   vertex={currentVertex}
-                  onVertexUpdated={(v) => {
-                    setCurrentVertex(v);
-                    return onVertexUpdated?.(v);
-                  }}
                 />
               )}
 
               {safeTab === "images" && (
                 <ImagesTab
                   vertex={currentVertex}
-                  onVertexUpdated={(v) => {
-                    setCurrentVertex(v);
-                    return onVertexUpdated?.(v);
-                  }}
                 />
               )}
 
               {safeTab === "urls" && (
                 <LinksTab
                   vertex={currentVertex}
-                  onVertexUpdated={(v) => {
-                    setCurrentVertex(v);
-                    return onVertexUpdated?.(v);
-                  }}
                 />
               )}
 

@@ -2,7 +2,10 @@ import * as React from "react";
 import { Box, Typography } from "@mui/material";
 
 import { VertexGrid, VertexItem } from "../vertex-grid/VertexGrid";
-import { CreateFab, type CreateFabHandle } from "../../components/create-fab/CreateFab";
+import {
+  CreateFab,
+  type CreateFabHandle,
+} from "../../components/create-fab/CreateFab";
 import {
   CreateVertexDialog,
   DeleteVertexDialog,
@@ -49,8 +52,6 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
   );
   const [createOpen, setCreateOpen] = React.useState(false);
   const [createError, setCreateError] = React.useState<string | null>(null);
-  const defaultKind =
-    (vertex.children_behavior?.child_kind as Vertex["kind"]) ?? "generic";
 
   const loadChildren = React.useCallback(async () => {
     setLoading(true);
@@ -114,7 +115,9 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
           </Typography>
         )}
         {loading ? (
-          <Typography color="text.secondary">{t("childrenTab.loading")}</Typography>
+          <Typography color="text.secondary">
+            {t("childrenTab.loading")}
+          </Typography>
         ) : children.length === 0 ? (
           <Box
             sx={{
@@ -124,7 +127,7 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
               alignItems: "center",
               justifyContent: "center",
             }}
-            >
+          >
             <Typography color="text.secondary" align="center">
               {t("childrenTab.empty", { kind: emptyLabel })}
             </Typography>
@@ -168,9 +171,9 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
             const newVertex: Vertex = {
               id: crypto.randomUUID(),
               title: data.title,
+              asset_directory: "",
               parent_id: vertex.id,
-              workspace_id: workspace.id,
-              kind: data.kind,
+              workspace_id: null,
               default_tab: "children",
               created_at: now,
               updated_at: now,
@@ -182,12 +185,12 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
             await loadChildren();
           } catch (err) {
             setCreateError(
-              err instanceof Error ? err.message : t("childrenTab.errors.create")
+              err instanceof Error
+                ? err.message
+                : t("childrenTab.errors.create")
             );
           }
         }}
-        workspaceLabel={workspace.name}
-        defaultKind={defaultKind}
         submitLabel={t("childrenTab.create")}
         title={t("childrenTab.create")}
       />

@@ -14,29 +14,22 @@ import DeleteIcon from "@mui/icons-material/DeleteOutline";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 
 import type { Vertex } from "@/core/vertex";
-import type { Reference } from "@/core/common/reference";
+import type { UrlEntry } from "@/integrations/fileSystem/fileSystem";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
 import { useTranslation } from "react-i18next";
 
 type LinksTabProps = {
   vertex: Vertex;
-  onVertexUpdated?: (vertex: Vertex) => Promise<void> | void;
 };
 
-type UrlRef = Extract<Reference, { type: "url" }>;
-
-export const LinksTab: React.FC<LinksTabProps> = ({
-  vertex,
-  onVertexUpdated,
-}) => {
+export const LinksTab: React.FC<LinksTabProps> = ({ vertex }) => {
   const { t } = useTranslation("common");
-  const [links, setLinks] = React.useState<UrlRef[]>(
-    (vertex.references ?? []).filter((r): r is UrlRef => r.type === "url")
-  );
+  const [links, setLinks] = React.useState<UrlEntry[]>([]);
   const [url, setUrl] = React.useState("");
   const [title, setTitle] = React.useState("");
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [loading, setLoading] = React.useState(false);
   const urlRef = React.useRef<HTMLInputElement | null>(null);
 
   const focusUrl = React.useCallback(() => {
@@ -46,27 +39,38 @@ export const LinksTab: React.FC<LinksTabProps> = ({
   }, []);
 
   React.useEffect(() => {
-    setLinks(
-      (vertex.references ?? []).filter((r): r is UrlRef => r.type === "url")
-    );
-    setError(null);
-    focusUrl();
-  }, [vertex, focusUrl]);
+    const loadLinks = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const fs = await getFileSystem();
+        const list = await fs.listLinks(vertex);
+        setLinks(list);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : t("linksTab.errors.update"));
+        setLinks([]);
+      } finally {
+        setLoading(false);
+        focusUrl();
+      }
+    };
+    loadLinks();
+  }, [focusUrl, t, vertex]);
 
-  const persistLinks = async (nextLinks: UrlRef[]) => {
+  const handleAdd = async () => {
+    const trimmedUrl = url.trim();
+    if (!trimmedUrl) return;
     setSaving(true);
     setError(null);
     try {
-      const others = (vertex.references ?? []).filter((r) => r.type !== "url");
-      const updated: Vertex = {
-        ...vertex,
-        references: [...others, ...nextLinks],
-        updated_at: new Date().toISOString(),
-      };
       const fs = await getFileSystem();
-      await fs.updateVertex(updated);
-      setLinks(nextLinks);
-      await onVertexUpdated?.(updated);
+      const created = await fs.createLink(vertex, {
+        url: trimmedUrl,
+        title: title.trim() || undefined,
+      });
+      setLinks((prev) => [...prev, created]);
+      setUrl("");
+      setTitle("");
     } catch (err) {
       setError(err instanceof Error ? err.message : t("linksTab.errors.update"));
     } finally {
@@ -75,18 +79,21 @@ export const LinksTab: React.FC<LinksTabProps> = ({
     }
   };
 
-  const handleAdd = async () => {
-    const trimmedUrl = url.trim();
-    if (!trimmedUrl) return;
-    const newRef: UrlRef = { type: "url", url: trimmedUrl, title: title.trim() || undefined };
-    await persistLinks([...links, newRef]);
-    setUrl("");
-    setTitle("");
-  };
-
   const handleRemove = async (idx: number) => {
-    const next = links.filter((_, i) => i !== idx);
-    await persistLinks(next);
+    const target = links[idx];
+    if (!target) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const fs = await getFileSystem();
+      await fs.deleteLink(vertex, target.id);
+      setLinks((prev) => prev.filter((_, i) => i !== idx));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("linksTab.errors.update"));
+    } finally {
+      setSaving(false);
+      focusUrl();
+    }
   };
 
   const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = async (
@@ -166,13 +173,15 @@ export const LinksTab: React.FC<LinksTabProps> = ({
           </Button>
         </Stack>
 
-        {links.length === 0 ? (
+        {loading ? (
+          <Typography color="text.secondary">{t("linksTab.loading")}</Typography>
+        ) : links.length === 0 ? (
           <Typography color="text.secondary">{t("linksTab.empty")}</Typography>
         ) : (
           <Stack spacing={1}>
             {links.map((link, idx) => (
               <Paper
-                key={`${link.url}-${idx}`}
+                key={link.id}
                 variant="outlined"
                 sx={{
                   p: 1.5,

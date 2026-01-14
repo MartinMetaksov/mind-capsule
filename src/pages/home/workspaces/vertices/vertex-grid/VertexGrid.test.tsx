@@ -28,13 +28,12 @@ const workspace: Workspace = {
 const makeVertex = (id: string, title: string): Vertex => ({
   id,
   title,
-  parent_id: undefined,
+  asset_directory: `/tmp/assets/${id}`,
+  parent_id: null,
   workspace_id: workspace.id,
-  kind: "project",
   created_at: "2024-01-01T00:00:00.000Z",
   updated_at: "2024-01-02T00:00:00.000Z",
   tags: [],
-  references: [],
   children_behavior: { child_kind: "item", display: "grid" },
 });
 

@@ -37,26 +37,7 @@ export const SearchDialog: React.FC<Props> = ({ open, onClose }) => {
     setSearchTab(0);
     (async () => {
       const fs = await getFileSystem();
-      // load all vertices present in storage
-      const ids: string[] = [];
-      Object.keys(localStorage)
-        .filter((k) => k.includes("vertices"))
-        .forEach((k) => {
-          try {
-            const val = localStorage.getItem(k);
-            if (!val) return;
-            const parsed = JSON.parse(val) as Record<string, Vertex>;
-            ids.push(...Object.keys(parsed));
-          } catch {
-            /* ignore */
-          }
-        });
-      const unique = Array.from(new Set(ids));
-      const verts: Vertex[] = [];
-      for (const id of unique) {
-        const v = await fs.getVertex(id);
-        if (v) verts.push(v);
-      }
+      const verts = await fs.getAllVertices();
       setAllVertices(verts);
       // defer focus to ensure dialog is painted
       requestAnimationFrame(() => {
@@ -100,27 +81,11 @@ export const SearchDialog: React.FC<Props> = ({ open, onClose }) => {
     if (!q) return byTab;
 
     for (const v of allVertices) {
-      const refs = v.references ?? [];
       if (match(v.title)) byTab.vertices.push(v);
-      if (match(v.kind) || match(v.children_behavior?.child_kind)) {
+      if (match(v.children_behavior?.child_kind)) {
         byTab.properties.push(v);
       }
       if (v.tags?.some((t) => match(t))) byTab.tags.push(v);
-      if (refs.some((r) => r.type === "note" && match(r.text))) {
-        byTab.notes.push(v);
-      }
-      if (
-        refs.some(
-          (r) =>
-            r.type === "image" &&
-            (match(r.alt) || match((r as { description?: string }).description) || match(r.path))
-        )
-      ) {
-        byTab.images.push(v);
-      }
-      if (refs.some((r) => r.type === "url" && (match(r.url) || match((r as { title?: string }).title)))) {
-        byTab.links.push(v);
-      }
     }
     return byTab;
   }, [allVertices, search]);

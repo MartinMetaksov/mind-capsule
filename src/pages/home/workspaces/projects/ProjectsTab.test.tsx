@@ -31,13 +31,12 @@ const workspace: Workspace = {
 const vertex: Vertex = {
   id: "v-1",
   title: "Project One",
-  parent_id: undefined,
+  asset_directory: "/tmp/assets/v-1",
+  parent_id: null,
   workspace_id: workspace.id,
-  kind: "project",
   created_at: "2024-01-01T00:00:00.000Z",
   updated_at: "2024-01-02T00:00:00.000Z",
   tags: [],
-  references: [],
   children_behavior: { child_kind: "item", display: "grid" },
 };
 

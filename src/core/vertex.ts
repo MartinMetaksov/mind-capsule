@@ -2,9 +2,7 @@ import { Identifiable } from "./traits/identifiable";
 import { Taggable } from "./traits/taggable";
 import { Timestampable } from "./traits/timestampable";
 import { Thumbnailable } from "./traits/thumbnailable";
-import { VertexKind } from "./common/vertexKind";
 import { Id } from "./common/id";
-import { Reference } from "./common/reference";
 
 export type ChildrenDisplayHint =
   | "list"
@@ -29,20 +27,18 @@ export type VertexTabId =
   | "notes"
   | "images"
   | "urls";
-// | "files"
-// | "references";
 
 export type Vertex = Identifiable &
   Thumbnailable &
   Timestampable &
   Taggable & {
     title: string;
-    parent_id?: Id;
-    workspace_id?: Id;
+    asset_directory: string;
+    parent_id: Id | null;
+    workspace_id: Id | null;
     children_layout?: VertexLayout;
-    references?: Reference[];
     children_behavior?: ChildrenBehavior;
     default_tab?: VertexTabId;
-    kind: VertexKind;
     is_leaf?: boolean;
+    is_corrupt?: boolean;
   };
