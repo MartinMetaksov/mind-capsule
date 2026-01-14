@@ -391,10 +391,6 @@ export const inMemoryFileSystemMock: FileSystem = {
   },
 
   async createImage(vertex: Vertex, file: File): Promise<ImageEntry> {
-    const baseStore = loadAssetStore(vertex);
-    if (!baseStore) {
-      throw new Error(`Assets for vertex ${vertex.id} are missing.`);
-    }
     const path = await fileToDataUrl(file);
     const store = loadAssetStore(vertex);
     if (!store) {
@@ -472,7 +468,7 @@ export const inMemoryFileSystemMock: FileSystem = {
     }
     let name = createNoteName();
     while (store.notes[name]) {
-      name = createNoteName("note");
+      name = createNoteName();
     }
     store.notes[name] = text;
     saveAssetStore(vertex, store);
