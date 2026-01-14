@@ -1,6 +1,6 @@
 import { Workspace } from "@/core/workspace";
 import { Vertex } from "@/core/vertex";
-import type { FileSystem } from "../fileSystem";
+import type { FileSystem, ImageEntry, ImageMetadata } from "../fileSystem";
 import { Id } from "@/core/common/id";
 import type { Reference } from "@/core/common/reference";
 import seed from "./mock/seed-data.json";
@@ -48,15 +48,105 @@ function loadEntries<T>(prefix: string): Record<Id, T> {
 }
 
 type AssetStore = {
-  images: Reference[];
+  images: Record<string, string>;
+  image_meta: Record<string, ImageMetadata>;
   notes: Reference[];
   urls: Reference[];
 };
 
-function ensureAssetStore(vertex: Vertex): AssetStore | null {
+function guessExtensionFromDataUrl(dataUrl: string): string | null {
+  const match = dataUrl.match(/^data:image\/([a-zA-Z0-9+.-]+);/);
+  if (!match) return null;
+  const ext = match[1].toLowerCase();
+  if (ext === "jpeg") return "jpg";
+  return ext;
+}
+
+function normalizeAssetStore(stored: unknown): AssetStore | null {
+  if (!stored || typeof stored !== "object") return null;
+  const raw = stored as Partial<AssetStore> & { images?: unknown };
+  const notes = Array.isArray(raw.notes) ? raw.notes : [];
+  const urls = Array.isArray(raw.urls) ? raw.urls : [];
+
+  if (raw.images && typeof raw.images === "object" && !Array.isArray(raw.images)) {
+    const images = raw.images as Record<string, string>;
+    const image_meta =
+      raw.image_meta && typeof raw.image_meta === "object"
+        ? (raw.image_meta as Record<string, ImageMetadata>)
+        : {};
+    return { images, image_meta, notes, urls };
+  }
+
+  if (Array.isArray(raw.images)) {
+    const images: Record<string, string> = {};
+    const image_meta: Record<string, ImageMetadata> = {};
+    raw.images.forEach((entry, idx) => {
+      const ref = entry as Reference | undefined;
+      if (!ref || ref.type !== "image" || typeof ref.path !== "string") return;
+      const ext = guessExtensionFromDataUrl(ref.path) ?? "png";
+      const name = `image-${idx + 1}.${ext}`;
+      images[name] = ref.path;
+      if (ref.alt || ref.description) {
+        image_meta[name] = { alt: ref.alt, description: ref.description };
+      }
+    });
+    return { images, image_meta, notes, urls };
+  }
+
+  return null;
+}
+
+function needsAssetStoreUpgrade(stored: unknown): boolean {
+  if (!stored || typeof stored !== "object") return false;
+  const raw = stored as { images?: unknown; image_meta?: unknown };
+  if (Array.isArray(raw.images)) return true;
+  if (!raw.images || typeof raw.images !== "object") return true;
+  if (!raw.image_meta || typeof raw.image_meta !== "object") return true;
+  return false;
+}
+
+function loadAssetStore(vertex: Vertex): AssetStore | null {
   const key = assetStorageKey(vertex.id);
-  const stored = loadJson<AssetStore>(key);
-  return stored ?? null;
+  const stored = loadJson<unknown>(key);
+  const normalized = normalizeAssetStore(stored);
+  if (normalized && needsAssetStoreUpgrade(stored)) {
+    persist(key, normalized);
+  }
+  return normalized;
+}
+
+function saveAssetStore(vertex: Vertex, store: AssetStore) {
+  persist(assetStorageKey(vertex.id), store);
+}
+
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") resolve(reader.result);
+      else reject(new Error("Invalid file"));
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function pickImageExtension(file: File): string {
+  const fromName = file.name?.split(".").pop()?.toLowerCase();
+  if (fromName) return fromName;
+  const type = file.type?.toLowerCase();
+  if (type === "image/jpeg") return "jpg";
+  if (type === "image/png") return "png";
+  return "png";
+}
+
+function createImageName(file: File, store: AssetStore): string {
+  const ext = pickImageExtension(file);
+  let name = `${crypto.randomUUID()}.${ext}`;
+  while (store.images[name]) {
+    name = `${crypto.randomUUID()}.${ext}`;
+  }
+  return name;
 }
 
 function seedIfRequested() {
@@ -72,7 +162,12 @@ function seedIfRequested() {
   });
   (seed.vertices as Vertex[]).forEach((vertex) => {
     persist(vertexStorageKey(vertex.id), vertex);
-    persist(assetStorageKey(vertex.id), { images: [], notes: [], urls: [] });
+    persist(assetStorageKey(vertex.id), {
+      images: {},
+      image_meta: {},
+      notes: [],
+      urls: [],
+    });
   });
   localStorage.setItem(SEEDED_KEY, "true");
 }
@@ -86,7 +181,7 @@ const vertices: Record<Id, Vertex> = loadEntries(VERTEX_KEY_PREFIX);
 
 Object.values(vertices).forEach((vertex) => {
   const assetKey = assetStorageKey(vertex.id);
-  const assetStore = ensureAssetStore(vertex);
+  const assetStore = loadAssetStore(vertex);
   if (!vertex.asset_directory) {
     vertex.asset_directory = assetKey;
     vertex.is_corrupt = true;
@@ -168,7 +263,7 @@ export const inMemoryFileSystemMock: FileSystem = {
     };
 
     persist(vertexStorageKey(vertex.id), vertices[vertex.id]);
-    persist(assetKey, { images: [], notes: [], urls: [] });
+    saveAssetStore(vertex, { images: {}, image_meta: {}, notes: [], urls: [] });
   },
 
   async getVertices(parent_id: Id): Promise<Vertex[]> {
@@ -208,5 +303,82 @@ export const inMemoryFileSystemMock: FileSystem = {
     delete vertices[vertex.id];
     localStorage.removeItem(vertexStorageKey(vertex.id));
     localStorage.removeItem(assetStorageKey(vertex.id));
+  },
+
+  /* ===== Images ===== */
+
+  async listImages(vertex: Vertex): Promise<ImageEntry[]> {
+    const store = loadAssetStore(vertex);
+    if (!store) {
+      throw new Error(`Assets for vertex ${vertex.id} are missing.`);
+    }
+    return Object.entries(store.images).map(([name, path]) => ({
+      name,
+      path,
+      ...(store.image_meta[name] ?? {}),
+    }));
+  },
+
+  async getImage(vertex: Vertex, name: string): Promise<ImageEntry | null> {
+    const store = loadAssetStore(vertex);
+    if (!store) {
+      throw new Error(`Assets for vertex ${vertex.id} are missing.`);
+    }
+    const path = store.images[name];
+    if (!path) return null;
+    return { name, path, ...(store.image_meta[name] ?? {}) };
+  },
+
+  async createImage(vertex: Vertex, file: File): Promise<ImageEntry> {
+    const baseStore = loadAssetStore(vertex);
+    if (!baseStore) {
+      throw new Error(`Assets for vertex ${vertex.id} are missing.`);
+    }
+    const path = await fileToDataUrl(file);
+    let store = loadAssetStore(vertex);
+    if (!store) {
+      throw new Error(`Assets for vertex ${vertex.id} are missing.`);
+    }
+    let name = createImageName(file, store);
+    while (store.images[name]) {
+      name = createImageName(file, store);
+    }
+    store.images[name] = path;
+    saveAssetStore(vertex, store);
+    return { name, path };
+  },
+
+  async deleteImage(vertex: Vertex, name: string): Promise<void> {
+    const store = loadAssetStore(vertex);
+    if (!store) {
+      throw new Error(`Assets for vertex ${vertex.id} are missing.`);
+    }
+    delete store.images[name];
+    delete store.image_meta[name];
+    saveAssetStore(vertex, store);
+  },
+
+  async updateImageMetadata(
+    vertex: Vertex,
+    name: string,
+    metadata: ImageMetadata
+  ): Promise<ImageEntry | null> {
+    const store = loadAssetStore(vertex);
+    if (!store) {
+      throw new Error(`Assets for vertex ${vertex.id} are missing.`);
+    }
+    const path = store.images[name];
+    if (!path) return null;
+    const nextMeta = {
+      alt: metadata.alt?.trim() || undefined,
+      description: metadata.description?.trim() || undefined,
+    };
+    if (!nextMeta.alt && !nextMeta.description) {
+      delete store.image_meta[name];
+    } else {
+      store.image_meta[name] = nextMeta;
+    }
+    saveAssetStore(vertex, store);
+    return { name, path, ...(store.image_meta[name] ?? {}) };
   },
 };

@@ -344,8 +344,6 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
               {safeTab === "images" && (
                 <ImagesTab
                   vertex={currentVertex}
-                  references={references}
-                  onReferencesUpdated={(next) => setReferences(next)}
                 />
               )}
 

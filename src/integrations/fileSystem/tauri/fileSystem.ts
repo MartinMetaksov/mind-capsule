@@ -1,15 +1,19 @@
 import { Id } from "@/core/common/id";
 import { Vertex } from "@/core/vertex";
 import { Workspace } from "@/core/workspace";
-import type { FileSystem } from "../fileSystem";
+import type { FileSystem, ImageEntry, ImageMetadata } from "../fileSystem";
 import { Store } from "@tauri-apps/plugin-store";
 import { invoke } from "@tauri-apps/api/core";
+import { create, readDir, readFile, remove, writeFile } from "@tauri-apps/plugin-fs";
+import { join } from "@tauri-apps/api/path";
 
 const store = await Store.load("settings.json");
 
 const WORKSPACE_KEY_PREFIX = "ws-";
 const VERTEX_KEY_PREFIX = "vert-";
 const KEY_SUFFIX = ".json";
+const IMAGE_META_FILE = "images.meta.json";
+const IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg"];
 
 type WorkspaceMap = Record<Id, Workspace>;
 type VertexMap = Record<Id, Vertex>;
@@ -48,6 +52,78 @@ function parseMetadataId(prefix: string, key: string): Id | null {
 function buildAssetDirectory(workspacePath: string, vertexId: Id): string {
   const trimmed = workspacePath.replace(/[\\/]+$/, "");
   return `${trimmed}/${vertexId}`;
+}
+
+function pickImageExtension(file: File): string {
+  const fromName = file.name?.split(".").pop()?.toLowerCase();
+  if (fromName) return fromName;
+  const type = file.type?.toLowerCase();
+  if (type === "image/jpeg") return "jpg";
+  if (type === "image/png") return "png";
+  return "png";
+}
+
+function createImageName(file: File): string {
+  const ext = pickImageExtension(file);
+  return `${crypto.randomUUID()}.${ext}`;
+}
+
+function getImageExtension(name: string): string | null {
+  const idx = name.lastIndexOf(".");
+  if (idx === -1) return null;
+  return name.slice(idx + 1).toLowerCase();
+}
+
+function isImageFile(name: string): boolean {
+  const ext = getImageExtension(name);
+  if (!ext) return false;
+  return IMAGE_EXTENSIONS.includes(`.${ext}`);
+}
+
+function mimeForExtension(ext: string | null): string {
+  if (!ext) return "application/octet-stream";
+  if (ext === "png") return "image/png";
+  if (ext === "jpg" || ext === "jpeg") return "image/jpeg";
+  return "application/octet-stream";
+}
+
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  bytes.forEach((b) => {
+    binary += String.fromCharCode(b);
+  });
+  return btoa(binary);
+}
+
+function toDataUrl(bytes: Uint8Array, name: string): string {
+  const ext = getImageExtension(name);
+  const mime = mimeForExtension(ext);
+  return `data:${mime};base64,${bytesToBase64(bytes)}`;
+}
+
+type ImageMetaFile = {
+  images: Record<string, ImageMetadata>;
+};
+
+async function readImageMeta(dir: string): Promise<ImageMetaFile> {
+  const metaPath = await join(dir, IMAGE_META_FILE);
+  try {
+    const raw = await readFile(metaPath);
+    const text = new TextDecoder().decode(raw);
+    const parsed = JSON.parse(text) as ImageMetaFile | null;
+    if (parsed && typeof parsed === "object" && parsed.images) {
+      return { images: parsed.images ?? {} };
+    }
+  } catch {
+    // ignore missing/invalid metadata
+  }
+  return { images: {} };
+}
+
+async function writeImageMeta(dir: string, meta: ImageMetaFile): Promise<void> {
+  const metaPath = await join(dir, IMAGE_META_FILE);
+  const encoded = new TextEncoder().encode(JSON.stringify(meta, null, 2));
+  await writeFile(metaPath, encoded);
 }
 
 async function loadMetadata<T>(prefix: string): Promise<Record<Id, T>> {
@@ -201,5 +277,98 @@ export const fileSystem: FileSystem = {
     delete vertices[new_vertex.id];
     await store.delete(vertexKey(new_vertex.id));
     await store.save();
+  },
+
+  /* ===== Images ===== */
+
+  async listImages(vertex: Vertex): Promise<ImageEntry[]> {
+    const dir = vertex.asset_directory;
+    const meta = await readImageMeta(dir);
+    const entries = await readDir(dir);
+    const results: ImageEntry[] = [];
+    for (const entry of entries) {
+      if (!entry.name) continue;
+      if (!isImageFile(entry.name)) continue;
+      const filePath = await join(dir, entry.name);
+      try {
+        const data = await readFile(filePath);
+        results.push({
+          name: entry.name,
+          path: toDataUrl(data, entry.name),
+          ...(meta.images[entry.name] ?? {}),
+        });
+      } catch {
+        // skip entries that cannot be read
+      }
+    }
+    return results;
+  },
+
+  async getImage(vertex: Vertex, name: string): Promise<ImageEntry | null> {
+    const dir = vertex.asset_directory;
+    const meta = await readImageMeta(dir);
+    const filePath = await join(dir, name);
+    try {
+      const data = await readFile(filePath);
+      return {
+        name,
+        path: toDataUrl(data, name),
+        ...(meta.images[name] ?? {}),
+      };
+    } catch {
+      return null;
+    }
+  },
+
+  async createImage(vertex: Vertex, file: File): Promise<ImageEntry> {
+    const dir = vertex.asset_directory;
+    await create(dir);
+    const name = createImageName(file);
+    const filePath = await join(dir, name);
+    const data = new Uint8Array(await file.arrayBuffer());
+    await writeFile(filePath, data);
+    return {
+      name,
+      path: toDataUrl(data, name),
+    };
+  },
+
+  async deleteImage(vertex: Vertex, name: string): Promise<void> {
+    const dir = vertex.asset_directory;
+    const meta = await readImageMeta(dir);
+    const filePath = await join(dir, name);
+    await remove(filePath);
+    delete meta.images[name];
+    await writeImageMeta(dir, meta);
+  },
+
+  async updateImageMetadata(
+    vertex: Vertex,
+    name: string,
+    metadata: ImageMetadata
+  ): Promise<ImageEntry | null> {
+    const dir = vertex.asset_directory;
+    const meta = await readImageMeta(dir);
+    const filePath = await join(dir, name);
+    const next = {
+      alt: metadata.alt?.trim() || undefined,
+      description: metadata.description?.trim() || undefined,
+    };
+    if (!next.alt && !next.description) {
+      delete meta.images[name];
+    } else {
+      meta.images[name] = next;
+    }
+    await writeImageMeta(dir, meta);
+    try {
+      const data = await readFile(filePath);
+      return {
+        name,
+        path: toDataUrl(data, name),
+        ...(meta.images[name] ?? {}),
+      };
+    } catch {
+      return null;
+    }
   },
 };

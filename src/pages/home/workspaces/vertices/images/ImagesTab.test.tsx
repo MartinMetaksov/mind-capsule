@@ -4,21 +4,20 @@ import { I18nextProvider } from "react-i18next";
 import i18n from "@/i18n";
 import { ImagesTab } from "./ImagesTab";
 import type { Vertex } from "@/core/vertex";
-import { Reference } from "@/core/common/reference";
 
-const mockUpdateReferences = vi.fn();
+const mockListImages = vi.fn();
+const mockDeleteImage = vi.fn();
+const mockUpdateImageMetadata = vi.fn();
+const mockCreateImage = vi.fn();
 
-// Mock FileReader for data URLs
-class MockFileReader {
-  public result: string | ArrayBuffer | null = "data://mock";
-  onload: null | (() => void) = null;
-  onerror: null | (() => void) = null;
-  readAsDataURL() {
-    setTimeout(() => this.onload && this.onload(), 0);
-  }
-}
-// @ts-expect-error replace global FileReader for tests
-global.FileReader = MockFileReader;
+vi.mock("@/integrations/fileSystem/integration", () => ({
+  getFileSystem: async () => ({
+    listImages: mockListImages,
+    deleteImage: mockDeleteImage,
+    updateImageMetadata: mockUpdateImageMetadata,
+    createImage: mockCreateImage,
+  }),
+}));
 
 const vertex: Vertex = {
   id: "v-1",
@@ -35,6 +34,21 @@ const vertex: Vertex = {
 describe("ImagesTab", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockListImages.mockResolvedValue([
+      {
+        name: "img1.png",
+        path: "data://img1",
+        alt: "Alt1",
+        description: "Desc1",
+      },
+    ]);
+    mockDeleteImage.mockResolvedValue(undefined);
+    mockUpdateImageMetadata.mockResolvedValue({
+      name: "img1.png",
+      path: "data://img1",
+      alt: "Alt1",
+      description: "Desc1",
+    });
   });
 
   const renderTab = (override?: Partial<React.ComponentProps<typeof ImagesTab>>) =>
@@ -42,34 +56,25 @@ describe("ImagesTab", () => {
       <I18nextProvider i18n={i18n}>
         <ImagesTab
           vertex={{ ...vertex, ...(override?.vertex ?? {}) }}
-          references={[
-            {
-              type: "image",
-              path: "data://img1",
-              alt: "Alt1",
-              description: "Desc1",
-            } as Reference,
-          ]}
-          onReferencesUpdated={mockUpdateReferences}
         />
       </I18nextProvider>
     );
 
-  it("renders existing images", () => {
+  it("renders existing images", async () => {
     renderTab();
-    expect(screen.getByAltText("Alt1")).toBeInTheDocument();
-    expect(screen.getByText("Desc1")).toBeInTheDocument();
+    expect(await screen.findByAltText("Alt1")).toBeInTheDocument();
+    expect(await screen.findByText("Desc1")).toBeInTheDocument();
   });
 
   it("opens edit dialog on image click", async () => {
     renderTab();
-    fireEvent.click(screen.getByAltText("Alt1"));
+    fireEvent.click(await screen.findByAltText("Alt1"));
     expect(await screen.findByText(/Edit image/i)).toBeInTheDocument();
   });
 
   it("deletes an image", async () => {
     renderTab();
-    fireEvent.click(screen.getByRole("button", { name: /Delete/i }));
-    await waitFor(() => expect(mockUpdateReferences).toHaveBeenCalled());
+    fireEvent.click(await screen.findByRole("button", { name: /Delete/i }));
+    await waitFor(() => expect(mockDeleteImage).toHaveBeenCalledWith(vertex, "img1.png"));
   });
 });

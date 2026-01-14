@@ -12,6 +12,12 @@ const storeMock = {
 };
 const loadSpy = vi.fn(async () => storeMock);
 const invokeMock = vi.fn();
+const readDirMock = vi.fn(async () => []);
+const readFileMock = vi.fn();
+const writeFileMock = vi.fn();
+const createDirMock = vi.fn();
+const removeFileMock = vi.fn();
+const joinMock = vi.fn(async (...parts: string[]) => parts.join("/"));
 
 vi.mock("@tauri-apps/plugin-store", () => ({
   Store: {
@@ -23,6 +29,18 @@ vi.mock("@tauri-apps/api/core", () => ({
   invoke: invokeMock,
 }));
 
+vi.mock("@tauri-apps/api/fs", () => ({
+  readDir: readDirMock,
+  readFile: readFileMock,
+  writeFile: writeFileMock,
+  createDir: createDirMock,
+  removeFile: removeFileMock,
+}));
+
+vi.mock("@tauri-apps/api/path", () => ({
+  join: joinMock,
+}));
+
 const loadFs = async (): Promise<FileSystem> => {
   vi.resetModules();
   storeMock.set.mockClear();
@@ -31,6 +49,12 @@ const loadFs = async (): Promise<FileSystem> => {
   storeMock.keys.mockClear();
   storeMock.delete.mockClear();
   invokeMock.mockReset();
+  readDirMock.mockClear();
+  readFileMock.mockClear();
+  writeFileMock.mockClear();
+  createDirMock.mockClear();
+  removeFileMock.mockClear();
+  joinMock.mockClear();
   // default empty store
   storeMock.get.mockResolvedValue(undefined);
   const mod = await import("./fileSystem");

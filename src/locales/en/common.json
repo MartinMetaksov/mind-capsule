@@ -233,6 +233,7 @@
     "title": "Images",
     "description": "Drag and drop images to add them to this vertex.",
     "dropzone": "Drop images here or click to select (multiple supported)",
+    "loading": "Loading images…",
     "empty": "No images yet.",
     "editTitle": "Edit image",
     "alt": "Alt text",
