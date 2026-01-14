@@ -96,6 +96,8 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
       const vertex: Vertex = {
         id: crypto.randomUUID(),
         title: data.title,
+        asset_directory: "",
+        parent_id: null,
         workspace_id: selectedWorkspace.id,
         default_tab: "children",
         created_at: now,

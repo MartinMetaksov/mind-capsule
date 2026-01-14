@@ -45,6 +45,11 @@ function parseMetadataId(prefix: string, key: string): Id | null {
   return id || null;
 }
 
+function buildAssetDirectory(workspacePath: string, vertexId: Id): string {
+  const trimmed = workspacePath.replace(/[\\/]+$/, "");
+  return `${trimmed}/${vertexId}`;
+}
+
 async function loadMetadata<T>(prefix: string): Promise<Record<Id, T>> {
   const map: Record<Id, T> = {};
   const keys = await store.keys();
@@ -61,6 +66,17 @@ async function loadMetadata<T>(prefix: string): Promise<Record<Id, T>> {
 
 const workspaces: WorkspaceMap = await loadMetadata<Workspace>(WORKSPACE_KEY_PREFIX);
 const vertices: VertexMap = await loadMetadata<Vertex>(VERTEX_KEY_PREFIX);
+
+Object.values(vertices).forEach((vertex) => {
+  if (!vertex.asset_directory) {
+    const workspaceId = resolveWorkspaceId(vertex);
+    const workspace = workspaceId ? workspaces[workspaceId] : null;
+    vertex.asset_directory = workspace
+      ? buildAssetDirectory(workspace.path, vertex.id)
+      : "";
+    vertex.is_corrupt = true;
+  }
+});
 
 export const fileSystem: FileSystem = {
   async createWorkspace(workspace: Workspace): Promise<void> {
@@ -128,8 +144,10 @@ export const fileSystem: FileSystem = {
       throw new Error(`Workspace ${workspaceId} does not exist.`);
     }
     const now = new Date().toISOString();
+    const assetDirectory = buildAssetDirectory(workspace.path, vertex.id);
     vertices[vertex.id] = {
       ...vertex,
+      asset_directory: assetDirectory,
       created_at: vertex.created_at ?? now,
       updated_at: vertex.updated_at ?? now,
     };
@@ -147,7 +165,7 @@ export const fileSystem: FileSystem = {
   },
   async getWorkspaceRootVertices(workspace_id: Id): Promise<Vertex[]> {
     return Object.values(vertices).filter(
-      (v) => v.parent_id === null || v.parent_id === undefined
+      (v) => v.parent_id == null
     ).filter((v) => v.workspace_id === workspace_id);
   },
   async getVertex(vertex_id: Id): Promise<Vertex | null> {
@@ -157,8 +175,12 @@ export const fileSystem: FileSystem = {
     if (!vertices[new_vertex.id]) {
       throw new Error(`Vertex ${new_vertex.id} does not exist.`);
     }
+    const assetDirectory =
+      new_vertex.asset_directory || vertices[new_vertex.id]?.asset_directory;
     vertices[new_vertex.id] = {
       ...new_vertex,
+      asset_directory: assetDirectory ?? "",
+      is_corrupt: assetDirectory ? new_vertex.is_corrupt : true,
       updated_at: new Date().toISOString(),
     };
     await persist(vertexKey(new_vertex.id), vertices[new_vertex.id]);

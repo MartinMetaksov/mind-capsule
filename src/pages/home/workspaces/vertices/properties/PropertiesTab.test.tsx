@@ -27,6 +27,8 @@ const workspace: Workspace = {
 const vertex: Vertex = {
   id: "v-1",
   title: "Vertex One",
+  asset_directory: "/tmp/assets/v-1",
+  parent_id: null,
   workspace_id: workspace.id,
   created_at: "2024-01-01T00:00:00.000Z",
   updated_at: "2024-01-02T00:00:00.000Z",
@@ -56,6 +58,7 @@ describe("PropertiesTab", () => {
     renderTab();
     expect(screen.getByDisplayValue("Vertex One")).toBeInTheDocument();
     expect(screen.getByDisplayValue("chapter")).toBeInTheDocument();
+    expect(screen.getByText("/tmp/assets/v-1")).toBeInTheDocument();
   });
 
   it("requires title before saving and then calls update", async () => {

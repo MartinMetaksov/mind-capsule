@@ -141,6 +141,17 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
         <Typography color="text.secondary">
           {t("propertiesTab.subtitle")}
         </Typography>
+        <Box sx={{ mt: 1 }}>
+          <Typography variant="caption" color="text.secondary">
+            {t("propertiesTab.assetDirectoryLabel")}
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{ fontFamily: "monospace", wordBreak: "break-all" }}
+          >
+            {vertex.asset_directory}
+          </Typography>
+        </Box>
       </Box>
 
       {error && (

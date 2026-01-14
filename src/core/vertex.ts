@@ -33,10 +33,12 @@ export type Vertex = Identifiable &
   Timestampable &
   Taggable & {
     title: string;
-    parent_id?: Id;
-    workspace_id?: Id;
+    asset_directory: string;
+    parent_id: Id | null;
+    workspace_id: Id | null;
     children_layout?: VertexLayout;
     children_behavior?: ChildrenBehavior;
     default_tab?: VertexTabId;
     is_leaf?: boolean;
+    is_corrupt?: boolean;
   };

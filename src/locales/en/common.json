@@ -192,6 +192,7 @@
   },
   "propertiesTab": {
     "subtitle": "Manage the core properties for this vertex.",
+    "assetDirectoryLabel": "Asset directory",
     "defaultTab": "Default tab",
     "leaf": {
       "label": "Leaf node",

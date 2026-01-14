@@ -171,7 +171,9 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
             const newVertex: Vertex = {
               id: crypto.randomUUID(),
               title: data.title,
+              asset_directory: "",
               parent_id: vertex.id,
+              workspace_id: null,
               default_tab: "children",
               created_at: now,
               updated_at: now,

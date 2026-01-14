@@ -42,8 +42,9 @@ const workspace: Workspace = {
 const child: Vertex = {
   id: "child-1",
   title: "Child One",
+  asset_directory: "/tmp/assets/child-1",
   parent_id: "parent",
-  workspace_id: workspace.id,
+  workspace_id: null,
   created_at: "2024-01-01T00:00:00.000Z",
   updated_at: "2024-01-02T00:00:00.000Z",
   tags: [],
@@ -53,6 +54,8 @@ const child: Vertex = {
 const parent: Vertex = {
   id: "parent",
   title: "Parent",
+  asset_directory: "/tmp/assets/parent",
+  parent_id: null,
   workspace_id: workspace.id,
   created_at: "2024-01-01T00:00:00.000Z",
   updated_at: "2024-01-02T00:00:00.000Z",

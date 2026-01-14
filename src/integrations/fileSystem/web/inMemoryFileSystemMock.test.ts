@@ -1,4 +1,5 @@
 import { Vertex } from "@/core/vertex";
+import { assetStorageKey } from "./storageKeys";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
 const loadMock = async () => {
@@ -61,7 +62,8 @@ describe("inMemoryFileSystemMock", () => {
     const vertex: Vertex = {
       id: "v-1",
       title: "Root",
-      parent_id: undefined,
+      asset_directory: assetStorageKey("v-1"),
+      parent_id: null,
       workspace_id: ws.id,
       created_at: "2024-01-01T00:00:00.000Z",
       updated_at: "2024-01-01T00:00:00.000Z",

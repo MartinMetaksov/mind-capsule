@@ -50,7 +50,8 @@ const ws: Workspace = {
 const vertex: Vertex = {
   id: "v-1",
   title: "Vertex",
-  parent_id: undefined,
+  asset_directory: `${ws.path}/v-1`,
+  parent_id: null,
   workspace_id: ws.id,
   created_at: "2024-01-01T00:00:00.000Z",
   updated_at: "2024-01-01T00:00:00.000Z",
@@ -81,13 +82,19 @@ describe("tauri fileSystem bridge", () => {
 
   it("persists vertices and invokes directory commands", async () => {
     const fs = await loadFs();
+    await fs.createWorkspace(ws);
     await fs.createVertex(vertex);
     expect(invokeMock).toHaveBeenCalledWith("fs_create_vertex_dir", {
       workspacePath: ws.path,
       vertexId: vertex.id,
     });
-    expect(storeMock.set).toHaveBeenCalledWith(`vert-${vertex.id}.json`, vertex);
-    expect(await fs.getVertex(vertex.id)).toEqual(vertex);
+    expect(storeMock.set).toHaveBeenCalledWith(
+      `vert-${vertex.id}.json`,
+      expect.objectContaining({ asset_directory: `${ws.path}/${vertex.id}` })
+    );
+    expect(await fs.getVertex(vertex.id)).toEqual(
+      expect.objectContaining({ asset_directory: `${ws.path}/${vertex.id}` })
+    );
     expect(await fs.getWorkspaceRootVertices(ws.id)).toEqual([vertex]);
 
     await fs.updateVertex({ ...vertex, title: "Updated" });

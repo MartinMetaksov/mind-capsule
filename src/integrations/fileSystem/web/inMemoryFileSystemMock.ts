@@ -2,11 +2,13 @@ import { Workspace } from "@/core/workspace";
 import { Vertex } from "@/core/vertex";
 import type { FileSystem } from "../fileSystem";
 import { Id } from "@/core/common/id";
+import type { Reference } from "@/core/common/reference";
 import seed from "./mock/seed-data.json";
 import {
   SEEDED_KEY,
   VERTEX_KEY_PREFIX,
   WORKSPACE_KEY_PREFIX,
+  assetStorageKey,
   vertexStorageKey,
   workspaceStorageKey,
 } from "./storageKeys";
@@ -45,6 +47,18 @@ function loadEntries<T>(prefix: string): Record<Id, T> {
   return map;
 }
 
+type AssetStore = {
+  images: Reference[];
+  notes: Reference[];
+  urls: Reference[];
+};
+
+function ensureAssetStore(vertex: Vertex): AssetStore | null {
+  const key = assetStorageKey(vertex.id);
+  const stored = loadJson<AssetStore>(key);
+  return stored ?? null;
+}
+
 function seedIfRequested() {
   const params = new URLSearchParams(window.location.search);
   const wantsSeed = params.get("seed") === "1";
@@ -58,6 +72,7 @@ function seedIfRequested() {
   });
   (seed.vertices as Vertex[]).forEach((vertex) => {
     persist(vertexStorageKey(vertex.id), vertex);
+    persist(assetStorageKey(vertex.id), { images: [], notes: [], urls: [] });
   });
   localStorage.setItem(SEEDED_KEY, "true");
 }
@@ -68,6 +83,18 @@ seedIfRequested();
 
 const workspaces: Record<Id, Workspace> = loadEntries(WORKSPACE_KEY_PREFIX);
 const vertices: Record<Id, Vertex> = loadEntries(VERTEX_KEY_PREFIX);
+
+Object.values(vertices).forEach((vertex) => {
+  const assetKey = assetStorageKey(vertex.id);
+  const assetStore = ensureAssetStore(vertex);
+  if (!vertex.asset_directory) {
+    vertex.asset_directory = assetKey;
+    vertex.is_corrupt = true;
+  }
+  if (!assetStore) {
+    vertex.is_corrupt = true;
+  }
+});
 
 /* ---------- mock filesystem ---------- */
 
@@ -118,6 +145,7 @@ export const inMemoryFileSystemMock: FileSystem = {
       if (vertex.workspace_id === workspace_id) {
         delete vertices[vertex.id];
         localStorage.removeItem(vertexStorageKey(vertex.id));
+        localStorage.removeItem(assetStorageKey(vertex.id));
       }
     });
     delete workspaces[workspace_id];
@@ -131,13 +159,16 @@ export const inMemoryFileSystemMock: FileSystem = {
       throw new Error(`Vertex ${vertex.id} already exists.`);
     }
 
+    const assetKey = assetStorageKey(vertex.id);
     vertices[vertex.id] = {
       ...vertex,
+      asset_directory: assetKey,
       created_at: vertex.created_at ?? now(),
       updated_at: vertex.updated_at ?? now(),
     };
 
     persist(vertexStorageKey(vertex.id), vertices[vertex.id]);
+    persist(assetKey, { images: [], notes: [], urls: [] });
   },
 
   async getVertices(parent_id: Id): Promise<Vertex[]> {
@@ -150,7 +181,7 @@ export const inMemoryFileSystemMock: FileSystem = {
 
   async getWorkspaceRootVertices(workspace_id: Id): Promise<Vertex[]> {
     return Object.values(vertices).filter(
-      (v) => v.parent_id === null || v.parent_id === undefined
+      (v) => v.parent_id == null
     ).filter((v) => v.workspace_id === workspace_id);
   },
 
@@ -163,8 +194,10 @@ export const inMemoryFileSystemMock: FileSystem = {
       throw new Error(`Vertex ${new_vertex.id} does not exist.`);
     }
 
+    const assetKey = new_vertex.asset_directory || assetStorageKey(new_vertex.id);
     vertices[new_vertex.id] = {
       ...new_vertex,
+      asset_directory: assetKey,
       updated_at: now(),
     };
 
@@ -174,5 +207,6 @@ export const inMemoryFileSystemMock: FileSystem = {
   async removeVertex(vertex: Vertex): Promise<void> {
     delete vertices[vertex.id];
     localStorage.removeItem(vertexStorageKey(vertex.id));
+    localStorage.removeItem(assetStorageKey(vertex.id));
   },
 };

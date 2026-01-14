@@ -14,6 +14,7 @@
     {
       "id": "v-project",
       "title": "My First Project",
+      "asset_directory": "mind-capsule.web.assets-v-project.json",
       "parent_id": null,
       "workspace_id": "ws-default",
       "default_tab": "children",
@@ -29,6 +30,7 @@
     {
       "id": "v-chapter-1",
       "title": "Chapter One",
+      "asset_directory": "mind-capsule.web.assets-v-chapter-1.json",
       "default_tab": "notes",
       "parent_id": "v-project",
       "workspace_id": "ws-default",
@@ -39,6 +41,7 @@
     {
       "id": "v-chapter-2",
       "title": "Chapter Two",
+      "asset_directory": "mind-capsule.web.assets-v-chapter-2.json",
       "default_tab": "notes",
       "parent_id": "v-project",
       "workspace_id": "ws-default",
@@ -49,6 +52,7 @@
     {
       "id": "v-chapter-3",
       "title": "Chapter Three",
+      "asset_directory": "mind-capsule.web.assets-v-chapter-3.json",
       "default_tab": "notes",
       "parent_id": "v-project",
       "workspace_id": "ws-default",
@@ -59,6 +63,7 @@
     {
       "id": "v-chapter-4",
       "title": "Chapter Four",
+      "asset_directory": "mind-capsule.web.assets-v-chapter-4.json",
       "default_tab": "notes",
       "parent_id": "v-project",
       "workspace_id": "ws-default",
