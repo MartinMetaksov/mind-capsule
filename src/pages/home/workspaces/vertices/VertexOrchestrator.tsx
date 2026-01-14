@@ -8,7 +8,6 @@ import TagOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import { TuneOutlined } from "@mui/icons-material";
 import type { Vertex, VertexTabId } from "@/core/vertex";
 import type { Workspace } from "@/core/workspace";
-import type { Reference } from "@/core/common/reference";
 import { BreadcrumbsTrail } from "../components/breadcrumbs-trail/BreadcrumbsTrail";
 import { VerticalTabs } from "../components/vertical-tabs/VerticalTabs";
 import { ChildrenTab } from "./children/ChildrenTab";
@@ -70,12 +69,10 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
   const location = useLocation();
   const navigate = useNavigate();
   const [currentVertex, setCurrentVertex] = React.useState<Vertex>(vertex);
-  const [references, setReferences] = React.useState<Reference[]>([]);
   const os = React.useMemo(() => detectOperatingSystem(), []);
 
   React.useEffect(() => {
     setCurrentVertex(vertex);
-    setReferences([]);
   }, [vertex]);
 
   const tabOrder: VertexTab[] = React.useMemo(() => {
@@ -348,8 +345,6 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
               {safeTab === "urls" && (
                 <LinksTab
                   vertex={currentVertex}
-                  references={references}
-                  onReferencesUpdated={(next) => setReferences(next)}
                 />
               )}
 

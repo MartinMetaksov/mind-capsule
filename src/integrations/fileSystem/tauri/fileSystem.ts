@@ -1,7 +1,7 @@
 import { Id } from "@/core/common/id";
 import { Vertex } from "@/core/vertex";
 import { Workspace } from "@/core/workspace";
-import type { FileSystem, ImageEntry, ImageMetadata, NoteEntry } from "../fileSystem";
+import type { FileSystem, ImageEntry, ImageMetadata, NoteEntry, UrlEntry } from "../fileSystem";
 import { Store } from "@tauri-apps/plugin-store";
 import { invoke } from "@tauri-apps/api/core";
 import { readDir, readFile, remove, writeFile } from "@tauri-apps/plugin-fs";
@@ -14,6 +14,7 @@ const VERTEX_KEY_PREFIX = "vert-";
 const KEY_SUFFIX = ".json";
 const IMAGE_META_FILE = "images.meta.json";
 const IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg"];
+const URLS_FILE = "urls.json";
 const NOTE_EXTENSION = ".md";
 
 type WorkspaceMap = Record<Id, Workspace>;
@@ -138,6 +139,26 @@ async function writeImageMeta(dir: string, meta: ImageMetaFile): Promise<void> {
   const metaPath = await join(dir, IMAGE_META_FILE);
   const encoded = new TextEncoder().encode(JSON.stringify(meta, null, 2));
   await writeFile(metaPath, encoded);
+}
+
+async function readUrlsFile(dir: string): Promise<UrlEntry[]> {
+  const urlsPath = await join(dir, URLS_FILE);
+  try {
+    const raw = await readFile(urlsPath);
+    const text = new TextDecoder().decode(raw);
+    const parsed = JSON.parse(text) as UrlEntry[] | { links?: UrlEntry[] } | null;
+    if (Array.isArray(parsed)) return parsed;
+    if (parsed && Array.isArray(parsed.links)) return parsed.links;
+  } catch {
+    // ignore missing/invalid file
+  }
+  return [];
+}
+
+async function writeUrlsFile(dir: string, links: UrlEntry[]): Promise<void> {
+  const urlsPath = await join(dir, URLS_FILE);
+  const encoded = new TextEncoder().encode(JSON.stringify(links, null, 2));
+  await writeFile(urlsPath, encoded);
 }
 
 async function loadMetadata<T>(prefix: string): Promise<Record<Id, T>> {
@@ -444,5 +465,58 @@ export const fileSystem: FileSystem = {
     } catch {
       return null;
     }
+  },
+
+  /* ===== Links ===== */
+
+  async listLinks(vertex: Vertex): Promise<UrlEntry[]> {
+    const dir = vertex.asset_directory;
+    return readUrlsFile(dir);
+  },
+
+  async getLink(vertex: Vertex, id: string): Promise<UrlEntry | null> {
+    const dir = vertex.asset_directory;
+    const links = await readUrlsFile(dir);
+    const match = links.find((link) => link.id === id);
+    return match ?? null;
+  },
+
+  async createLink(
+    vertex: Vertex,
+    link: Omit<UrlEntry, "id">
+  ): Promise<UrlEntry> {
+    const dir = vertex.asset_directory;
+    const links = await readUrlsFile(dir);
+    const entry: UrlEntry = {
+      id: crypto.randomUUID(),
+      url: link.url,
+      title: link.title,
+    };
+    await writeUrlsFile(dir, [...links, entry]);
+    return entry;
+  },
+
+  async deleteLink(vertex: Vertex, id: string): Promise<void> {
+    const dir = vertex.asset_directory;
+    const links = await readUrlsFile(dir);
+    await writeUrlsFile(
+      dir,
+      links.filter((link) => link.id !== id)
+    );
+  },
+
+  async updateLink(
+    vertex: Vertex,
+    id: string,
+    link: Omit<UrlEntry, "id">
+  ): Promise<UrlEntry | null> {
+    const dir = vertex.asset_directory;
+    const links = await readUrlsFile(dir);
+    const idx = links.findIndex((entry) => entry.id === id);
+    if (idx === -1) return null;
+    const updated: UrlEntry = { id, url: link.url, title: link.title };
+    const next = links.map((entry, i) => (i === idx ? updated : entry));
+    await writeUrlsFile(dir, next);
+    return updated;
   },
 };

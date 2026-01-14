@@ -223,6 +223,7 @@
     "urlPlaceholder": "https://example.com",
     "titleLabel": "Title (optional)",
     "titlePlaceholder": "Descriptive title",
+    "loading": "Loading links…",
     "add": "Add link",
     "empty": "No links yet.",
     "errors": {

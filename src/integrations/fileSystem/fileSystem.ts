@@ -17,6 +17,12 @@ export type NoteEntry = {
   text: string;
 };
 
+export type UrlEntry = {
+  id: string;
+  url: string;
+  title?: string;
+};
+
 export interface FileSystem {
   // workspaces
   createWorkspace(workspace: Workspace): Promise<void>;
@@ -52,4 +58,15 @@ export interface FileSystem {
   createNote(vertex: Vertex, text: string): Promise<NoteEntry>;
   deleteNote(vertex: Vertex, name: string): Promise<void>;
   updateNote(vertex: Vertex, name: string, text: string): Promise<NoteEntry | null>;
+
+  // links
+  listLinks(vertex: Vertex): Promise<UrlEntry[]>;
+  getLink(vertex: Vertex, id: string): Promise<UrlEntry | null>;
+  createLink(vertex: Vertex, link: Omit<UrlEntry, "id">): Promise<UrlEntry>;
+  deleteLink(vertex: Vertex, id: string): Promise<void>;
+  updateLink(
+    vertex: Vertex,
+    id: string,
+    link: Omit<UrlEntry, "id">
+  ): Promise<UrlEntry | null>;
 }

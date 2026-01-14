@@ -1,6 +1,12 @@
 import { Workspace } from "@/core/workspace";
 import { Vertex } from "@/core/vertex";
-import type { FileSystem, ImageEntry, ImageMetadata, NoteEntry } from "../fileSystem";
+import type {
+  FileSystem,
+  ImageEntry,
+  ImageMetadata,
+  NoteEntry,
+  UrlEntry,
+} from "../fileSystem";
 import { Id } from "@/core/common/id";
 import type { Reference } from "@/core/common/reference";
 import seed from "./mock/seed-data.json";
@@ -51,7 +57,7 @@ type AssetStore = {
   images: Record<string, string>;
   image_meta: Record<string, ImageMetadata>;
   notes: Record<string, string>;
-  urls: Reference[];
+  urls: UrlEntry[];
 };
 
 function guessExtensionFromDataUrl(dataUrl: string): string | null {
@@ -64,12 +70,12 @@ function guessExtensionFromDataUrl(dataUrl: string): string | null {
 
 function normalizeAssetStore(stored: unknown): AssetStore | null {
   if (!stored || typeof stored !== "object") return null;
-  const raw = stored as Partial<AssetStore> & { images?: unknown; notes?: unknown };
+  const raw = stored as Partial<AssetStore> & { images?: unknown; notes?: unknown; urls?: unknown };
   let notes: Record<string, string> =
     raw.notes && typeof raw.notes === "object" && !Array.isArray(raw.notes)
       ? (raw.notes as Record<string, string>)
       : {};
-  const urls = Array.isArray(raw.urls) ? raw.urls : [];
+  let urls = Array.isArray(raw.urls) ? raw.urls : [];
 
   if (Array.isArray(raw.notes)) {
     const converted: Record<string, string> = {};
@@ -81,6 +87,29 @@ function normalizeAssetStore(stored: unknown): AssetStore | null {
       converted[name] = ref.text ?? "";
     });
     notes = converted;
+  }
+
+  if (Array.isArray(raw.urls)) {
+    const converted: UrlEntry[] = [];
+    raw.urls.forEach((entry) => {
+      const candidate = entry as Partial<UrlEntry> & Reference;
+      if (candidate && typeof candidate.id === "string" && candidate.url) {
+        converted.push({
+          id: candidate.id,
+          url: candidate.url,
+          title: candidate.title,
+        });
+        return;
+      }
+      if (candidate?.type === "url" && typeof candidate.url === "string") {
+        converted.push({
+          id: crypto.randomUUID(),
+          url: candidate.url,
+          title: candidate.title,
+        });
+      }
+    });
+    urls = converted;
   }
 
   if (raw.images && typeof raw.images === "object" && !Array.isArray(raw.images)) {
@@ -113,12 +142,18 @@ function normalizeAssetStore(stored: unknown): AssetStore | null {
 
 function needsAssetStoreUpgrade(stored: unknown): boolean {
   if (!stored || typeof stored !== "object") return false;
-  const raw = stored as { images?: unknown; image_meta?: unknown; notes?: unknown };
+  const raw = stored as {
+    images?: unknown;
+    image_meta?: unknown;
+    notes?: unknown;
+    urls?: unknown;
+  };
   if (Array.isArray(raw.images)) return true;
   if (!raw.images || typeof raw.images !== "object") return true;
   if (!raw.image_meta || typeof raw.image_meta !== "object") return true;
   if (Array.isArray(raw.notes)) return true;
   if (!raw.notes || typeof raw.notes !== "object") return true;
+  if (Array.isArray(raw.urls)) return true;
   return false;
 }
 
@@ -462,5 +497,68 @@ export const inMemoryFileSystemMock: FileSystem = {
     store.notes[name] = text;
     saveAssetStore(vertex, store);
     return { name, text };
+  },
+
+  /* ===== Links ===== */
+
+  async listLinks(vertex: Vertex): Promise<UrlEntry[]> {
+    const store = loadAssetStore(vertex);
+    if (!store) {
+      throw new Error(`Assets for vertex ${vertex.id} are missing.`);
+    }
+    return [...store.urls];
+  },
+
+  async getLink(vertex: Vertex, id: string): Promise<UrlEntry | null> {
+    const store = loadAssetStore(vertex);
+    if (!store) {
+      throw new Error(`Assets for vertex ${vertex.id} are missing.`);
+    }
+    const entry = store.urls.find((link) => link.id === id);
+    return entry ? { ...entry } : null;
+  },
+
+  async createLink(
+    vertex: Vertex,
+    link: Omit<UrlEntry, "id">
+  ): Promise<UrlEntry> {
+    const store = loadAssetStore(vertex);
+    if (!store) {
+      throw new Error(`Assets for vertex ${vertex.id} are missing.`);
+    }
+    const entry: UrlEntry = {
+      id: crypto.randomUUID(),
+      url: link.url,
+      title: link.title,
+    };
+    store.urls = [...store.urls, entry];
+    saveAssetStore(vertex, store);
+    return entry;
+  },
+
+  async deleteLink(vertex: Vertex, id: string): Promise<void> {
+    const store = loadAssetStore(vertex);
+    if (!store) {
+      throw new Error(`Assets for vertex ${vertex.id} are missing.`);
+    }
+    store.urls = store.urls.filter((link) => link.id !== id);
+    saveAssetStore(vertex, store);
+  },
+
+  async updateLink(
+    vertex: Vertex,
+    id: string,
+    link: Omit<UrlEntry, "id">
+  ): Promise<UrlEntry | null> {
+    const store = loadAssetStore(vertex);
+    if (!store) {
+      throw new Error(`Assets for vertex ${vertex.id} are missing.`);
+    }
+    const idx = store.urls.findIndex((entry) => entry.id === id);
+    if (idx === -1) return null;
+    const updated: UrlEntry = { id, url: link.url, title: link.title };
+    store.urls = store.urls.map((entry, i) => (i === idx ? updated : entry));
+    saveAssetStore(vertex, store);
+    return updated;
   },
 };

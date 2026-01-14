@@ -223,6 +223,7 @@
     "urlPlaceholder": "https://example.com",
     "titleLabel": "Заглавие (по желание)",
     "titlePlaceholder": "Описание на връзката",
+    "loading": "Зареждане на връзки…",
     "add": "Добави връзка",
     "empty": "Все още няма връзки.",
     "errors": {
