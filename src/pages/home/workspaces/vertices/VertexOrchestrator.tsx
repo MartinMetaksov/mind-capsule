@@ -289,12 +289,14 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
             }}
           >
             {/* Inner canvas padding */}
-            <Box
-              sx={{
-                p: 2,
-                minHeight: "100%",
-              }}
-            >
+          <Box
+            sx={{
+              p: 2,
+              minHeight: "100%",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
               {/* TAB CONTENTS (no big rounded wrapper) */}
               {safeTab === "children" && (
                 <ChildrenTab

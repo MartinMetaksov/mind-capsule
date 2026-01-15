@@ -40,7 +40,6 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
   const [description, setDescription] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
-  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
   React.useEffect(() => {
     const loadImages = async () => {
@@ -75,7 +74,6 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
       setError(err instanceof Error ? err.message : t("imagesTab.errors.add"));
     } finally {
       setDragging(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -134,9 +132,14 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
         flexDirection: "column",
         gap: 2,
         height: "100%",
+        position: "relative",
+        flex: 1,
+        minHeight: "100%",
+        alignSelf: "stretch",
       }}
       onDragOver={(e) => {
         e.preventDefault();
+        e.dataTransfer.dropEffect = "copy";
         setDragging(true);
       }}
       onDragEnter={(e) => {
@@ -145,13 +148,37 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
       }}
       onDragLeave={(e) => {
         e.preventDefault();
-        setDragging(false);
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+          setDragging(false);
+        }
       }}
       onDrop={async (e) => {
         e.preventDefault();
         await handleFiles(e.dataTransfer.files);
       }}
     >
+      {dragging && (
+        <Box
+          sx={{
+            position: "absolute",
+            inset: 0,
+            bgcolor: (theme) =>
+              theme.palette.mode === "dark"
+                ? "rgba(255, 255, 255, 0.14)"
+                : "rgba(0, 0, 0, 0.08)",
+            opacity: 1,
+            pointerEvents: "none",
+            zIndex: 1,
+            outline: (theme) =>
+              `2px dashed ${
+                theme.palette.mode === "dark"
+                  ? "rgba(255, 255, 255, 0.35)"
+                  : "rgba(0, 0, 0, 0.2)"
+              }`,
+            outlineOffset: -6,
+          }}
+        />
+      )}
       <Box>
         <Typography variant="h6" sx={{ fontWeight: 900, mb: 1 }}>
           {t("imagesTab.title")}
@@ -169,115 +196,148 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
 
       <Box
         sx={{
-          border: dragging ? "2px dashed" : "1px dashed",
-          borderColor: dragging ? "primary.main" : "divider",
-          borderRadius: 2,
-          p: 2,
-          textAlign: "center",
-          cursor: "pointer",
-          bgcolor: dragging ? "action.hover" : "background.default",
+          flex: 1,
+          minHeight: "100%",
+          display: "flex",
+          flexDirection: "column",
         }}
-        onClick={() => fileInputRef.current?.click()}
       >
-        <Typography>{t("imagesTab.dropzone")}</Typography>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          multiple
-          style={{ display: "none" }}
-          onChange={(e) => handleFiles(e.target.files)}
-        />
-      </Box>
-
-      {loading ? (
-        <Typography color="text.secondary" align="center" sx={{ mt: 4 }}>
-          {t("imagesTab.loading")}
-        </Typography>
-      ) : images.length === 0 ? (
-        <Typography color="text.secondary" align="center" sx={{ mt: 4 }}>
-          {t("imagesTab.empty")}
-        </Typography>
-      ) : (
-        <Box
-          sx={{
-            columnCount: { xs: 1, sm: 2, md: 3 },
-            columnGap: 16,
-            width: "100%",
-          }}
-        >
-          {images.map((img, idx) => (
-            <Box
-              key={img.name}
-              sx={{
-                breakInside: "avoid",
-                position: "relative",
-                mb: 2,
-                borderRadius: 2,
-                overflow: "hidden",
-                boxShadow: 1,
-              }}
-            >
+        {loading ? (
+          <Typography color="text.secondary" align="center" sx={{ mt: 4 }}>
+            {t("imagesTab.loading")}
+          </Typography>
+        ) : images.length === 0 ? (
+          <Typography color="text.secondary" align="center" sx={{ mt: 4 }}>
+            {t("imagesTab.empty")}
+          </Typography>
+        ) : (
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                sm: "repeat(2, minmax(0, 1fr))",
+                md: "repeat(3, minmax(0, 1fr))",
+              },
+              gap: 2,
+              width: "100%",
+            }}
+          >
+            {images.map((img, idx) => (
               <Box
-                component="img"
-                src={img.path}
-                alt={img.alt ?? `Image ${idx + 1}`}
+                key={img.name}
                 sx={{
-                  width: "100%",
-                  display: "block",
+                  position: "relative",
+                  borderRadius: 0,
+                  overflow: "hidden",
+                  boxShadow: 2,
+                  cursor: "pointer",
+                  aspectRatio: "4 / 3",
+                  backgroundColor: "background.paper",
+                  transition: "transform 150ms ease, box-shadow 150ms ease",
+                  "&:hover": {
+                    transform: "translateY(-2px)",
+                    boxShadow: 4,
+                  },
+                  "&:hover [data-role='image-actions']": {
+                    opacity: 1,
+                  },
+                  "&:hover [data-role='image-overlay']": {
+                    opacity: 1,
+                  },
                 }}
                 onClick={() => openDialog(idx)}
-              />
-              <Box
-                sx={{
-                  position: "absolute",
-                  top: 8,
-                  right: 8,
-                  display: "flex",
-                  gap: 0.5,
-                  bgcolor: "rgba(0,0,0,0.35)",
-                  borderRadius: 999,
-                  p: "2px",
-                }}
               >
-                <IconButton
-                  size="small"
-                  sx={{ color: "common.white" }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openDialog(idx);
+                <Box
+                  component="img"
+                  src={img.path}
+                  alt={img.alt ?? `Image ${idx + 1}`}
+                  sx={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    display: "block",
+                  }}
+                />
+                <Box
+                  data-role="image-overlay"
+                  sx={{
+                    position: "absolute",
+                    inset: 0,
+                    background:
+                      "linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.6) 100%)",
+                    opacity: 0.9,
+                    transition: "opacity 150ms ease",
+                  }}
+                />
+                <Box
+                  sx={{
+                    position: "absolute",
+                    left: 12,
+                    right: 12,
+                    bottom: 12,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 0.25,
+                    color: "common.white",
+                    textShadow: "0 2px 8px rgba(0,0,0,0.5)",
                   }}
                 >
-                  <ZoomInIcon fontSize="small" />
-                </IconButton>
-                <IconButton
-                  size="small"
-                  sx={{ color: "error.light" }}
-                  aria-label={t("commonActions.delete")}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const label =
-                      img.alt?.trim() ||
-                      img.name ||
-                      t("imagesTab.deleteFallback");
-                    setDeleteTarget({ name: img.name, label });
-                  }}
-                >
-                  <DeleteOutlineIcon fontSize="small" />
-                </IconButton>
-              </Box>
-              {(img.alt || img.description) && (
-                <Box sx={{ p: 1, bgcolor: "background.paper" }}>
-                  <Typography variant="subtitle2">{img.alt}</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {img.description}
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                    {img.alt || img.name}
                   </Typography>
+                  {img.description && (
+                    <Typography variant="caption" sx={{ opacity: 0.9 }}>
+                      {img.description}
+                    </Typography>
+                  )}
                 </Box>
-              )}
-            </Box>
-          ))}
-        </Box>
-      )}
+                <Box
+                  data-role="image-actions"
+                  sx={{
+                    position: "absolute",
+                    top: 8,
+                    right: 8,
+                    display: "flex",
+                    gap: 0.5,
+                    bgcolor: "rgba(0,0,0,0.45)",
+                    borderRadius: 999,
+                    p: "2px",
+                    opacity: 0,
+                    transition: "opacity 150ms ease",
+                  }}
+                >
+                  <IconButton
+                    size="small"
+                    sx={{ color: "common.white" }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openDialog(idx);
+                    }}
+                  >
+                    <ZoomInIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    sx={{ color: "error.light" }}
+                    aria-label={t("commonActions.delete")}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const label =
+                        img.alt?.trim() ||
+                        img.name ||
+                        t("imagesTab.deleteFallback");
+                      setDeleteTarget({ name: img.name, label });
+                    }}
+                  >
+                    <DeleteOutlineIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        )}
+      </Box>
 
       <Dialog
         open={dialogOpen && selectedIdx !== null}
@@ -294,7 +354,7 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
               component="img"
               src={images[selectedIdx].path}
               alt={images[selectedIdx].alt}
-              sx={{ width: "100%", borderRadius: 1 }}
+              sx={{ width: "100%", borderRadius: 0 }}
             />
           )}
           <TextField
