@@ -36,7 +36,7 @@ export type ThumbnailPickerProps = {
 export const ThumbnailPicker: React.FC<ThumbnailPickerProps> = ({
   value,
   onChange,
-  height = 260,
+  height = 150,
 }) => {
   const [dragging, setDragging] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
@@ -179,7 +179,7 @@ export const CreateVertexDialog: React.FC<CreateVertexDialogProps> = ({
           </Typography>
         )}
       </DialogContent>
-      <DialogActions>
+      <DialogActions sx={{ px: 3, pt: 2, pb: 3 }}>
         <Button onClick={onClose}>{t("commonActions.cancel")}</Button>
         <Button variant="contained" onClick={handleSubmit}>
           {submitLabel}

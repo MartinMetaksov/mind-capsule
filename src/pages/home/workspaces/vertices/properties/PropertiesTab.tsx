@@ -248,7 +248,7 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
         <ThumbnailPicker
           value={thumbnail}
           onChange={setThumbnail}
-          height={240}
+          height={150}
         />
       </Stack>
 
