@@ -3,7 +3,7 @@ import { detectOperatingSystem, type OperatingSystem } from "./os";
 export type ShortcutAction =
   | "openSearch"
   | "openSettings"
-  | "createVertex"
+  | "insert"
   | "confirmDelete"
   | "cancelDelete"
   | "imagePrev"
@@ -44,7 +44,7 @@ const SHORTCUTS: Record<
     keys: ["meta", "o"],
     display: "⌘ + O / Ctrl + O",
   }),
-  createVertex: makeUniformShortcuts({
+  insert: makeUniformShortcuts({
     keys: ["meta", "i"],
     display: "⌘ + I / Ctrl + I",
   }),

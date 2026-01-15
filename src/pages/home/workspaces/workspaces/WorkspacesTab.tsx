@@ -43,7 +43,7 @@ export const WorkspacesTab: React.FC<WorkspacesTabProps> = ({
   );
   const os = React.useMemo(() => detectOperatingSystem(), []);
   const createShortcut = React.useMemo(
-    () => getShortcut("createVertex", os),
+    () => getShortcut("insert", os),
     [os]
   );
 

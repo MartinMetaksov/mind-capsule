@@ -35,7 +35,7 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
   const fabRef = React.useRef<CreateFabHandle | null>(null);
   const os = React.useMemo(() => detectOperatingSystem(), []);
   const createShortcut = React.useMemo(
-    () => getShortcut("createVertex", os),
+    () => getShortcut("insert", os),
     [os]
   );
   const emptyLabel = React.useMemo(() => {

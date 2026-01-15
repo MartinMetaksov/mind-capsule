@@ -56,7 +56,7 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
   const [workspaceQuery, setWorkspaceQuery] = React.useState("");
   const os = React.useMemo(() => detectOperatingSystem(), []);
   const createShortcut = React.useMemo(
-    () => getShortcut("createVertex", os),
+    () => getShortcut("insert", os),
     [os]
   );
 

@@ -22,6 +22,7 @@ import { useTranslation } from "react-i18next";
 import { DeleteConfirmDialog } from "../../components/delete-confirm-dialog/DeleteConfirmDialog";
 import { detectOperatingSystem } from "@/utils/os";
 import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
+import { CreateFab } from "../../components/create-fab/CreateFab";
 
 type ImagesTabProps = {
   vertex: Vertex;
@@ -44,6 +45,7 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
   const os = React.useMemo(() => detectOperatingSystem(), []);
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
   React.useEffect(() => {
     const loadImages = async () => {
@@ -78,6 +80,7 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
       setError(err instanceof Error ? err.message : t("imagesTab.errors.add"));
     } finally {
       setDragging(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -137,6 +140,28 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [dialogOpen, handleNext, handlePrev, os]);
+
+  React.useEffect(() => {
+    if (dialogOpen) return;
+    const insertShortcut = getShortcut("insert", os);
+    const handler = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+      if (matchesShortcut(event, insertShortcut)) {
+        event.preventDefault();
+        fileInputRef.current?.click();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [dialogOpen, os]);
 
   const handleDialogSave = async () => {
     if (selectedIdx === null) return;
@@ -591,6 +616,25 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
         })}
         onCancel={() => setDeleteTarget(null)}
         onConfirm={handleConfirmDelete}
+      />
+
+      <CreateFab
+        title={t("imagesTab.upload")}
+        onClick={() => fileInputRef.current?.click()}
+        sx={{
+          position: "fixed",
+          right: 20,
+          bottom: 94,
+          zIndex: 1300,
+        }}
+      />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        style={{ display: "none" }}
+        onChange={(e) => handleFiles(e.target.files)}
       />
     </Box>
   );

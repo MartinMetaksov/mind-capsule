@@ -48,7 +48,7 @@
   "shortcuts": {
     "search": "Search",
     "settings": "Open Settings",
-    "create": "Create",
+    "insert": "Insert",
     "tab": "Tab {{number}}",
     "confirmDelete": "Confirm delete",
     "cancelDelete": "Cancel delete",
@@ -239,6 +239,7 @@
     "loading": "Loading images…",
     "empty": "No images yet.",
     "editTitle": "Edit image",
+    "upload": "Add images",
     "previous": "Previous image",
     "next": "Next image",
     "deleteTitle": "Delete image",
