@@ -1,5 +1,5 @@
 import * as React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { I18nextProvider } from "react-i18next";
 import i18n from "@/i18n";
 import { ImagesTab } from "./ImagesTab";
@@ -75,6 +75,8 @@ describe("ImagesTab", () => {
   it("deletes an image", async () => {
     renderTab();
     fireEvent.click(await screen.findByRole("button", { name: /Delete/i }));
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: /Delete/i }));
     await waitFor(() => expect(mockDeleteImage).toHaveBeenCalledWith(vertex, "img1.png"));
   });
 });
