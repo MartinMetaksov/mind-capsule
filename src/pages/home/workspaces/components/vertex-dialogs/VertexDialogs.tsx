@@ -160,6 +160,7 @@ export const CreateVertexDialog: React.FC<CreateVertexDialogProps> = ({
           <TextField
             label={t("vertexDialog.fields.title")}
             fullWidth
+            autoFocus
             value={form.title}
             onChange={(e) =>
               setForm((prev) => ({ ...prev, title: e.target.value }))

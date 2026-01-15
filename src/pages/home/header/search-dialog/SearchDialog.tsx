@@ -3,15 +3,14 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  Tabs,
-  Tab,
   TextField,
   List,
   ListItemButton,
   ListItemText,
   Typography,
+  Box,
 } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import type { Vertex } from "@/core/vertex";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
 import { useTranslation } from "react-i18next";
@@ -21,20 +20,17 @@ type Props = {
   onClose: () => void;
 };
 
-const TAB_KEYS = ["children", "properties", "tags", "notes", "images", "urls"] as const;
-
 export const SearchDialog: React.FC<Props> = ({ open, onClose }) => {
   const [search, setSearch] = React.useState("");
-  const [searchTab, setSearchTab] = React.useState(0);
   const [allVertices, setAllVertices] = React.useState<Vertex[]>([]);
   const inputRef = React.useRef<HTMLInputElement | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation("common");
 
   React.useEffect(() => {
     if (!open) return;
     setSearch("");
-    setSearchTab(0);
     (async () => {
       const fs = await getFileSystem();
       const verts = await fs.getAllVertices();
@@ -52,7 +48,7 @@ export const SearchDialog: React.FC<Props> = ({ open, onClose }) => {
     return map;
   }, [allVertices]);
 
-  const buildPath = (v: Vertex, tab: string) => {
+  const buildPath = (v: Vertex) => {
     const segs: string[] = [];
     let cur: Vertex | undefined = v;
     while (cur) {
@@ -61,46 +57,57 @@ export const SearchDialog: React.FC<Props> = ({ open, onClose }) => {
       cur = vertexMap.get(cur.parent_id);
       if (!cur) break;
     }
-    const tabSeg = TAB_KEYS.includes(tab as (typeof TAB_KEYS)[number]) ? `?tab=${tab}` : "";
-    return `/${segs.join("/")}${tabSeg}`;
+    return `/${segs.join("/")}`;
   };
+
+  const scopedVertices = React.useMemo(() => {
+    const segments = location.pathname.split("/").filter(Boolean);
+    const activeId = segments[segments.length - 1];
+    if (!activeId || !vertexMap.has(activeId)) {
+      return allVertices;
+    }
+
+    const childrenByParent = new Map<string | null, Vertex[]>();
+    for (const v of allVertices) {
+      const parentId = v.parent_id ?? null;
+      const existing = childrenByParent.get(parentId) ?? [];
+      existing.push(v);
+      childrenByParent.set(parentId, existing);
+    }
+
+    const scoped: Vertex[] = [];
+    const queue: string[] = [activeId];
+    const seen = new Set<string>();
+
+    while (queue.length > 0) {
+      const nextId = queue.shift();
+      if (!nextId || seen.has(nextId)) continue;
+      seen.add(nextId);
+      const vertex = vertexMap.get(nextId);
+      if (vertex) {
+        scoped.push(vertex);
+        const children = childrenByParent.get(nextId) ?? [];
+        children.forEach((child) => queue.push(child.id));
+      }
+    }
+
+    return scoped;
+  }, [allVertices, location.pathname, vertexMap]);
 
   const filtered = React.useMemo(() => {
     const q = search.toLowerCase().trim();
-    const match = (text?: string) => text?.toLowerCase().includes(q);
-
-    const byTab = {
-      vertices: [] as Vertex[],
-      properties: [] as Vertex[],
-      tags: [] as Vertex[],
-      notes: [] as Vertex[],
-      images: [] as Vertex[],
-      links: [] as Vertex[],
-    };
-
-    if (!q) return byTab;
-
-    for (const v of allVertices) {
-      if (match(v.title)) byTab.vertices.push(v);
-      if (match(v.children_behavior?.child_kind)) {
-        byTab.properties.push(v);
-      }
-      if (v.tags?.some((t) => match(t))) byTab.tags.push(v);
-    }
-    return byTab;
-  }, [allVertices, search]);
-
-  const resultSets = [
-    filtered.vertices,
-    filtered.properties,
-    filtered.tags,
-    filtered.notes,
-    filtered.images,
-    filtered.links,
-  ];
+    if (!q) return [];
+    const segments = location.pathname.split("/").filter(Boolean);
+    const activeId = segments[segments.length - 1];
+    return scopedVertices.filter((v) => {
+      if (activeId && v.id === activeId) return false;
+      if (v.title.toLowerCase().includes(q)) return true;
+      return v.tags?.some((tag) => tag.toLowerCase().includes(q)) ?? false;
+    });
+  }, [location.pathname, scopedVertices, search]);
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>{t("search.title")}</DialogTitle>
       <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
         <TextField
@@ -111,37 +118,58 @@ export const SearchDialog: React.FC<Props> = ({ open, onClose }) => {
           onChange={(e) => setSearch(e.target.value)}
           fullWidth
         />
-        <Tabs
-          value={searchTab}
-          onChange={(_, v) => setSearchTab(v)}
-          variant="scrollable"
-          scrollButtons="auto"
-        >
-          <Tab label={t("search.tabs.vertices", { count: filtered.vertices.length })} />
-          <Tab label={t("search.tabs.properties", { count: filtered.properties.length })} />
-          <Tab label={t("search.tabs.tags", { count: filtered.tags.length })} />
-          <Tab label={t("search.tabs.notes", { count: filtered.notes.length })} />
-          <Tab label={t("search.tabs.images", { count: filtered.images.length })} />
-          <Tab label={t("search.tabs.links", { count: filtered.links.length })} />
-        </Tabs>
         {search ? (
           <List dense>
-            {resultSets[searchTab].map((v) => {
-              const tabName = ["children", "properties", "tags", "notes", "images", "urls"][searchTab];
-              return (
-                <ListItemButton
-                  key={`${v.id}-${tabName}`}
-                  onClick={() => {
-                    const path = buildPath(v, tabName);
-                    navigate(path);
-                    onClose();
-                  }}
+            {filtered.map((v) => (
+              <ListItemButton
+                key={v.id}
+                onClick={() => {
+                  const path = buildPath(v);
+                  navigate(path);
+                  onClose();
+                }}
+                sx={{ gap: 2, alignItems: "center" }}
+              >
+                <Box
+                  sx={(theme) => ({
+                    width: 52,
+                    height: 52,
+                    borderRadius: 0.75,
+                    overflow: "hidden",
+                    flexShrink: 0,
+                    border: `1px solid ${theme.palette.divider}`,
+                    bgcolor: "background.paper",
+                  })}
                 >
-                  <ListItemText primary={v.title} secondary={`/${t(`search.tabNames.${tabName}`)}`} />
-                </ListItemButton>
-              );
-            })}
-            {resultSets[searchTab].length === 0 && (
+                  {v.thumbnail_path ? (
+                    <Box
+                      component="img"
+                      src={v.thumbnail_path}
+                      alt={v.thumbnail_alt ?? v.title}
+                      sx={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        display: "block",
+                      }}
+                    />
+                  ) : (
+                    <Box
+                      sx={(theme) => ({
+                        width: "100%",
+                        height: "100%",
+                        background:
+                          theme.palette.mode === "dark"
+                            ? "linear-gradient(145deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02))"
+                            : "linear-gradient(145deg, rgba(0,0,0,0.08), rgba(0,0,0,0.02))",
+                      })}
+                    />
+                  )}
+                </Box>
+                <ListItemText primary={v.title} />
+              </ListItemButton>
+            ))}
+            {filtered.length === 0 && (
               <Typography color="text.secondary" sx={{ px: 1, py: 2 }}>
                 {t("search.noResults")}
               </Typography>

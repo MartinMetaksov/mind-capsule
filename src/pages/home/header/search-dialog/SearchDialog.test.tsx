@@ -5,7 +5,7 @@ import i18n from "@/i18n";
 import { SearchDialog } from "./SearchDialog";
 import type { Vertex } from "@/core/vertex";
 
-const vertex: Vertex = {
+const baseVertex: Vertex = {
   id: "v-1",
   title: "Test Vertex",
   asset_directory: "/tmp/assets/v-1",
@@ -17,10 +17,13 @@ const vertex: Vertex = {
   children_behavior: { child_kind: "item", display: "grid" },
 };
 
+let mockVertices: Vertex[] = [baseVertex];
+
 vi.mock("@/integrations/fileSystem/integration", () => ({
   getFileSystem: async () => ({
-    getVertex: async (id: string) => (id === vertex.id ? vertex : null),
-    getAllVertices: async () => [vertex],
+    getVertex: async (id: string) =>
+      mockVertices.find((v) => v.id === id) ?? null,
+    getAllVertices: async () => mockVertices,
     getWorkspaces: vi.fn(),
   }),
 }));
@@ -37,6 +40,7 @@ const renderDialog = () =>
 describe("SearchDialog", () => {
   beforeEach(() => {
     window.history.pushState({}, "", "/");
+    mockVertices = [baseVertex];
     localStorage.clear();
   });
 
@@ -62,5 +66,30 @@ describe("SearchDialog", () => {
     fireEvent.click(item);
     // ensure list item still exists in DOM tree to verify render path (navigate mocked by BrowserRouter)
     expect(container).toBeTruthy();
+  });
+
+  it("limits results to descendants of the current vertex", async () => {
+    const root = { ...baseVertex, id: "root", title: "Root" };
+    const child = {
+      ...baseVertex,
+      id: "child",
+      title: "Child Vertex",
+      parent_id: "root",
+    };
+    const sibling = {
+      ...baseVertex,
+      id: "sibling",
+      title: "Sibling Vertex",
+      parent_id: null,
+    };
+    mockVertices = [root, child, sibling];
+    window.history.pushState({}, "", "/root");
+
+    renderDialog();
+    const input = screen.getByPlaceholderText(/Search/i);
+    fireEvent.change(input, { target: { value: "Vertex" } });
+
+    expect(await screen.findByText("Child Vertex")).toBeInTheDocument();
+    expect(screen.queryByText("Sibling Vertex")).not.toBeInTheDocument();
   });
 });

@@ -43,8 +43,8 @@ const SHORTCUTS: Record<
     display: "⌘ + O / Ctrl + O",
   }),
   createVertex: makeUniformShortcuts({
-    keys: ["meta", "a"],
-    display: "⌘ + A / Ctrl + A",
+    keys: ["meta", "i"],
+    display: "⌘ + I / Ctrl + I",
   }),
   confirmDelete: makeUniformShortcuts({ keys: ["y"], display: "Y" }),
   cancelDelete: makeUniformShortcuts({ keys: ["n"], display: "N" }),
