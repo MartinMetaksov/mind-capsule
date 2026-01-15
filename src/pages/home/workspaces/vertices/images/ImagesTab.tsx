@@ -18,6 +18,7 @@ import type { Vertex } from "@/core/vertex";
 import type { ImageEntry } from "@/integrations/fileSystem/fileSystem";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
 import { useTranslation } from "react-i18next";
+import { DeleteConfirmDialog } from "../../components/delete-confirm-dialog/DeleteConfirmDialog";
 
 type ImagesTabProps = {
   vertex: Vertex;
@@ -31,6 +32,10 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
   const [dragging, setDragging] = React.useState(false);
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [selectedIdx, setSelectedIdx] = React.useState<number | null>(null);
+  const [deleteTarget, setDeleteTarget] = React.useState<{
+    name: string;
+    label: string;
+  } | null>(null);
   const [alt, setAlt] = React.useState("");
   const [description, setDescription] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
@@ -101,19 +106,25 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
     }
   };
 
-  const handleDelete = async (idx: number) => {
-    const target = images[idx];
+  const handleDelete = async (targetName: string) => {
     try {
       const fs = await getFileSystem();
-      await fs.deleteImage(vertex, target.name);
-      setImages((prev) => prev.filter((_, i) => i !== idx));
-      if (selectedIdx === idx) {
-        setDialogOpen(false);
-        setSelectedIdx(null);
-      }
+      await fs.deleteImage(vertex, targetName);
+      setImages((prev) => prev.filter((img) => img.name !== targetName));
     } catch (err) {
       setError(err instanceof Error ? err.message : t("imagesTab.errors.add"));
     }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    const deletingName = deleteTarget.name;
+    if (selectedIdx !== null && images[selectedIdx]?.name === deletingName) {
+      setDialogOpen(false);
+      setSelectedIdx(null);
+    }
+    setDeleteTarget(null);
+    await handleDelete(deletingName);
   };
 
   return (
@@ -245,7 +256,11 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
                   aria-label={t("commonActions.delete")}
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleDelete(idx);
+                    const label =
+                      img.alt?.trim() ||
+                      img.name ||
+                      t("imagesTab.deleteFallback");
+                    setDeleteTarget({ name: img.name, label });
                   }}
                 >
                   <DeleteOutlineIcon fontSize="small" />
@@ -306,6 +321,16 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
           </Button>
         </DialogActions>
       </Dialog>
+
+      <DeleteConfirmDialog
+        open={Boolean(deleteTarget)}
+        title={t("imagesTab.deleteTitle")}
+        message={t("imagesTab.deletePrompt", {
+          name: deleteTarget?.label ?? t("imagesTab.deleteFallback"),
+        })}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </Box>
   );
 };

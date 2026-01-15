@@ -237,6 +237,9 @@
     "loading": "Loading images…",
     "empty": "No images yet.",
     "editTitle": "Edit image",
+    "deleteTitle": "Delete image",
+    "deletePrompt": "Are you sure you want to delete {{name}}?",
+    "deleteFallback": "this image",
     "alt": "Alt text",
     "descriptionLabel": "Description",
     "errors": {
