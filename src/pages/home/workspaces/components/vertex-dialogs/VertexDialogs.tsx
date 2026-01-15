@@ -60,11 +60,15 @@ export const ThumbnailPicker: React.FC<ThumbnailPickerProps> = ({
       <Paper
         variant="outlined"
         sx={{
-          p: 2,
+          p: value ? 0 : 2,
+          height: height,
+          overflow: "hidden",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
           textAlign: "center",
           cursor: "pointer",
           bgcolor: "background.default",
-          minHeight: height,
           borderStyle: dragging ? "dashed" : "solid",
           borderWidth: 1,
           borderColor: dragging ? "primary.main" : "divider",
@@ -94,7 +98,12 @@ export const ThumbnailPicker: React.FC<ThumbnailPickerProps> = ({
             component="img"
             src={value}
             alt="thumbnail preview"
-            sx={{ maxWidth: "100%", maxHeight: height - 100, borderRadius: 1 }}
+            sx={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              objectPosition: "center",
+            }}
           />
         ) : (
           <Typography variant="body2" color="text.secondary">
