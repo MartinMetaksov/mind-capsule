@@ -51,7 +51,9 @@
     "create": "Create",
     "tab": "Tab {{number}}",
     "confirmDelete": "Confirm delete",
-    "cancelDelete": "Cancel delete"
+    "cancelDelete": "Cancel delete",
+    "imagePrev": "Previous image",
+    "imageNext": "Next image"
   },
   "workspaces": {
     "title": "Workspaces",
@@ -237,6 +239,8 @@
     "loading": "Loading images…",
     "empty": "No images yet.",
     "editTitle": "Edit image",
+    "previous": "Previous image",
+    "next": "Next image",
     "deleteTitle": "Delete image",
     "deletePrompt": "Are you sure you want to delete {{name}}?",
     "deleteFallback": "this image",

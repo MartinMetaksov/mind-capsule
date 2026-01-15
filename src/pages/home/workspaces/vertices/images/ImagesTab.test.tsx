@@ -69,7 +69,8 @@ describe("ImagesTab", () => {
   it("opens edit dialog on image click", async () => {
     renderTab();
     fireEvent.click(await screen.findByAltText("Alt1"));
-    expect(await screen.findByText(/Edit image/i)).toBeInTheDocument();
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByLabelText(/Alt text/i)).toBeInTheDocument();
   });
 
   it("deletes an image", async () => {

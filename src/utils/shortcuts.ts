@@ -6,6 +6,8 @@ export type ShortcutAction =
   | "createVertex"
   | "confirmDelete"
   | "cancelDelete"
+  | "imagePrev"
+  | "imageNext"
   | "tab1"
   | "tab2"
   | "tab3"
@@ -48,6 +50,8 @@ const SHORTCUTS: Record<
   }),
   confirmDelete: makeUniformShortcuts({ keys: ["y"], display: "Y" }),
   cancelDelete: makeUniformShortcuts({ keys: ["n"], display: "N" }),
+  imagePrev: makeUniformShortcuts({ keys: ["arrowleft"], display: "←" }),
+  imageNext: makeUniformShortcuts({ keys: ["arrowright"], display: "→" }),
   tab1: makeUniformShortcuts({ keys: ["meta", "1"], display: "⌘/Ctrl + 1" }),
   tab2: makeUniformShortcuts({ keys: ["meta", "2"], display: "⌘/Ctrl + 2" }),
   tab3: makeUniformShortcuts({ keys: ["meta", "3"], display: "⌘/Ctrl + 3" }),
@@ -74,6 +78,14 @@ export function getShortcut(
   const pieces: string[] = [];
   if (main === "~") {
     pieces.push("~");
+  } else if (["arrowleft", "arrowright", "arrowup", "arrowdown"].includes(main)) {
+    const arrowMap: Record<string, string> = {
+      arrowleft: "←",
+      arrowright: "→",
+      arrowup: "↑",
+      arrowdown: "↓",
+    };
+    pieces.push(arrowMap[main] ?? main.toUpperCase());
   } else {
     if (hasMeta) pieces.push(currentOs === "macOS" ? "⌘" : "Ctrl");
     else if (hasCtrl) pieces.push("Ctrl");

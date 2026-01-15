@@ -56,6 +56,8 @@ export const SettingsDialog: React.FC<Props> = ({
       { label: t("shortcuts.tab", { number: 6 }), key: getShortcut("tab6", os).display },
       { label: t("shortcuts.confirmDelete"), key: getShortcut("confirmDelete", os).display },
       { label: t("shortcuts.cancelDelete"), key: getShortcut("cancelDelete", os).display },
+      { label: t("shortcuts.imagePrev"), key: getShortcut("imagePrev", os).display },
+      { label: t("shortcuts.imageNext"), key: getShortcut("imageNext", os).display },
     ],
     [os, t]
   );

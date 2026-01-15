@@ -4,21 +4,24 @@ import {
   Box,
   Button,
   Dialog,
-  DialogActions,
   DialogContent,
-  DialogTitle,
   IconButton,
   TextField,
   Typography,
 } from "@mui/material";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import ZoomInIcon from "@mui/icons-material/ZoomIn";
+import CloseIcon from "@mui/icons-material/Close";
+import NavigateBeforeIcon from "@mui/icons-material/NavigateBefore";
+import NavigateNextIcon from "@mui/icons-material/NavigateNext";
 
 import type { Vertex } from "@/core/vertex";
 import type { ImageEntry } from "@/integrations/fileSystem/fileSystem";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
 import { useTranslation } from "react-i18next";
 import { DeleteConfirmDialog } from "../../components/delete-confirm-dialog/DeleteConfirmDialog";
+import { detectOperatingSystem } from "@/utils/os";
+import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
 
 type ImagesTabProps = {
   vertex: Vertex;
@@ -40,6 +43,7 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
   const [description, setDescription] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
+  const os = React.useMemo(() => detectOperatingSystem(), []);
 
   React.useEffect(() => {
     const loadImages = async () => {
@@ -83,6 +87,56 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
     setDescription(images[idx].description ?? "");
     setDialogOpen(true);
   };
+
+  const switchImage = React.useCallback(
+    (nextIdx: number) => {
+      if (!images[nextIdx]) return;
+      setSelectedIdx(nextIdx);
+      setAlt(images[nextIdx].alt ?? "");
+      setDescription(images[nextIdx].description ?? "");
+    },
+    [images]
+  );
+
+  const handleNext = React.useCallback(() => {
+    if (images.length === 0) return;
+    const current = selectedIdx ?? 0;
+    const next = (current + 1) % images.length;
+    switchImage(next);
+  }, [images, selectedIdx, switchImage]);
+
+  const handlePrev = React.useCallback(() => {
+    if (images.length === 0) return;
+    const current = selectedIdx ?? 0;
+    const prev = (current - 1 + images.length) % images.length;
+    switchImage(prev);
+  }, [images, selectedIdx, switchImage]);
+
+  React.useEffect(() => {
+    if (!dialogOpen) return;
+    const prevShortcut = getShortcut("imagePrev", os);
+    const nextShortcut = getShortcut("imageNext", os);
+    const handler = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+      if (matchesShortcut(event, prevShortcut)) {
+        event.preventDefault();
+        handlePrev();
+      } else if (matchesShortcut(event, nextShortcut)) {
+        event.preventDefault();
+        handleNext();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [dialogOpen, handleNext, handlePrev, os]);
 
   const handleDialogSave = async () => {
     if (selectedIdx === null) return;
@@ -342,44 +396,191 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
       <Dialog
         open={dialogOpen && selectedIdx !== null}
         onClose={() => setDialogOpen(false)}
-        fullWidth
-        maxWidth="sm"
+        fullScreen
+        PaperProps={{
+          sx: {
+            bgcolor: "background.default",
+          },
+        }}
       >
-        <DialogTitle>{t("imagesTab.editTitle")}</DialogTitle>
         <DialogContent
-          sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+          sx={{
+            p: 0,
+            position: "relative",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            bgcolor: "background.default",
+          }}
         >
-          {selectedIdx !== null && (
+          <Box
+            sx={{
+              position: "absolute",
+              top: 24,
+              right: 24,
+              display: "flex",
+              gap: 1,
+              alignItems: "center",
+              zIndex: 2,
+            }}
+          >
+            <Button
+              size="small"
+              variant="contained"
+              onClick={handleDialogSave}
+              sx={{ textTransform: "none" }}
+            >
+              {t("commonActions.save")}
+            </Button>
+            <IconButton
+              size="small"
+              aria-label={t("commonActions.cancel")}
+              onClick={() => setDialogOpen(false)}
+              sx={{ color: "text.secondary" }}
+            >
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          </Box>
+
+          <Box
+            sx={{
+              width: "100%",
+              height: "100%",
+              display: "flex",
+              flexDirection: { xs: "column", md: "row" },
+              gap: { xs: 2, md: 3 },
+              p: { xs: 2, md: 3 },
+              pt: { xs: 8, md: 9 },
+              alignItems: "stretch",
+            }}
+          >
             <Box
-              component="img"
-              src={images[selectedIdx].path}
-              alt={images[selectedIdx].alt}
-              sx={{ width: "100%", borderRadius: 0 }}
-            />
-          )}
-          <TextField
-            label={t("imagesTab.alt")}
-            value={alt}
-            onChange={(e) => setAlt(e.target.value)}
-            slotProps={{ inputLabel: { shrink: true } }}
-          />
-          <TextField
-            label={t("imagesTab.descriptionLabel")}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            multiline
-            minRows={2}
-            slotProps={{ inputLabel: { shrink: true } }}
-          />
+              sx={{
+                flex: 1,
+                minHeight: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                bgcolor: "background.default",
+                position: "relative",
+              }}
+            >
+              {selectedIdx !== null && (
+                <Box
+                  component="img"
+                  src={images[selectedIdx].path}
+                  alt={images[selectedIdx].alt}
+                  sx={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "contain",
+                    borderRadius: 0,
+                    backgroundColor: "background.default",
+                  }}
+                />
+              )}
+              <IconButton
+                aria-label={t("imagesTab.previous")}
+                onClick={handlePrev}
+                sx={(theme) => ({
+                  position: "absolute",
+                  left: 12,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  bgcolor:
+                    theme.palette.mode === "dark"
+                      ? "rgba(0, 0, 0, 0.45)"
+                      : "rgba(255, 255, 255, 0.7)",
+                  color: "text.primary",
+                  "&:hover": {
+                    bgcolor:
+                      theme.palette.mode === "dark"
+                        ? "rgba(0, 0, 0, 0.6)"
+                        : "rgba(255, 255, 255, 0.9)",
+                  },
+                })}
+              >
+                <NavigateBeforeIcon />
+              </IconButton>
+              <IconButton
+                aria-label={t("imagesTab.next")}
+                onClick={handleNext}
+                sx={(theme) => ({
+                  position: "absolute",
+                  right: 12,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  bgcolor:
+                    theme.palette.mode === "dark"
+                      ? "rgba(0, 0, 0, 0.45)"
+                      : "rgba(255, 255, 255, 0.7)",
+                  color: "text.primary",
+                  "&:hover": {
+                    bgcolor:
+                      theme.palette.mode === "dark"
+                        ? "rgba(0, 0, 0, 0.6)"
+                        : "rgba(255, 255, 255, 0.9)",
+                  },
+                })}
+              >
+                <NavigateNextIcon />
+              </IconButton>
+            </Box>
+            <Box
+              sx={(theme) => ({
+                width: { xs: "100%", md: 320 },
+                display: "grid",
+                alignContent: "start",
+                gap: 1,
+                p: 1.5,
+                borderRadius: 2,
+                background:
+                  theme.palette.mode === "dark"
+                    ? "rgba(10, 10, 12, 0.55)"
+                    : "rgba(255, 255, 255, 0.7)",
+                backdropFilter: "blur(8px)",
+                border: `1px solid ${theme.palette.divider}`,
+              })}
+            >
+              <TextField
+                label={t("imagesTab.alt")}
+                value={alt}
+                onChange={(e) => setAlt(e.target.value)}
+                slotProps={{ inputLabel: { shrink: true } }}
+                size="small"
+                sx={(theme) => ({
+                  "& .MuiInputBase-root": {
+                    paddingTop: 0,
+                    paddingBottom: 0,
+                    minHeight: 40,
+                    bgcolor:
+                      theme.palette.mode === "dark"
+                        ? "rgba(0, 0, 0, 0.35)"
+                        : "rgba(255, 255, 255, 0.65)",
+                  },
+                })}
+              />
+              <TextField
+                label={t("imagesTab.descriptionLabel")}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                multiline
+                minRows={2}
+                slotProps={{ inputLabel: { shrink: true } }}
+                size="small"
+                sx={(theme) => ({
+                  "& .MuiInputBase-root": {
+                    minHeight: 64,
+                    bgcolor:
+                      theme.palette.mode === "dark"
+                        ? "rgba(0, 0, 0, 0.35)"
+                        : "rgba(255, 255, 255, 0.65)",
+                  },
+                })}
+              />
+            </Box>
+          </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>
-            {t("commonActions.cancel")}
-          </Button>
-          <Button variant="contained" onClick={handleDialogSave}>
-            {t("commonActions.save")}
-          </Button>
-        </DialogActions>
       </Dialog>
 
       <DeleteConfirmDialog
