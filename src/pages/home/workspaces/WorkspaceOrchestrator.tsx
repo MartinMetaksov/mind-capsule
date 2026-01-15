@@ -97,7 +97,10 @@ export const WorkspaceOrchestrator: React.FC = () => {
 
     setTab(tabParam);
     params.delete("tab");
-    navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
+    navigate(
+      { pathname: location.pathname, search: params.toString() },
+      { replace: true }
+    );
   }, [location.pathname, location.search, navigate, rootTabs]);
 
   React.useEffect(() => {
@@ -227,7 +230,12 @@ export const WorkspaceOrchestrator: React.FC = () => {
     };
 
     syncTrailFromPath();
-  }, [location.pathname, resolveWorkspaceForVertex, workspaces, workspacesLoading]);
+  }, [
+    location.pathname,
+    resolveWorkspaceForVertex,
+    workspaces,
+    workspacesLoading,
+  ]);
 
   if (workspacesLoading || !workspaces) {
     return (
@@ -255,7 +263,6 @@ export const WorkspaceOrchestrator: React.FC = () => {
         )}
 
         <WorkspaceSetup
-          workspaces={workspaces}
           onChanged={async () => {
             await refreshWorkspaces();
             await reloadVertices();

@@ -8,12 +8,10 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 
 type WorkspaceSetupProps = {
-  workspaces?: Workspace[];
   onChanged?: () => Promise<void> | void;
 };
 
 export const WorkspaceSetup: React.FC<WorkspaceSetupProps> = ({
-  workspaces = [],
   onChanged,
 }) => {
   const { t } = useTranslation("common");
@@ -47,7 +45,7 @@ export const WorkspaceSetup: React.FC<WorkspaceSetupProps> = ({
     } catch (err) {
       console.error("Pick workspace failed:", err);
       setError(
-        err instanceof Error ? err.message : "Failed to select workspace.",
+        err instanceof Error ? err.message : "Failed to select workspace."
       );
     } finally {
       setLoading(false);
@@ -79,7 +77,7 @@ export const WorkspaceSetup: React.FC<WorkspaceSetupProps> = ({
     } catch (err) {
       console.error("Create default workspace failed:", err);
       setError(
-        err instanceof Error ? err.message : "Failed to create workspace.",
+        err instanceof Error ? err.message : "Failed to create workspace."
       );
     } finally {
       setLoading(false);
@@ -87,18 +85,31 @@ export const WorkspaceSetup: React.FC<WorkspaceSetupProps> = ({
   };
 
   return (
-    <Box sx={{ display: "flex", justifyContent: "center", m: "auto", mt: 2 }}>
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "flex-start",
+        width: "100%",
+        height: "100%",
+        overflow: "auto",
+        py: 6,
+        px: 2,
+      }}
+    >
       <Stack spacing={2} sx={{ maxWidth: 420 }}>
         <Logo width={180} />
 
-        <Typography variant="h5">{t("workspaceSetup.welcome", { app: APP_NAME })}</Typography>
+        <Typography variant="h5">
+          {t("workspaceSetup.welcome", { app: APP_NAME })}
+        </Typography>
 
         <Typography color="text.secondary">
           {t("workspaceSetup.description", { app: APP_NAME })}
         </Typography>
 
         <Typography color="text.secondary">
-          {t("workspaceSetup.requires")}{" "}
+          {t("workspaceSetup.requires", { app: APP_NAME })}{" "}
           <Tooltip
             title={
               <Stack spacing={1.5}>
@@ -140,7 +151,9 @@ export const WorkspaceSetup: React.FC<WorkspaceSetupProps> = ({
           onClick={handlePickWorkspace}
           disabled={loading}
         >
-          {loading ? t("workspaceSetup.settingUp") : t("workspaceSetup.chooseFolder")}
+          {loading
+            ? t("workspaceSetup.settingUp")
+            : t("workspaceSetup.chooseFolder")}
         </Button>
 
         <Box visibility={loading ? "hidden" : "visible"}>
@@ -149,7 +162,9 @@ export const WorkspaceSetup: React.FC<WorkspaceSetupProps> = ({
             <Tooltip
               title={
                 <Typography variant="body2">
-                  {t("workspaceSetup.quickStartTooltip", { technical: APP_NAME_TECHNICAL })}
+                  {t("workspaceSetup.quickStartTooltip", {
+                    technical: APP_NAME_TECHNICAL,
+                  })}
                 </Typography>
               }
               arrow
@@ -196,17 +211,6 @@ export const WorkspaceSetup: React.FC<WorkspaceSetupProps> = ({
           <Typography color="error" variant="body2">
             {error}
           </Typography>
-        )}
-
-        {workspaces.length > 0 && (
-          <>
-            <Typography variant="subtitle1">{t("workspaces.title")}</Typography>
-            <ul>
-              {workspaces.map((w) => (
-                <li key={w.id}>{w.name}</li>
-              ))}
-            </ul>
-          </>
         )}
       </Stack>
     </Box>
