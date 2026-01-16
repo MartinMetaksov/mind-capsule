@@ -49,7 +49,7 @@ const SHORTCUTS: Record<
     keys: ["meta", "i"],
     display: "⌘ + I / Ctrl + I",
   }),
-  goHome: makeUniformShortcuts({ keys: ["/"], display: "/" }),
+  goHome: makeUniformShortcuts({ keys: ["meta", "/"], display: "⌘/Ctrl + /" }),
   confirmDelete: makeUniformShortcuts({ keys: ["y"], display: "Y" }),
   cancelDelete: makeUniformShortcuts({ keys: ["n"], display: "N" }),
   imagePrev: makeUniformShortcuts({ keys: ["arrowleft"], display: "←" }),

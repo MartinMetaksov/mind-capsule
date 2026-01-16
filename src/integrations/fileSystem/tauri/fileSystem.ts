@@ -160,7 +160,7 @@ async function readUrlsFile(dir: string): Promise<UrlEntry[]> {
     if (Array.isArray(parsed)) return parsed;
     if (parsed && Array.isArray(parsed.links)) return parsed.links;
   } catch {
-    // ignore missing/invalid file
+    await ensureUrlsFile(dir);
   }
   return [];
 }
@@ -169,6 +169,18 @@ async function writeUrlsFile(dir: string, links: UrlEntry[]): Promise<void> {
   const urlsPath = await join(dir, URLS_FILE);
   const encoded = new TextEncoder().encode(JSON.stringify(links, null, 2));
   await writeFile(urlsPath, encoded);
+}
+
+async function ensureUrlsFile(dir: string): Promise<void> {
+  try {
+    const entries = await readDir(dir);
+    const exists = entries.some((entry) => entry.name === URLS_FILE);
+    if (!exists) {
+      await writeUrlsFile(dir, []);
+    }
+  } catch {
+    // ignore missing/invalid directory
+  }
 }
 
 async function loadMetadata<T>(activeStore: Store, prefix: string): Promise<Record<Id, T>> {
@@ -292,6 +304,7 @@ export const fileSystem: FileSystem = {
       workspacePath: workspace.path,
       vertexId: vertex.id,
     });
+    await ensureUrlsFile(assetDirectory);
     await persist(vertexKey(vertex.id), vertices[vertex.id]);
   },
   async getVertices(parent_id: Id): Promise<Vertex[]> {
