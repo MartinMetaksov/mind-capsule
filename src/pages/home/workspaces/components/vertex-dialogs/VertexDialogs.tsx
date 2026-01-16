@@ -158,11 +158,18 @@ export const CreateVertexDialog: React.FC<CreateVertexDialogProps> = ({
     onSubmit({ ...form, title: form.title.trim() });
   };
 
+  const handleKeyDown: React.KeyboardEventHandler<HTMLDivElement> = (e) => {
+    if (e.key !== "Enter" || e.shiftKey) return;
+    e.preventDefault();
+    handleSubmit();
+  };
+
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>{title}</DialogTitle>
       <DialogContent
         sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 2, pb: 1 }}
+        onKeyDown={handleKeyDown}
       >
         {workspaceLabel && (
           <Typography variant="body2" color="text.secondary">

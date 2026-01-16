@@ -54,9 +54,18 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
     null
   );
   const [workspaceQuery, setWorkspaceQuery] = React.useState("");
+  const [activeWorkspaceIndex, setActiveWorkspaceIndex] = React.useState(-1);
   const os = React.useMemo(() => detectOperatingSystem(), []);
   const createShortcut = React.useMemo(
     () => getShortcut("insert", os),
+    [os]
+  );
+  const prevShortcut = React.useMemo(
+    () => getShortcut("searchPrevResult", os),
+    [os]
+  );
+  const nextShortcut = React.useMemo(
+    () => getShortcut("searchNextResult", os),
     [os]
   );
 
@@ -66,11 +75,53 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
     return workspaces.filter((ws) => ws.name.toLowerCase().includes(q));
   }, [workspaces, workspaceQuery]);
 
+  React.useEffect(() => {
+    if (filteredWorkspaces.length === 0) {
+      setActiveWorkspaceIndex(-1);
+    } else {
+      setActiveWorkspaceIndex(0);
+    }
+  }, [filteredWorkspaces]);
+
   const handleCreateProjectInWorkspace = (ws: Workspace) => {
     setSelectedWorkspace(ws);
     setEditorOpen(true);
     setError(null);
     setFabAnchor(null);
+  };
+
+  const moveActiveWorkspace = React.useCallback(
+    (direction: "prev" | "next") => {
+      if (filteredWorkspaces.length === 0) return;
+      setActiveWorkspaceIndex((prev) => {
+        if (prev === -1) return 0;
+        const delta = direction === "next" ? 1 : -1;
+        return (prev + delta + filteredWorkspaces.length) % filteredWorkspaces.length;
+      });
+    },
+    [filteredWorkspaces.length]
+  );
+
+  const handleWorkspaceKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (
+    e
+  ) => {
+    if (matchesShortcut(e.nativeEvent, prevShortcut)) {
+      e.preventDefault();
+      moveActiveWorkspace("prev");
+      return;
+    }
+    if (matchesShortcut(e.nativeEvent, nextShortcut)) {
+      e.preventDefault();
+      moveActiveWorkspace("next");
+      return;
+    }
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const target = filteredWorkspaces[activeWorkspaceIndex];
+      if (target) {
+        handleCreateProjectInWorkspace(target);
+      }
+    }
   };
 
   React.useEffect(() => {
@@ -217,6 +268,7 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
             fullWidth
             value={workspaceQuery}
             onChange={(e) => setWorkspaceQuery(e.target.value)}
+            onKeyDown={handleWorkspaceKeyDown}
             placeholder={t("projects.searchPlaceholder")}
             autoFocus
           />
@@ -237,6 +289,12 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
                 <ListItemButton
                   key={ws.id}
                   onClick={() => handleCreateProjectInWorkspace(ws)}
+                  selected={ws.id === filteredWorkspaces[activeWorkspaceIndex]?.id}
+                  onMouseEnter={() =>
+                    setActiveWorkspaceIndex(
+                      filteredWorkspaces.findIndex((entry) => entry.id === ws.id)
+                    )
+                  }
                 >
                   <ListItemText
                     primary={ws.name}

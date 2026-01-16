@@ -14,7 +14,13 @@ describe("Footer", () => {
     );
 
     expect(screen.getByText(new RegExp(APP_NAME, "i"))).toBeInTheDocument();
-    expect(screen.getByText(/GitHub/i)).toHaveAttribute("href");
-    expect(screen.getByText(/License/i)).toHaveAttribute("href");
+    expect(screen.getByRole("button", { name: /GitHub/i })).toHaveAttribute(
+      "type",
+      "button"
+    );
+    expect(screen.getByRole("button", { name: /License/i })).toHaveAttribute(
+      "type",
+      "button"
+    );
   });
 });

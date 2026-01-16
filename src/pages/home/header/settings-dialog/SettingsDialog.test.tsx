@@ -30,7 +30,7 @@ describe("SettingsDialog", () => {
   it("switches tabs to shortcuts and lists keys", () => {
     renderDialog();
     fireEvent.click(screen.getByText(/Keyboard shortcuts/i));
-    expect(screen.getByText(/Search/i)).toBeInTheDocument();
+    expect(screen.getByText(/^Search$/i)).toBeInTheDocument();
     expect(screen.getByText(/Open Settings/i)).toBeInTheDocument();
   });
 
