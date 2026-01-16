@@ -6,6 +6,18 @@ import { useTranslation } from "react-i18next";
 export const Footer: React.FC = () => {
   const { t } = useTranslation("common");
   const year = new Date().getFullYear();
+  const openExternal = React.useCallback(async (url: string) => {
+    try {
+      const { isTauri, invoke } = await import("@tauri-apps/api/core");
+      if (isTauri()) {
+        await invoke("open_external_url", { url });
+        return;
+      }
+    } catch {
+      // fall back to browser navigation
+    }
+    window.open(url, "_blank", "noreferrer");
+  }, []);
 
   return (
     <Box
@@ -35,21 +47,21 @@ export const Footer: React.FC = () => {
           sx={{ width: { xs: "100%", sm: "auto" } }}
         >
           <Link
-            href={GITHUB_URL}
+            component="button"
+            type="button"
+            onClick={() => void openExternal(GITHUB_URL)}
             underline="hover"
             color="text.secondary"
-            target="_blank"
-            rel="noreferrer"
           >
             {t("footer.github")}
           </Link>
 
           <Link
-            href={LICENSE_URL}
+            component="button"
+            type="button"
+            onClick={() => void openExternal(LICENSE_URL)}
             underline="hover"
             color="text.secondary"
-            target="_blank"
-            rel="noreferrer"
           >
             {t("footer.license")}
           </Link>

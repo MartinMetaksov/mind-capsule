@@ -13,6 +13,8 @@ import {
 import { useLocation, useNavigate } from "react-router-dom";
 import type { Vertex } from "@/core/vertex";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
+import { detectOperatingSystem } from "@/utils/os";
+import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
 import { useTranslation } from "react-i18next";
 
 type Props = {
@@ -23,10 +25,20 @@ type Props = {
 export const SearchDialog: React.FC<Props> = ({ open, onClose }) => {
   const [search, setSearch] = React.useState("");
   const [allVertices, setAllVertices] = React.useState<Vertex[]>([]);
+  const [activeIndex, setActiveIndex] = React.useState<number>(-1);
   const inputRef = React.useRef<HTMLInputElement | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation("common");
+  const os = React.useMemo(() => detectOperatingSystem(), []);
+  const prevShortcut = React.useMemo(
+    () => getShortcut("searchPrevResult", os),
+    [os]
+  );
+  const nextShortcut = React.useMemo(
+    () => getShortcut("searchNextResult", os),
+    [os]
+  );
 
   React.useEffect(() => {
     if (!open) return;
@@ -106,6 +118,47 @@ export const SearchDialog: React.FC<Props> = ({ open, onClose }) => {
     });
   }, [location.pathname, scopedVertices, search]);
 
+  React.useEffect(() => {
+    if (!search || filtered.length === 0) {
+      setActiveIndex(-1);
+      return;
+    }
+    setActiveIndex(0);
+  }, [filtered.length, search]);
+
+  const moveActiveIndex = React.useCallback(
+    (direction: "prev" | "next") => {
+      if (filtered.length === 0) return;
+      setActiveIndex((prev) => {
+        if (prev === -1) return 0;
+        const delta = direction === "next" ? 1 : -1;
+        return (prev + delta + filtered.length) % filtered.length;
+      });
+    },
+    [filtered.length]
+  );
+
+  const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
+    if (matchesShortcut(e.nativeEvent, prevShortcut)) {
+      e.preventDefault();
+      moveActiveIndex("prev");
+      return;
+    }
+    if (matchesShortcut(e.nativeEvent, nextShortcut)) {
+      e.preventDefault();
+      moveActiveIndex("next");
+      return;
+    }
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const target = filtered[activeIndex];
+      if (!target) return;
+      const path = buildPath(target);
+      navigate(path);
+      onClose();
+    }
+  };
+
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>{t("search.title")}</DialogTitle>
@@ -116,18 +169,21 @@ export const SearchDialog: React.FC<Props> = ({ open, onClose }) => {
           placeholder={t("search.placeholder")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          onKeyDown={handleKeyDown}
           fullWidth
         />
         {search ? (
           <List dense>
-            {filtered.map((v) => (
+            {filtered.map((v, idx) => (
               <ListItemButton
                 key={v.id}
+                selected={idx === activeIndex}
                 onClick={() => {
                   const path = buildPath(v);
                   navigate(path);
                   onClose();
                 }}
+                onMouseEnter={() => setActiveIndex(idx)}
                 sx={{ gap: 2, alignItems: "center" }}
               >
                 <Box

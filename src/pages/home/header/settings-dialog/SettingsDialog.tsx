@@ -49,6 +49,8 @@ export const SettingsDialog: React.FC<Props> = ({
       { label: t("shortcuts.settings"), key: getShortcut("openSettings", os).display },
       { label: t("shortcuts.goHome"), key: getShortcut("goHome", os).display },
       { label: t("shortcuts.insert"), key: getShortcut("insert", os).display },
+      { label: t("shortcuts.searchPrevResult"), key: getShortcut("searchPrevResult", os).display },
+      { label: t("shortcuts.searchNextResult"), key: getShortcut("searchNextResult", os).display },
       { label: t("shortcuts.tab", { number: 1 }), key: getShortcut("tab1", os).display },
       { label: t("shortcuts.tab", { number: 2 }), key: getShortcut("tab2", os).display },
       { label: t("shortcuts.tab", { number: 3 }), key: getShortcut("tab3", os).display },

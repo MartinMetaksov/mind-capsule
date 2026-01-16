@@ -7,6 +7,8 @@ export type ShortcutAction =
   | "goHome"
   | "confirmDelete"
   | "cancelDelete"
+  | "searchPrevResult"
+  | "searchNextResult"
   | "imagePrev"
   | "imageNext"
   | "tab1"
@@ -52,6 +54,8 @@ const SHORTCUTS: Record<
   goHome: makeUniformShortcuts({ keys: ["meta", "/"], display: "⌘/Ctrl + /" }),
   confirmDelete: makeUniformShortcuts({ keys: ["y"], display: "Y" }),
   cancelDelete: makeUniformShortcuts({ keys: ["n"], display: "N" }),
+  searchPrevResult: makeUniformShortcuts({ keys: ["arrowup"], display: "↑" }),
+  searchNextResult: makeUniformShortcuts({ keys: ["arrowdown"], display: "↓" }),
   imagePrev: makeUniformShortcuts({ keys: ["arrowleft"], display: "←" }),
   imageNext: makeUniformShortcuts({ keys: ["arrowright"], display: "→" }),
   tab1: makeUniformShortcuts({ keys: ["meta", "1"], display: "⌘/Ctrl + 1" }),

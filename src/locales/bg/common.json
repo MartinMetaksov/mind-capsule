@@ -50,6 +50,8 @@
     "settings": "Отвори настройки",
     "goHome": "Към началото",
     "insert": "Вмъкване",
+    "searchPrevResult": "Предишен резултат",
+    "searchNextResult": "Следващ резултат",
     "tab": "Таб {{number}}",
     "confirmDelete": "Потвърди изтриване",
     "cancelDelete": "Откажи изтриване",

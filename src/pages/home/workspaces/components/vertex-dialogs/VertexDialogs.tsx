@@ -138,11 +138,15 @@ export const CreateVertexDialog: React.FC<CreateVertexDialogProps> = ({
     title: "",
   });
   const [error, setError] = React.useState<string | null>(null);
+  const titleRef = React.useRef<HTMLInputElement | null>(null);
 
   React.useEffect(() => {
     if (open) {
       setForm({ title: "" });
       setError(null);
+      requestAnimationFrame(() => {
+        titleRef.current?.focus({ preventScroll: true });
+      });
     }
   }, [open]);
 
@@ -174,6 +178,7 @@ export const CreateVertexDialog: React.FC<CreateVertexDialogProps> = ({
             onChange={(e) =>
               setForm((prev) => ({ ...prev, title: e.target.value }))
             }
+            inputRef={titleRef}
             InputLabelProps={{ shrink: true }}
           />
           <ThumbnailPicker

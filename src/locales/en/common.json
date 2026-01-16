@@ -50,6 +50,8 @@
     "settings": "Open Settings",
     "goHome": "Go to Home",
     "insert": "Insert",
+    "searchPrevResult": "Previous search result",
+    "searchNextResult": "Next search result",
     "tab": "Tab {{number}}",
     "confirmDelete": "Confirm delete",
     "cancelDelete": "Cancel delete",
