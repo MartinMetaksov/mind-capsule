@@ -4,6 +4,7 @@ import {
   Box,
   Button,
   Divider,
+  Link,
   MenuItem,
   Stack,
   TextField,
@@ -52,6 +53,7 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [isLeaf, setIsLeaf] = React.useState<boolean>(Boolean(vertex.is_leaf));
+  const assetDirectory = vertex.asset_directory;
 
   React.useEffect(() => {
     setTitle(vertex.title);
@@ -64,6 +66,20 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
     setError(null);
     setIsLeaf(Boolean(vertex.is_leaf));
   }, [vertex]);
+
+  const handleOpenAssetDirectory = React.useCallback(async () => {
+    if (!assetDirectory) return;
+    try {
+      const { isTauri, invoke } = await import("@tauri-apps/api/core");
+      if (isTauri()) {
+        await invoke("fs_open_path", { path: assetDirectory });
+        return;
+      }
+      window.open(encodeURI(`file://${assetDirectory}`), "_blank", "noreferrer");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to open folder.");
+    }
+  }, [assetDirectory]);
 
   const tabOptions: { value: VertexTabId; label: string }[] = [
     { value: "children", label: t("vertex.tabs.children") },
@@ -145,12 +161,31 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
           <Typography variant="caption" color="text.secondary">
             {t("propertiesTab.assetDirectoryLabel")}
           </Typography>
-          <Typography
-            variant="body2"
-            sx={{ fontFamily: "monospace", wordBreak: "break-all" }}
-          >
-            {vertex.asset_directory}
-          </Typography>
+          {assetDirectory ? (
+            <Link
+              component="button"
+              type="button"
+              variant="body2"
+              underline="hover"
+              onClick={handleOpenAssetDirectory}
+              sx={{
+                display: "block",
+                fontFamily: "monospace",
+                wordBreak: "break-all",
+                textAlign: "left",
+              }}
+            >
+              {assetDirectory}
+            </Link>
+          ) : (
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ fontFamily: "monospace", wordBreak: "break-all" }}
+            >
+              —
+            </Typography>
+          )}
         </Box>
       </Box>
 
@@ -236,6 +271,7 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
             }
             fullWidth
             slotProps={{ inputLabel: { shrink: true } }}
+            disabled
           >
             {childDisplayOptions.map((opt) => (
               <MenuItem key={opt.value} value={opt.value}>

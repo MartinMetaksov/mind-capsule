@@ -1,5 +1,6 @@
 use std::fs;
 use std::path::PathBuf;
+use std::process::Command;
 use tauri::{command, AppHandle};
 use tauri_plugin_dialog::DialogExt;
 
@@ -61,6 +62,39 @@ pub fn fs_remove_vertex_dir(workspace_path: String, vertex_id: String) -> Result
   let dir = root.join(vertex_id);
   if dir.exists() {
     fs::remove_dir_all(&dir).map_err(|e| e.to_string())?;
+  }
+  Ok(())
+}
+
+#[command]
+pub fn fs_open_path(path: String) -> Result<(), String> {
+  let target = PathBuf::from(&path);
+  if !target.is_absolute() {
+    return Err("Path must be an absolute path".into());
+  }
+  if !target.exists() {
+    return Err("Path does not exist.".into());
+  }
+  #[cfg(target_os = "macos")]
+  {
+    Command::new("open")
+      .arg(&path)
+      .status()
+      .map_err(|e| e.to_string())?;
+  }
+  #[cfg(target_os = "windows")]
+  {
+    Command::new("cmd")
+      .args(["/C", "start", "", &path])
+      .status()
+      .map_err(|e| e.to_string())?;
+  }
+  #[cfg(all(unix, not(target_os = "macos")))]
+  {
+    Command::new("xdg-open")
+      .arg(&path)
+      .status()
+      .map_err(|e| e.to_string())?;
   }
   Ok(())
 }

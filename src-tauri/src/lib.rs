@@ -12,7 +12,8 @@ pub fn run() {
             commands::fs_remove_workspace,
             commands::fs_pick_workspace_dir,
             commands::fs_create_vertex_dir,
-            commands::fs_remove_vertex_dir
+            commands::fs_remove_vertex_dir,
+            commands::fs_open_path
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {
