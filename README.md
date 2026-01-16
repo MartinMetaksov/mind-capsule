@@ -10,20 +10,22 @@
 <h1 align="center">Mind Capsule</h1>
 
 <p align="center">
-  A focused workspace for managing game development ideas, stories, lore,
-  inspiration, and world-building notes — all in one place.
+  A focused workspace for managing ideas, notes, references, and creative assets
+  — all in one place.
 </p>
 
 ---
 
 ## ✨ What is Mind Capsule?
 
-**Mind Capsule** is an open-source, work-in-progress desktop application (built with Tauri) designed to help game developers and writers:
+**Mind Capsule** is an open-source, work-in-progress desktop application (built with Tauri) designed to help creators and teams:
 
-- Capture story ideas quickly
-- Organize lore, characters, worlds, and concepts
+- Capture ideas quickly
+- Organize concepts, projects, and research
 - Store inspiration links, references, and notes
 - Keep everything accessible across devices (planned)
+
+It is especially handy for game development, but it is intentionally broad enough to support many other workflows.
 
 The goal is a **distraction-free, writing-first experience**, built with modern web tools and a calm, readable UI.
 
@@ -196,17 +198,22 @@ On every push and pull request, the CI pipeline automatically:
 - Runs TypeScript type checks
 - Lints the codebase
 - Executes tests
+- Runs Tauri (Rust) tests
 - Builds the project
 
 This ensures the main branch stays healthy and deployable.
 
 ### 🧭 Roadmap (early, subject to change)
 
-- Story / lore data model
-- Tagging and search
-- Rich text / markdown editor
-- Focus / writing mode
-- Offline-first storage
+- Show vertices in multiple ways (currently only Grid is supported), such as List, Timeline
+- Expand options menu
+  - permission checks when deleting elements could be toggleable
+- A mechanism for handling orphaned directories - e.g. prompt user if folder should be removed or a new vertex should be created
+- Ordering data - it could make a lot of sense to be able to reorganize e.g. vertices, images, notes
+- Other file formats (not openable by Mind Capsule, but available to quickly access if needed)
+- Reference viewer - could be a d3.js visualization of vertex relationships
+- A way to reparent vertices, move content between vertices, etc. Could be dependent on the reference viewer
+- More languages
 
 ### 📄 License
 
