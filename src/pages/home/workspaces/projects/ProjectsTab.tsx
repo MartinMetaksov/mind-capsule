@@ -240,7 +240,7 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
                 >
                   <ListItemText
                     primary={ws.name}
-                    secondary={ws.purpose ?? ws.path}
+                    secondary={ws.path}
                     slotProps={{ secondary: { noWrap: true } }}
                   />
                 </ListItemButton>

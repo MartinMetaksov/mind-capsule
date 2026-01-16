@@ -48,7 +48,7 @@ export const WorkspacesTab: React.FC<WorkspacesTabProps> = ({
   );
 
   const openCreate = () => {
-    setEditing({ name: "", path: "", purpose: "" });
+    setEditing({ name: "", path: "" });
     setEditorOpen(true);
     setError(null);
   };
@@ -96,7 +96,6 @@ export const WorkspacesTab: React.FC<WorkspacesTabProps> = ({
           id: crypto.randomUUID(),
           name: data.name,
           path: data.path,
-          purpose: data.purpose ?? "",
           created_at: now,
           updated_at: now,
           tags: [],
@@ -218,7 +217,6 @@ export const WorkspacesTab: React.FC<WorkspacesTabProps> = ({
               id: editing.id,
               name: editing.name,
               path: editing.path,
-              purpose: editing.purpose ?? "",
             }
             : undefined
         }

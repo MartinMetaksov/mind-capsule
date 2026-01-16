@@ -13,7 +13,7 @@ import type { Workspace } from "@/core/workspace";
 import { useTranslation } from "react-i18next";
 import { DeleteConfirmDialog } from "../delete-confirm-dialog/DeleteConfirmDialog";
 
-export type WorkspaceFormData = Pick<Workspace, "name" | "path" | "purpose"> & {
+export type WorkspaceFormData = Pick<Workspace, "name" | "path"> & {
   id?: string;
 };
 
@@ -40,7 +40,6 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
     id: initial?.id,
     name: initial?.name ?? "",
     path: initial?.path ?? "",
-    purpose: initial?.purpose ?? "",
   });
 
   React.useEffect(() => {
@@ -49,7 +48,6 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
       id: initial?.id,
       name: initial?.name ?? "",
       path: initial?.path ?? "",
-      purpose: initial?.purpose ?? "",
     });
     setFormError(null);
   }, [initial, open]);
@@ -63,7 +61,6 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
       ...data,
       name: data.name.trim(),
       path: data.path.trim(),
-      purpose: data.purpose?.trim() ?? "",
     });
   };
 
@@ -80,15 +77,6 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
             value={data.name}
             onChange={(e) =>
               setData((prev) => ({ ...prev, name: e.target.value }))
-            }
-            slotProps={{ inputLabel: { shrink: true } }}
-          />
-          <TextField
-            label={t("workspaces.fields.purpose")}
-            fullWidth
-            value={data.purpose}
-            onChange={(e) =>
-              setData((prev) => ({ ...prev, purpose: e.target.value }))
             }
             slotProps={{ inputLabel: { shrink: true } }}
           />

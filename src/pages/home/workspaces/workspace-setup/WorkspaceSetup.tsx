@@ -1,11 +1,15 @@
 import { Loading } from "@/common/loading/Loading";
 import { Logo } from "@/common/logo/Logo";
-import { APP_NAME, APP_NAME_TECHNICAL } from "@/constants/appConstants";
+import { APP_NAME } from "@/constants/appConstants";
 import { Workspace } from "@/core/workspace";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
 import { Box, Button, Stack, Tooltip, Typography } from "@mui/material";
 import React from "react";
 import { useTranslation } from "react-i18next";
+import {
+  WorkspaceDialog,
+  WorkspaceFormData,
+} from "../components/workspace-dialogs/WorkspaceDialogs";
 
 type WorkspaceSetupProps = {
   onChanged?: () => Promise<void> | void;
@@ -17,56 +21,34 @@ export const WorkspaceSetup: React.FC<WorkspaceSetupProps> = ({
   const { t } = useTranslation("common");
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [editorOpen, setEditorOpen] = React.useState(false);
 
-  const handlePickWorkspace = async () => {
-    setLoading(true);
-    setError(null);
-
+  const handlePickPath = async () => {
     try {
       const fs = await getFileSystem();
-
-      const selectedDir = await fs.selectWorkspaceDirectory();
-      if (!selectedDir) return;
-
-      const now = new Date().toISOString();
-
-      const workspace: Workspace = {
-        id: crypto.randomUUID(),
-        name: t("workspaceSetup.newWorkspaceName"),
-        path: selectedDir,
-        purpose: t("workspaceSetup.selectedPurpose"),
-        created_at: now,
-        updated_at: now,
-        tags: [],
-      };
-
-      await fs.createWorkspace(workspace);
-      await onChanged?.();
+      const selected = await fs.selectWorkspaceDirectory();
+      return selected;
     } catch (err) {
-      console.error("Pick workspace failed:", err);
       setError(
-        err instanceof Error ? err.message : "Failed to select workspace."
+        err instanceof Error
+          ? err.message
+          : t("workspaces.errors.selectDirectory")
       );
-    } finally {
-      setLoading(false);
+      return null;
     }
   };
 
-  const createDefaultWorkspace = async () => {
+  const handleCreateWorkspace = async (data: WorkspaceFormData) => {
     setLoading(true);
     setError(null);
 
     try {
       const fs = await getFileSystem();
-
-      const defaultPath = `memory://.${APP_NAME_TECHNICAL}Workspace`;
       const now = new Date().toISOString();
-
       const workspace: Workspace = {
         id: crypto.randomUUID(),
-        name: t("workspaceSetup.defaultWorkspaceName"),
-        path: defaultPath,
-        purpose: t("workspaceSetup.defaultPurpose", { app: APP_NAME }),
+        name: data.name,
+        path: data.path,
         created_at: now,
         updated_at: now,
         tags: [],
@@ -74,10 +56,11 @@ export const WorkspaceSetup: React.FC<WorkspaceSetupProps> = ({
 
       await fs.createWorkspace(workspace);
       await onChanged?.();
+      setEditorOpen(false);
     } catch (err) {
-      console.error("Create default workspace failed:", err);
+      console.error("Create workspace failed:", err);
       setError(
-        err instanceof Error ? err.message : "Failed to create workspace."
+        err instanceof Error ? err.message : t("workspaces.errors.save")
       );
     } finally {
       setLoading(false);
@@ -148,57 +131,12 @@ export const WorkspaceSetup: React.FC<WorkspaceSetupProps> = ({
 
         <Button
           variant="contained"
-          onClick={handlePickWorkspace}
+          onClick={() => setEditorOpen(true)}
           disabled={loading}
         >
           {loading
             ? t("workspaceSetup.settingUp")
-            : t("workspaceSetup.chooseFolder")}
-        </Button>
-
-        <Box visibility={loading ? "hidden" : "visible"}>
-          <Typography color="text.secondary">
-            {t("workspaceSetup.quickStart", { app: APP_NAME })}{" "}
-            <Tooltip
-              title={
-                <Typography variant="body2">
-                  {t("workspaceSetup.quickStartTooltip", {
-                    technical: APP_NAME_TECHNICAL,
-                  })}
-                </Typography>
-              }
-              arrow
-              placement="top"
-              slotProps={{
-                tooltip: {
-                  sx: {
-                    backgroundColor: "background.paper",
-                    color: "text.primary",
-                    border: "1px solid",
-                    borderColor: "divider",
-                    fontSize: "0.75rem",
-                  },
-                },
-                arrow: { sx: { color: "background.paper" } },
-              }}
-            >
-              <Box
-                component="span"
-                sx={{ textDecoration: "underline dotted", cursor: "help" }}
-              >
-                {t("workspaceSetup.default")}
-              </Box>
-            </Tooltip>{" "}
-            {t("workspaceSetup.workspaceLower")}
-          </Typography>
-        </Box>
-
-        <Button
-          variant="contained"
-          onClick={createDefaultWorkspace}
-          disabled={loading}
-        >
-          {t("workspaceSetup.createDefault")}
+            : t("workspaceSetup.create")}
         </Button>
 
         <Typography color="text.secondary">
@@ -213,6 +151,17 @@ export const WorkspaceSetup: React.FC<WorkspaceSetupProps> = ({
           </Typography>
         )}
       </Stack>
+
+      <WorkspaceDialog
+        open={editorOpen}
+        onClose={() => {
+          setEditorOpen(false);
+          setError(null);
+        }}
+        onSubmit={handleCreateWorkspace}
+        onPickPath={handlePickPath}
+        error={error}
+      />
     </Box>
   );
 };

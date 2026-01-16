@@ -4,7 +4,6 @@
       "id": "ws-default",
       "name": "Default Workspace",
       "path": "memory://.MindCapsuleWorkspace",
-      "purpose": "Your first Mind Capsule workspace",
       "created_at": "2024-01-01T00:00:00.000Z",
       "updated_at": "2024-01-01T00:00:00.000Z",
       "tags": ["default"]

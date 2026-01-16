@@ -22,7 +22,6 @@ const workspace: Workspace = {
   id: "ws-1",
   name: "Default Workspace",
   path: "/tmp/ws",
-  purpose: "Test",
   created_at: "2024-01-01T00:00:00.000Z",
   updated_at: "2024-01-02T00:00:00.000Z",
   tags: [],

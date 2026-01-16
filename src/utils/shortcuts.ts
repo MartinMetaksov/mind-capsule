@@ -4,6 +4,7 @@ export type ShortcutAction =
   | "openSearch"
   | "openSettings"
   | "insert"
+  | "goHome"
   | "confirmDelete"
   | "cancelDelete"
   | "imagePrev"
@@ -48,6 +49,7 @@ const SHORTCUTS: Record<
     keys: ["meta", "i"],
     display: "⌘ + I / Ctrl + I",
   }),
+  goHome: makeUniformShortcuts({ keys: ["/"], display: "/" }),
   confirmDelete: makeUniformShortcuts({ keys: ["y"], display: "Y" }),
   cancelDelete: makeUniformShortcuts({ keys: ["n"], display: "N" }),
   imagePrev: makeUniformShortcuts({ keys: ["arrowleft"], display: "←" }),

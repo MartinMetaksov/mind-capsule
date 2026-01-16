@@ -48,6 +48,7 @@
   "shortcuts": {
     "search": "Search",
     "settings": "Open Settings",
+    "goHome": "Go to Home",
     "insert": "Insert",
     "tab": "Tab {{number}}",
     "confirmDelete": "Confirm delete",
@@ -65,11 +66,11 @@
     },
     "fields": {
       "name": "Name",
-      "purpose": "Purpose",
       "path": "Path"
     },
     "errors": {
       "required": "Name and path are required.",
+      "selectDirectory": "Failed to select directory.",
       "save": "Failed to save workspace.",
       "delete": "Failed to delete workspace."
     },
@@ -81,26 +82,17 @@
   },
   "workspaceSetup": {
     "welcome": "Welcome to {{app}}",
-    "description": "{{app}} helps you capture and organize ideas, story beats, lore, inspiration, and world-building notes — all in one place.",
-    "requires": "{{app}} requires a",
+    "description": "{{app}} keeps your projects, notes, and files inside a workspace you control.",
+    "requires": "Create a",
     "workspace": "workspace",
     "toGetStarted": "to get started.",
     "tooltip": {
-      "line1": "A workspace is a folder on your computer where {{app}} stores your projects, notes, and files.",
-      "line2": "Tip: If you place your workspace in iCloud, Dropbox, or OneDrive, it can sync across your devices automatically."
+      "line1": "A workspace is a folder on your computer where {{app}} stores your work.",
+      "line2": "Tip: Put it in iCloud, Dropbox, or OneDrive to sync across devices."
     },
-    "settingUp": "Setting up workspace…",
-    "chooseFolder": "Choose workspace folder",
-    "quickStart": "Prefer a quick start? {{app}} can create a",
-    "quickStartTooltip": "Creates a folder named .{{technical}}Workspace in your home directory.",
-    "default": "default",
-    "workspaceLower": "workspace for you.",
-    "createDefault": "Create default workspace",
-    "changeLater": "You can change your workspace later in Settings.",
-    "newWorkspaceName": "New workspace",
-    "selectedPurpose": "Selected workspace directory",
-    "defaultWorkspaceName": "Default workspace",
-    "defaultPurpose": "Created by {{app}}"
+    "settingUp": "Creating workspace…",
+    "create": "Create workspace",
+    "changeLater": "You can change your workspace later in Settings."
   },
   "vertexNotFound": {
     "title": "Vertex not found",

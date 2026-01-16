@@ -7,5 +7,4 @@ export type Workspace = Identifiable &
   Taggable & {
     name: string;
     path: string;
-    purpose?: string;
   };

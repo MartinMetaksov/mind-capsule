@@ -75,6 +75,7 @@ export const WorkspaceOrchestrator: React.FC = () => {
     ],
     [t]
   );
+  const homeShortcut = React.useMemo(() => getShortcut("goHome", os), [os]);
 
   const active = trail.length > 0 ? trail[trail.length - 1] : null;
 
@@ -187,11 +188,22 @@ export const WorkspaceOrchestrator: React.FC = () => {
     });
   };
 
-  const backToRoot = () => {
+  const backToRoot = React.useCallback(() => {
     setTrail([]);
     navigate("/");
     setNotFound({ missingId: null });
-  };
+  }, [navigate]);
+
+  React.useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (matchesShortcut(event, homeShortcut)) {
+        event.preventDefault();
+        backToRoot();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [backToRoot, homeShortcut]);
 
   React.useEffect(() => {
     const syncTrailFromPath = async () => {
