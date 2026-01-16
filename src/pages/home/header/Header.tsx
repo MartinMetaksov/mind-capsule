@@ -11,6 +11,7 @@ import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
 import { SearchDialog } from "./search-dialog/SearchDialog";
 import { SettingsDialog } from "./settings-dialog/SettingsDialog";
 import { useTranslation } from "react-i18next";
+import packageJson from "../../../../package.json";
 
 export const Header: React.FC = () => {
   const { t } = useTranslation("common");
@@ -81,6 +82,9 @@ export const Header: React.FC = () => {
             sx={{ fontWeight: 800 }}
           >
             {APP_NAME}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            v{packageJson.version}
           </Typography>
         </Box>
 
