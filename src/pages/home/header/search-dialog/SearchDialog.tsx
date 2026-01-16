@@ -161,19 +161,25 @@ export const SearchDialog: React.FC<Props> = ({ open, onClose }) => {
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>{t("search.title")}</DialogTitle>
-      <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-        <TextField
-          autoFocus
-          inputRef={inputRef}
-          placeholder={t("search.placeholder")}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={handleKeyDown}
-          fullWidth
-        />
+      <DialogTitle sx={{ px: 3, pt: 3, pb: 1 }}>
+        {t("search.title")}
+      </DialogTitle>
+      <DialogContent
+        sx={{ display: "flex", flexDirection: "column", gap: 0, p: 0 }}
+      >
+        <Box sx={{ px: 3, pb: 2 }}>
+          <TextField
+            autoFocus
+            inputRef={inputRef}
+            placeholder={t("search.placeholder")}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={handleKeyDown}
+            fullWidth
+          />
+        </Box>
         {search ? (
-          <List dense>
+          <List dense disablePadding sx={{ pb: 2 }}>
             {filtered.map((v, idx) => (
               <ListItemButton
                 key={v.id}
@@ -226,13 +232,15 @@ export const SearchDialog: React.FC<Props> = ({ open, onClose }) => {
               </ListItemButton>
             ))}
             {filtered.length === 0 && (
-              <Typography color="text.secondary" sx={{ px: 1, py: 2 }}>
+              <Typography color="text.secondary" sx={{ px: 3, py: 2 }}>
                 {t("search.noResults")}
               </Typography>
             )}
           </List>
         ) : (
-          <Typography color="text.secondary">{t("search.emptyState")}</Typography>
+          <Typography color="text.secondary" sx={{ px: 3, pb: 3 }}>
+            {t("search.emptyState")}
+          </Typography>
         )}
       </DialogContent>
     </Dialog>
