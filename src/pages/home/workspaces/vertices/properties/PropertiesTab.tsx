@@ -246,20 +246,6 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
           </TextField>
 
           <TextField
-            label={t("propertiesTab.items.kind")}
-            value={itemsBehavior.child_kind}
-            onChange={(e) =>
-              setItemsBehavior((prev) => ({
-                ...prev,
-                child_kind: e.target.value,
-              }))
-            }
-            fullWidth
-            slotProps={{ inputLabel: { shrink: true } }}
-            placeholder={t("propertiesTab.items.placeholder")}
-          />
-
-          <TextField
             label={t("propertiesTab.items.display")}
             select
             value={itemsBehavior.display}

@@ -364,6 +364,10 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
                   vertex={currentVertex}
                   workspace={workspace}
                   onOpenVertex={handleOpenVertex}
+                  onVertexUpdated={(v) => {
+                    setCurrentVertex(v);
+                    return onVertexUpdated?.(v);
+                  }}
                 />
               )}
 

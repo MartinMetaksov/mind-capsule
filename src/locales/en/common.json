@@ -189,7 +189,8 @@
     "create": "Create item",
     "errors": {
       "load": "Failed to load items.",
-      "create": "Failed to create item."
+      "create": "Failed to create item.",
+      "update": "Failed to rename items."
     }
   },
   "filesTab": {

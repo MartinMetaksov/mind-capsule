@@ -1,5 +1,6 @@
 import * as React from "react";
-import { Box, Typography } from "@mui/material";
+import { Box, InputBase, Typography } from "@mui/material";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 
 import { VertexGrid, VertexItem } from "../vertex-grid/VertexGrid";
 import {
@@ -23,6 +24,7 @@ type ItemsTabProps = {
   vertex: Vertex;
   workspace: Workspace;
   onOpenVertex?: (vertexId: string) => void;
+  onVertexUpdated?: (vertex: Vertex) => Promise<void> | void;
 };
 
 export const ItemsTab: React.FC<ItemsTabProps> = ({
@@ -30,14 +32,12 @@ export const ItemsTab: React.FC<ItemsTabProps> = ({
   vertex,
   workspace,
   onOpenVertex,
+  onVertexUpdated,
 }) => {
   const { t } = useTranslation("common");
   const fabRef = React.useRef<CreateFabHandle | null>(null);
   const os = React.useMemo(() => detectOperatingSystem(), []);
-  const createShortcut = React.useMemo(
-    () => getShortcut("insert", os),
-    [os]
-  );
+  const createShortcut = React.useMemo(() => getShortcut("insert", os), [os]);
   const emptyLabel = React.useMemo(() => {
     const kind = vertex.items_behavior?.child_kind?.trim();
     if (!kind) return "items";
@@ -52,6 +52,55 @@ export const ItemsTab: React.FC<ItemsTabProps> = ({
   );
   const [createOpen, setCreateOpen] = React.useState(false);
   const [createError, setCreateError] = React.useState<string | null>(null);
+  const [editingLabel, setEditingLabel] = React.useState(false);
+  const [labelDraft, setLabelDraft] = React.useState(label);
+  const [labelSaving, setLabelSaving] = React.useState(false);
+  const labelInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  React.useEffect(() => {
+    if (!editingLabel) {
+      setLabelDraft(label);
+    }
+  }, [editingLabel, label]);
+
+  React.useEffect(() => {
+    if (!editingLabel || !labelInputRef.current) return;
+    labelInputRef.current.focus();
+    labelInputRef.current.select();
+  }, [editingLabel]);
+
+  const handleLabelCommit = React.useCallback(
+    async (nextValue?: string) => {
+      const trimmed = (nextValue ?? labelDraft).trim();
+      const nextKind = trimmed.length > 0 ? trimmed : "";
+      const currentKind = vertex.items_behavior?.child_kind ?? "";
+      setEditingLabel(false);
+      if (nextKind === currentKind) {
+        return;
+      }
+      try {
+        setLabelSaving(true);
+        const fs = await getFileSystem();
+        const updated: Vertex = {
+          ...vertex,
+          items_behavior: {
+            child_kind: nextKind,
+            display: vertex.items_behavior?.display ?? "grid",
+          },
+          updated_at: new Date().toISOString(),
+        };
+        await fs.updateVertex(updated);
+        await onVertexUpdated?.(updated);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : t("itemsTab.errors.update")
+        );
+      } finally {
+        setLabelSaving(false);
+      }
+    },
+    [labelDraft, onVertexUpdated, t, vertex]
+  );
 
   const loadItems = React.useCallback(async () => {
     setLoading(true);
@@ -62,9 +111,7 @@ export const ItemsTab: React.FC<ItemsTabProps> = ({
       setItems(vertices.map((v) => ({ vertex: v, workspace })));
     } catch (err) {
       console.error("Failed to load item vertices:", err);
-      setError(
-        err instanceof Error ? err.message : t("itemsTab.errors.load")
-      );
+      setError(err instanceof Error ? err.message : t("itemsTab.errors.load"));
       setItems([]);
     } finally {
       setLoading(false);
@@ -106,9 +153,78 @@ export const ItemsTab: React.FC<ItemsTabProps> = ({
           gap: 1,
         }}
       >
-        <Typography variant="h6" sx={{ fontWeight: 900, mb: 1 }}>
-          {label}
-        </Typography>
+        <Box
+          sx={(theme) => ({
+            mb: 1,
+            minHeight: `calc(${theme.typography.h6.fontSize} * ${String(
+              theme.typography.h6.lineHeight ?? 1.4
+            )})`,
+            display: "flex",
+            alignItems: "center",
+            maxWidth: 360,
+            cursor: "text",
+            "&:hover .items-title-input": editingLabel
+              ? undefined
+              : {
+                  textDecorationColor: "currentColor",
+                  textDecorationThickness: "2px",
+                },
+          })}
+          onClick={() => {
+            if (!editingLabel) {
+              setEditingLabel(true);
+            }
+          }}
+        >
+          <EditOutlinedIcon
+            fontSize="small"
+            sx={{
+              mr: 1,
+              color: "text.secondary",
+              opacity: editingLabel ? 0.6 : 0.9,
+            }}
+          />
+          <InputBase
+            value={labelDraft}
+            onChange={(e) => setLabelDraft(e.target.value)}
+            onBlur={() => {
+              if (editingLabel) {
+                void handleLabelCommit();
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                void handleLabelCommit();
+              }
+              if (e.key === "Escape") {
+                e.preventDefault();
+                setEditingLabel(false);
+                setLabelDraft(label);
+              }
+            }}
+            placeholder={t("vertex.tabs.items")}
+            readOnly={!editingLabel}
+            disabled={labelSaving}
+            className="items-title-input"
+            inputRef={labelInputRef}
+            inputProps={{
+              "aria-label": t("vertex.tabs.items"),
+            }}
+            sx={(theme) => ({
+              flex: 1,
+              fontSize: theme.typography.h6.fontSize,
+              fontWeight: theme.typography.h6.fontWeight,
+              lineHeight: theme.typography.h6.lineHeight,
+              color: "text.primary",
+              padding: 0,
+              "& .MuiInputBase-input": {
+                padding: 0,
+                cursor: "text",
+              },
+            })}
+          />
+        </Box>
         {error && (
           <Typography color="error" variant="body2">
             {error}
@@ -185,9 +301,7 @@ export const ItemsTab: React.FC<ItemsTabProps> = ({
             await loadItems();
           } catch (err) {
             setCreateError(
-              err instanceof Error
-                ? err.message
-                : t("itemsTab.errors.create")
+              err instanceof Error ? err.message : t("itemsTab.errors.create")
             );
           }
         }}

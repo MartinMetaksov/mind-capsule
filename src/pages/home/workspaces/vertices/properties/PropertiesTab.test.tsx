@@ -56,7 +56,6 @@ describe("PropertiesTab", () => {
   it("renders fields with initial values", () => {
     renderTab();
     expect(screen.getByDisplayValue("Vertex One")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("chapter")).toBeInTheDocument();
     expect(screen.getByText("/tmp/assets/v-1")).toBeInTheDocument();
   });
 
