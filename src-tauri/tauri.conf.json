@@ -1,6 +1,6 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "mind-capsule",
+  "productName": "Mind Capsule",
   "version": "1.0.0",
   "identifier": "com.mindcapsule.app",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "mind-capsule",
+        "title": "Mind Capsule",
         "width": 800,
         "height": 600,
         "maximized": true,
@@ -34,6 +34,14 @@
       "icons/256x256.png",
       "icons/32x32.png",
       "icons/1024x1024.png"
-    ]
+    ],
+    "macOS": {
+      "bundleName": "Mind Capsule"
+    },
+    "windows": {
+      "nsis": {
+        "startMenuFolder": "Mind Capsule"
+      }
+    }
   }
 }
