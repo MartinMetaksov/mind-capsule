@@ -132,7 +132,7 @@ export const DetachedProjectsTab: React.FC<DetachedProjectsTabProps> = ({
         asset_directory: "",
         parent_id: null,
         workspace_id: createTarget.workspace.id,
-        default_tab: "children",
+        default_tab: "items",
         created_at: now,
         updated_at: now,
         tags: [],

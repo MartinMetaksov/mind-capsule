@@ -26,7 +26,7 @@ const rootVertex: Vertex = {
   created_at: "2024-01-01T00:00:00.000Z",
   updated_at: "2024-01-02T00:00:00.000Z",
   tags: [],
-  children_behavior: { child_kind: "item", display: "grid" },
+  items_behavior: { child_kind: "item", display: "grid" },
 };
 
 vi.mock("@/integrations/fileSystem/integration", () => ({

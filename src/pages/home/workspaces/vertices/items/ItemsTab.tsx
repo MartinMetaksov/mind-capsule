@@ -18,14 +18,14 @@ import { detectOperatingSystem } from "@/utils/os";
 import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
 import { useTranslation } from "react-i18next";
 
-type ChildrenTabProps = {
+type ItemsTabProps = {
   label: string;
   vertex: Vertex;
   workspace: Workspace;
   onOpenVertex?: (vertexId: string) => void;
 };
 
-export const ChildrenTab: React.FC<ChildrenTabProps> = ({
+export const ItemsTab: React.FC<ItemsTabProps> = ({
   label,
   vertex,
   workspace,
@@ -39,12 +39,12 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
     [os]
   );
   const emptyLabel = React.useMemo(() => {
-    const kind = vertex.children_behavior?.child_kind?.trim();
-    if (!kind) return "children";
+    const kind = vertex.items_behavior?.child_kind?.trim();
+    if (!kind) return "items";
     return kind;
-  }, [vertex.children_behavior?.child_kind]);
+  }, [vertex.items_behavior?.child_kind]);
 
-  const [children, setChildren] = React.useState<VertexItem[]>([]);
+  const [items, setItems] = React.useState<VertexItem[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = React.useState<VertexItem | null>(
@@ -53,27 +53,27 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
   const [createOpen, setCreateOpen] = React.useState(false);
   const [createError, setCreateError] = React.useState<string | null>(null);
 
-  const loadChildren = React.useCallback(async () => {
+  const loadItems = React.useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const fs = await getFileSystem();
       const vertices = await fs.getVertices(vertex.id);
-      setChildren(vertices.map((v) => ({ vertex: v, workspace })));
+      setItems(vertices.map((v) => ({ vertex: v, workspace })));
     } catch (err) {
-      console.error("Failed to load child vertices:", err);
+      console.error("Failed to load item vertices:", err);
       setError(
-        err instanceof Error ? err.message : t("childrenTab.errors.load")
+        err instanceof Error ? err.message : t("itemsTab.errors.load")
       );
-      setChildren([]);
+      setItems([]);
     } finally {
       setLoading(false);
     }
   }, [t, vertex.id, workspace]);
 
   React.useEffect(() => {
-    loadChildren();
-  }, [loadChildren, vertex.id]);
+    loadItems();
+  }, [loadItems, vertex.id]);
 
   React.useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -116,9 +116,9 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
         )}
         {loading ? (
           <Typography color="text.secondary">
-            {t("childrenTab.loading")}
+            {t("itemsTab.loading")}
           </Typography>
-        ) : children.length === 0 ? (
+        ) : items.length === 0 ? (
           <Box
             sx={{
               flex: 1,
@@ -129,19 +129,19 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
             }}
           >
             <Typography color="text.secondary" align="center">
-              {t("childrenTab.empty", { kind: emptyLabel })}
+              {t("itemsTab.empty", { kind: emptyLabel })}
             </Typography>
           </Box>
         ) : (
           <Box sx={{ flex: 1, minHeight: 0 }}>
             <VertexGrid
-              items={children}
+              items={items}
               selectedVertexId={null}
               onSelect={(id) => {
                 onOpenVertex?.(id);
               }}
               onDeleteVertex={(v) => {
-                const match = children.find((c) => c.vertex.id === v.id);
+                const match = items.find((c) => c.vertex.id === v.id);
                 if (match) setConfirmDelete(match);
               }}
               scrollY
@@ -155,7 +155,7 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
         onClick={() => {
           setCreateOpen(true);
         }}
-        title={t("childrenTab.create")}
+        title={t("itemsTab.create")}
         sx={{ position: "absolute", bottom: 20, right: 20 }}
       />
       <CreateVertexDialog
@@ -174,7 +174,7 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
               asset_directory: "",
               parent_id: vertex.id,
               workspace_id: null,
-              default_tab: "children",
+              default_tab: "items",
               created_at: now,
               updated_at: now,
               tags: [],
@@ -182,17 +182,17 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
             };
             await fs.createVertex(newVertex);
             setCreateOpen(false);
-            await loadChildren();
+            await loadItems();
           } catch (err) {
             setCreateError(
               err instanceof Error
                 ? err.message
-                : t("childrenTab.errors.create")
+                : t("itemsTab.errors.create")
             );
           }
         }}
-        submitLabel={t("childrenTab.create")}
-        title={t("childrenTab.create")}
+        submitLabel={t("itemsTab.create")}
+        title={t("itemsTab.create")}
       />
       {createError && (
         <Typography color="error" variant="body2" sx={{ px: 2, pt: 1 }}>
@@ -210,14 +210,14 @@ export const ChildrenTab: React.FC<ChildrenTabProps> = ({
             const fs = await getFileSystem();
             await fs.removeVertex(confirmDelete.vertex);
             setConfirmDelete(null);
-            await loadChildren();
+            await loadItems();
           } catch (err) {
             setError(
-              err instanceof Error ? err.message : "Failed to delete child."
+              err instanceof Error ? err.message : "Failed to delete item."
             );
           }
         }}
-        entityLabel="child"
+        entityLabel="item"
       />
     </Box>
   );

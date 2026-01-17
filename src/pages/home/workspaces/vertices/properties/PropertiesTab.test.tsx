@@ -32,7 +32,7 @@ const vertex: Vertex = {
   created_at: "2024-01-01T00:00:00.000Z",
   updated_at: "2024-01-02T00:00:00.000Z",
   tags: [],
-  children_behavior: { child_kind: "chapter", display: "grid" },
+  items_behavior: { child_kind: "chapter", display: "grid" },
 };
 
 describe("PropertiesTab", () => {
@@ -46,7 +46,7 @@ describe("PropertiesTab", () => {
         <PropertiesTab
           vertex={vertex}
           workspace={workspace}
-          hasChildren={false}
+          hasItems={false}
           onSelectTab={vi.fn()}
           {...override}
         />

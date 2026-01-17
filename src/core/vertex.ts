@@ -4,16 +4,16 @@ import { Timestampable } from "./traits/timestampable";
 import { Thumbnailable } from "./traits/thumbnailable";
 import { Id } from "./common/id";
 
-export type ChildrenDisplayHint =
+export type ItemsDisplayHint =
   | "list"
   | "grid"
   | "canvas"
   | "timeline"
   | `custom:${string}`;
 
-export type ChildrenBehavior = {
+export type ItemsBehavior = {
   child_kind: string;
-  display: ChildrenDisplayHint;
+  display: ItemsDisplayHint;
 };
 
 export type VertexLayout =
@@ -21,7 +21,7 @@ export type VertexLayout =
   | { mode: "canvas"; positions: Record<Id, { x: number; y: number }> };
 
 export type VertexTabId =
-  | "children"
+  | "items"
   | "properties"
   | "tags"
   | "notes"
@@ -36,8 +36,8 @@ export type Vertex = Identifiable &
     asset_directory: string;
     parent_id: Id | null;
     workspace_id: Id | null;
-    children_layout?: VertexLayout;
-    children_behavior?: ChildrenBehavior;
+    items_layout?: VertexLayout;
+    items_behavior?: ItemsBehavior;
     default_tab?: VertexTabId;
     is_leaf?: boolean;
     is_corrupt?: boolean;

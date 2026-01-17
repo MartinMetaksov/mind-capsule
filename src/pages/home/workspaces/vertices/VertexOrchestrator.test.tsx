@@ -27,7 +27,7 @@ vi.mock("../components/VerticalTabs", () => ({
     <div>{items.map((i) => i.label).join("|")}</div>
   ),
 }));
-vi.mock("./children/ChildrenTab", () => ({ ChildrenTab: () => <div>ChildrenTab</div> }));
+vi.mock("./items/ItemsTab", () => ({ ItemsTab: () => <div>ItemsTab</div> }));
 vi.mock("./properties/PropertiesTab", () => ({ PropertiesTab: () => <div>PropertiesTab</div> }));
 vi.mock("./tags/TagsTab", () => ({ TagsTab: () => <div>TagsTab</div> }));
 vi.mock("./notes/NotesTab", () => ({ NotesTab: () => <div>NotesTab</div> }));
@@ -52,7 +52,7 @@ const baseVertex: Vertex = {
   created_at: "2024-01-01T00:00:00.000Z",
   updated_at: "2024-01-02T00:00:00.000Z",
   tags: [],
-  children_behavior: { child_kind: "item", display: "grid" },
+  items_behavior: { child_kind: "item", display: "grid" },
 };
 
 const renderOrchestrator = (vertex: Vertex) =>
@@ -71,14 +71,14 @@ const renderOrchestrator = (vertex: Vertex) =>
   );
 
 describe("VertexOrchestrator", () => {
-  it("renders children tab by default for non-leaf vertices", () => {
-    renderOrchestrator({ ...baseVertex, is_leaf: false, default_tab: "children" });
-    expect(screen.getByText("ChildrenTab")).toBeInTheDocument();
+  it("renders items tab by default for non-leaf vertices", () => {
+    renderOrchestrator({ ...baseVertex, is_leaf: false, default_tab: "items" });
+    expect(screen.getByText("ItemsTab")).toBeInTheDocument();
   });
 
-  it("omits children tab for leaf vertices and shows properties", () => {
-    renderOrchestrator({ ...baseVertex, is_leaf: true, default_tab: "children" });
-    expect(screen.queryByText("ChildrenTab")).not.toBeInTheDocument();
+  it("omits items tab for leaf vertices and shows properties", () => {
+    renderOrchestrator({ ...baseVertex, is_leaf: true, default_tab: "items" });
+    expect(screen.queryByText("ItemsTab")).not.toBeInTheDocument();
     expect(screen.getByText("PropertiesTab")).toBeInTheDocument();
   });
 });

@@ -15,8 +15,8 @@ import {
 import type { Vertex } from "@/core/vertex";
 import type { Workspace } from "@/core/workspace";
 import type {
-  ChildrenBehavior,
-  ChildrenDisplayHint,
+  ItemsBehavior,
+  ItemsDisplayHint,
   VertexTabId,
 } from "@/core/vertex";
 import { ThumbnailPicker } from "../../components/vertex-dialogs/VertexDialogs";
@@ -26,7 +26,7 @@ import { useTranslation } from "react-i18next";
 type PropertiesTabProps = {
   vertex: Vertex;
   workspace: Workspace;
-  hasChildren: boolean;
+  hasItems: boolean;
   onVertexUpdated?: (vertex: Vertex) => Promise<void> | void;
   onSelectTab: (tab: VertexTabId) => void;
 };
@@ -34,18 +34,18 @@ type PropertiesTabProps = {
 export const PropertiesTab: React.FC<PropertiesTabProps> = ({
   vertex,
   workspace: _workspace,
-  hasChildren: _hasChildren,
+  hasItems: _hasItems,
   onVertexUpdated,
   onSelectTab,
 }) => {
   const { t } = useTranslation("common");
   const [title, setTitle] = React.useState(vertex.title);
   const [defaultTab, setDefaultTab] = React.useState<VertexTabId>(
-    vertex.default_tab ?? "children"
+    vertex.default_tab ?? "items"
   );
-  const [childBehavior, setChildBehavior] = React.useState<ChildrenBehavior>({
-    child_kind: vertex.children_behavior?.child_kind ?? "generic",
-    display: vertex.children_behavior?.display ?? "grid",
+  const [itemsBehavior, setItemsBehavior] = React.useState<ItemsBehavior>({
+    child_kind: vertex.items_behavior?.child_kind ?? "generic",
+    display: vertex.items_behavior?.display ?? "grid",
   });
   const [thumbnail, setThumbnail] = React.useState<string | undefined>(
     vertex.thumbnail_path
@@ -57,10 +57,10 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
 
   React.useEffect(() => {
     setTitle(vertex.title);
-    setDefaultTab(vertex.default_tab ?? "children");
-    setChildBehavior({
-      child_kind: vertex.children_behavior?.child_kind ?? "generic",
-      display: vertex.children_behavior?.display ?? "grid",
+    setDefaultTab(vertex.default_tab ?? "items");
+    setItemsBehavior({
+      child_kind: vertex.items_behavior?.child_kind ?? "generic",
+      display: vertex.items_behavior?.display ?? "grid",
     });
     setThumbnail(vertex.thumbnail_path);
     setError(null);
@@ -82,7 +82,7 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
   }, [assetDirectory]);
 
   const tabOptions: { value: VertexTabId; label: string }[] = [
-    { value: "children", label: t("vertex.tabs.children") },
+    { value: "items", label: t("vertex.tabs.items") },
     { value: "properties", label: t("vertex.tabs.properties") },
     { value: "tags", label: t("vertex.tabs.tags") },
     { value: "notes", label: t("vertex.tabs.notes") },
@@ -90,18 +90,18 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
     { value: "urls", label: t("vertex.tabs.links") },
   ];
 
-  const childDisplayOptions: { value: ChildrenDisplayHint; label: string }[] = [
-    { value: "grid", label: t("propertiesTab.childrenDisplay.grid") },
-    { value: "list", label: t("propertiesTab.childrenDisplay.list") },
-    { value: "timeline", label: t("propertiesTab.childrenDisplay.timeline") },
+  const itemsDisplayOptions: { value: ItemsDisplayHint; label: string }[] = [
+    { value: "grid", label: t("propertiesTab.itemsDisplay.grid") },
+    { value: "list", label: t("propertiesTab.itemsDisplay.list") },
+    { value: "timeline", label: t("propertiesTab.itemsDisplay.timeline") },
   ];
 
   const isDirty =
     title !== vertex.title ||
-    defaultTab !== (vertex.default_tab ?? "children") ||
-    childBehavior.child_kind !==
-      (vertex.children_behavior?.child_kind ?? "generic") ||
-    childBehavior.display !== (vertex.children_behavior?.display ?? "grid") ||
+    defaultTab !== (vertex.default_tab ?? "items") ||
+    itemsBehavior.child_kind !==
+      (vertex.items_behavior?.child_kind ?? "generic") ||
+    itemsBehavior.display !== (vertex.items_behavior?.display ?? "grid") ||
     thumbnail !== vertex.thumbnail_path ||
     isLeaf !== Boolean(vertex.is_leaf);
 
@@ -118,7 +118,7 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
         ...vertex,
         title: title.trim(),
         default_tab: defaultTab,
-        children_behavior: childBehavior,
+        items_behavior: itemsBehavior,
         thumbnail_path: thumbnail,
         updated_at: new Date().toISOString(),
         is_leaf: isLeaf,
@@ -128,7 +128,7 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
       onSelectTab(
         updated.is_leaf
           ? ("properties" as VertexTabId)
-          : (updated.default_tab ?? "children")
+          : (updated.default_tab ?? "items")
       );
     } catch (err) {
       setError(
@@ -246,34 +246,34 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
           </TextField>
 
           <TextField
-            label={t("propertiesTab.children.kind")}
-            value={childBehavior.child_kind}
+            label={t("propertiesTab.items.kind")}
+            value={itemsBehavior.child_kind}
             onChange={(e) =>
-              setChildBehavior((prev) => ({
+              setItemsBehavior((prev) => ({
                 ...prev,
                 child_kind: e.target.value,
               }))
             }
             fullWidth
             slotProps={{ inputLabel: { shrink: true } }}
-            placeholder={t("propertiesTab.children.placeholder")}
+            placeholder={t("propertiesTab.items.placeholder")}
           />
 
           <TextField
-            label={t("propertiesTab.children.display")}
+            label={t("propertiesTab.items.display")}
             select
-            value={childBehavior.display}
+            value={itemsBehavior.display}
             onChange={(e) =>
-              setChildBehavior((prev) => ({
+              setItemsBehavior((prev) => ({
                 ...prev,
-                display: e.target.value as ChildrenDisplayHint,
+                display: e.target.value as ItemsDisplayHint,
               }))
             }
             fullWidth
             slotProps={{ inputLabel: { shrink: true } }}
             disabled
           >
-            {childDisplayOptions.map((opt) => (
+            {itemsDisplayOptions.map((opt) => (
               <MenuItem key={opt.value} value={opt.value}>
                 {opt.label}
               </MenuItem>

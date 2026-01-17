@@ -150,7 +150,7 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
         asset_directory: "",
         parent_id: null,
         workspace_id: selectedWorkspace.id,
-        default_tab: "children",
+        default_tab: "items",
         created_at: now,
         updated_at: now,
         tags: [],

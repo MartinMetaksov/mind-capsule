@@ -34,7 +34,7 @@
       "links": "Links ({{count}})"
     },
     "tabNames": {
-      "children": "items",
+      "items": "items",
       "properties": "properties",
       "tags": "tags",
       "notes": "notes",
@@ -145,7 +145,7 @@
   },
   "vertex": {
     "tabs": {
-      "children": "Items",
+      "items": "Items",
       "properties": "Properties",
       "tags": "Tags",
       "notes": "Notes",
@@ -183,7 +183,7 @@
     "searchPlaceholder": "Search workspaces…",
     "noWorkspaces": "No workspaces found."
   },
-  "childrenTab": {
+  "itemsTab": {
     "loading": "Loading items…",
     "empty": "No {{kind}} found. Start by creating one.",
     "create": "Create item",
@@ -217,16 +217,16 @@
     "defaultTab": "Default tab",
     "leaf": {
       "label": "Leaf node",
-      "tooltip": "If yes, this vertex will not show a children tab.",
+      "tooltip": "If yes, this vertex will not show an items tab.",
       "no": "No",
       "yes": "Yes"
     },
-    "children": {
-      "kind": "Children kind",
+    "items": {
+      "kind": "Items kind",
       "placeholder": "e.g. Chapter, Task, Project, Apple",
-      "display": "Children display"
+      "display": "Items display"
     },
-    "childrenDisplay": {
+    "itemsDisplay": {
       "grid": "Grid",
       "list": "List",
       "timeline": "Timeline"

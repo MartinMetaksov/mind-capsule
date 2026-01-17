@@ -1,6 +1,6 @@
 import * as React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { ChildrenTab } from "./ChildrenTab";
+import { ItemsTab } from "./ItemsTab";
 import type { Vertex } from "@/core/vertex";
 import type { Workspace } from "@/core/workspace";
 import { I18nextProvider } from "react-i18next";
@@ -38,16 +38,16 @@ const workspace: Workspace = {
   tags: [],
 };
 
-const child: Vertex = {
-  id: "child-1",
-  title: "Child One",
-  asset_directory: "/tmp/assets/child-1",
+const item: Vertex = {
+  id: "item-1",
+  title: "Item One",
+  asset_directory: "/tmp/assets/item-1",
   parent_id: "parent",
   workspace_id: null,
   created_at: "2024-01-01T00:00:00.000Z",
   updated_at: "2024-01-02T00:00:00.000Z",
   tags: [],
-  children_behavior: { child_kind: "item", display: "grid" },
+  items_behavior: { child_kind: "item", display: "grid" },
 };
 
 const parent: Vertex = {
@@ -59,13 +59,13 @@ const parent: Vertex = {
   created_at: "2024-01-01T00:00:00.000Z",
   updated_at: "2024-01-02T00:00:00.000Z",
   tags: [],
-  children_behavior: { child_kind: "chapter", display: "grid" },
+  items_behavior: { child_kind: "chapter", display: "grid" },
 };
 
-const renderTab = (override?: Partial<React.ComponentProps<typeof ChildrenTab>>) =>
+const renderTab = (override?: Partial<React.ComponentProps<typeof ItemsTab>>) =>
   render(
     <I18nextProvider i18n={i18n}>
-      <ChildrenTab
+      <ItemsTab
         label="Chapters"
         vertex={parent}
         workspace={workspace}
@@ -75,7 +75,7 @@ const renderTab = (override?: Partial<React.ComponentProps<typeof ChildrenTab>>)
     </I18nextProvider>
   );
 
-describe("ChildrenTab", () => {
+describe("ItemsTab", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGetVertices.mockResolvedValue([]);
@@ -83,16 +83,16 @@ describe("ChildrenTab", () => {
     mockRemoveVertex.mockResolvedValue(undefined);
   });
 
-  it("shows empty state when no children", async () => {
+  it("shows empty state when no items", async () => {
     renderTab();
     await waitFor(() => expect(mockGetVertices).toHaveBeenCalled());
     expect(screen.getByText(/No chapter found/i)).toBeInTheDocument();
   });
 
-  it("renders children when present", async () => {
-    mockGetVertices.mockResolvedValue([child]);
+  it("renders items when present", async () => {
+    mockGetVertices.mockResolvedValue([item]);
     renderTab();
-    expect(await screen.findByText("Child One")).toBeInTheDocument();
+    expect(await screen.findByText("Item One")).toBeInTheDocument();
   });
 
   it("opens create dialog via fab", () => {

@@ -79,12 +79,12 @@ export const SearchDialog: React.FC<Props> = ({ open, onClose }) => {
       return allVertices;
     }
 
-    const childrenByParent = new Map<string | null, Vertex[]>();
+    const itemsByParent = new Map<string | null, Vertex[]>();
     for (const v of allVertices) {
       const parentId = v.parent_id ?? null;
-      const existing = childrenByParent.get(parentId) ?? [];
+      const existing = itemsByParent.get(parentId) ?? [];
       existing.push(v);
-      childrenByParent.set(parentId, existing);
+      itemsByParent.set(parentId, existing);
     }
 
     const scoped: Vertex[] = [];
@@ -98,8 +98,8 @@ export const SearchDialog: React.FC<Props> = ({ open, onClose }) => {
       const vertex = vertexMap.get(nextId);
       if (vertex) {
         scoped.push(vertex);
-        const children = childrenByParent.get(nextId) ?? [];
-        children.forEach((child) => queue.push(child.id));
+        const items = itemsByParent.get(nextId) ?? [];
+        items.forEach((item) => queue.push(item.id));
       }
     }
 

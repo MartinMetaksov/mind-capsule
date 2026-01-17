@@ -16,12 +16,12 @@
       "asset_directory": "mind-capsule.web.assets-v-project.json",
       "parent_id": null,
       "workspace_id": "ws-default",
-      "default_tab": "children",
+      "default_tab": "items",
       "created_at": "2024-01-01T00:00:00.000Z",
       "updated_at": "2024-01-01T00:00:00.000Z",
       "tags": ["story", "demo"],
       "thumbnail_path": "/images/sample-project.jpg",
-      "children_behavior": {
+      "items_behavior": {
         "child_kind": "chapter",
         "display": "list"
       }

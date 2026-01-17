@@ -10,7 +10,7 @@ import type { Vertex, VertexTabId } from "@/core/vertex";
 import type { Workspace } from "@/core/workspace";
 import { BreadcrumbsTrail } from "../components/breadcrumbs-trail/BreadcrumbsTrail";
 import { VerticalTabs } from "../components/vertical-tabs/VerticalTabs";
-import { ChildrenTab } from "./children/ChildrenTab";
+import { ItemsTab } from "./items/ItemsTab";
 import { PropertiesTab } from "./properties/PropertiesTab";
 import { TagsTab } from "./tags/TagsTab";
 import { LinksTab } from "./links/LinksTab";
@@ -22,7 +22,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 type VertexTab =
-  | "children"
+  | "items"
   | "properties"
   | "tags"
   | "notes"
@@ -48,7 +48,7 @@ export type VertexOrchestratorProps = {
   onVertexUpdated?: (vertex: Vertex) => Promise<void> | void;
 };
 
-function formatChildLabel(behavior: Vertex["children_behavior"]): string {
+function formatItemsLabel(behavior: Vertex["items_behavior"]): string {
   if (!behavior?.child_kind) return "Items";
   const raw = behavior.child_kind.startsWith("custom:")
     ? behavior.child_kind.slice("custom:".length) || "custom"
@@ -120,7 +120,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
 
   const tabOrder: VertexTab[] = React.useMemo(() => {
     const base: VertexTab[] = [
-      "children",
+      "items",
       "properties",
       "tags",
       "notes",
@@ -129,22 +129,22 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
       // "files",
       // "references",
     ];
-    return vertex.is_leaf ? base.filter((t) => t !== "children") : base;
+    return vertex.is_leaf ? base.filter((t) => t !== "items") : base;
   }, [vertex.is_leaf]);
 
   const resolveInitialTab = React.useCallback((): VertexTab => {
     const candidate = currentVertex.default_tab as VertexTabId | undefined;
-    const fallback = currentVertex.is_leaf ? "properties" : "children";
+    const fallback = currentVertex.is_leaf ? "properties" : "items";
     return tabOrder.includes(candidate as VertexTab)
       ? (candidate as VertexTab)
       : (fallback as VertexTab);
   }, [tabOrder, currentVertex.default_tab, currentVertex.is_leaf]);
 
   const [tab, setTab] = React.useState<VertexTab>(() => resolveInitialTab());
-  const hasChildren = false;
-  const childrenLabel = React.useMemo(
-    () => formatChildLabel(currentVertex.children_behavior),
-    [currentVertex.children_behavior]
+  const hasItems = false;
+  const itemsLabel = React.useMemo(
+    () => formatItemsLabel(currentVertex.items_behavior),
+    [currentVertex.items_behavior]
   );
   const handleOpenVertex = React.useCallback(
     (id: string) => {
@@ -157,8 +157,8 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
       ...(!currentVertex.is_leaf
         ? [
             {
-              value: "children" as const,
-              label: childrenLabel,
+              value: "items" as const,
+              label: itemsLabel,
               icon: <AccountTreeOutlinedIcon />,
             },
           ]
@@ -199,7 +199,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
       //   icon: <HubOutlinedIcon />,
       // },
     ],
-    [childrenLabel, currentVertex.is_leaf, t]
+    [itemsLabel, currentVertex.is_leaf, t]
   );
   const availableTabValues = React.useMemo(
     () => vertexTabs.map((t) => t.value),
@@ -358,9 +358,9 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
               }}
             >
               {/* TAB CONTENTS (no big rounded wrapper) */}
-              {safeTab === "children" && (
-                <ChildrenTab
-                  label={childrenLabel}
+              {safeTab === "items" && (
+                <ItemsTab
+                  label={itemsLabel}
                   vertex={currentVertex}
                   workspace={workspace}
                   onOpenVertex={handleOpenVertex}
@@ -371,13 +371,13 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
                 <PropertiesTab
                   vertex={currentVertex}
                   workspace={workspace}
-                  hasChildren={hasChildren}
+                  hasItems={hasItems}
                   onVertexUpdated={(v) => {
                     setCurrentVertex(v);
                     return onVertexUpdated?.(v);
                   }}
                   onSelectTab={(nextTab) =>
-                    setTab((nextTab as VertexTab) ?? "children")
+                    setTab((nextTab as VertexTab) ?? "items")
                   }
                 />
               )}
