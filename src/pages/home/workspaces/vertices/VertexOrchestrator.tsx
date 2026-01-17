@@ -105,6 +105,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
           { recursive: false }
         );
       } catch (err) {
+        console.error(err);
         // ignore watch failures; tabs still load on mount
       }
     };
@@ -167,7 +168,11 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
         label: t("vertex.tabs.properties"),
         icon: <TuneOutlined />,
       },
-      { value: "tags" as const, label: t("vertex.tabs.tags"), icon: <TagOutlinedIcon /> },
+      {
+        value: "tags" as const,
+        label: t("vertex.tabs.tags"),
+        icon: <TagOutlinedIcon />,
+      },
       {
         value: "notes" as const,
         label: t("vertex.tabs.notes"),
@@ -178,7 +183,11 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
         label: t("vertex.tabs.images"),
         icon: <ImageOutlinedIcon />,
       },
-      { value: "urls" as const, label: t("vertex.tabs.links"), icon: <LinkOutlinedIcon /> },
+      {
+        value: "urls" as const,
+        label: t("vertex.tabs.links"),
+        icon: <LinkOutlinedIcon />,
+      },
       // {
       //   value: "files" as const,
       //   label: "Files",
@@ -207,7 +216,10 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
     [availableTabValues]
   );
 
-  const safeTab = React.useMemo(() => resolveToAvailable(tab), [resolveToAvailable, tab]);
+  const safeTab = React.useMemo(
+    () => resolveToAvailable(tab),
+    [resolveToAvailable, tab]
+  );
 
   React.useEffect(() => {
     setTab(resolveToAvailable(resolveInitialTab()));
@@ -226,7 +238,13 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
       { pathname: location.pathname, search: params.toString() },
       { replace: true }
     );
-  }, [availableTabValues, location.pathname, location.search, navigate, resolveToAvailable]);
+  }, [
+    availableTabValues,
+    location.pathname,
+    location.search,
+    navigate,
+    resolveToAvailable,
+  ]);
 
   React.useEffect(() => {
     const shortcuts = [
@@ -331,14 +349,14 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
             }}
           >
             {/* Inner canvas padding */}
-          <Box
-            sx={{
-              p: 2,
-              minHeight: "100%",
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
+            <Box
+              sx={{
+                p: 2,
+                minHeight: "100%",
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
               {/* TAB CONTENTS (no big rounded wrapper) */}
               {safeTab === "children" && (
                 <ChildrenTab

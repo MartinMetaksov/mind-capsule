@@ -15,7 +15,8 @@
   "workspace": {
     "tabs": {
       "projects": "Projects",
-      "workspaces": "Workspaces"
+      "workspaces": "Workspaces",
+      "detached": "Detached"
     },
     "rootLabel": "Workspaces"
   },
@@ -57,6 +58,30 @@
     "cancelDelete": "Cancel delete",
     "imagePrev": "Previous image",
     "imageNext": "Next image"
+  },
+  "detachedTab": {
+    "title": "Detached projects",
+    "subtitle": "Folders found in workspaces that are not linked to a project.",
+    "loading": "Loading detached projects…",
+    "empty": "No detached projects found.",
+    "openFolder": "Open folder",
+    "errors": {
+      "load": "Failed to load detached projects.",
+      "open": "Failed to open folder.",
+      "create": "Failed to create project.",
+      "delete": "Failed to delete folder."
+    },
+    "dialog": {
+      "title": "Associate / create new project",
+      "description": "This folder is not linked to a project yet.",
+      "associate": "Associate existing (soon)",
+      "create": "Create new project",
+      "createTitle": "Create new project"
+    },
+    "delete": {
+      "title": "Delete detached folder",
+      "message": "Delete \"{{name}}\" and all its contents?"
+    }
   },
   "workspaces": {
     "title": "Workspaces",

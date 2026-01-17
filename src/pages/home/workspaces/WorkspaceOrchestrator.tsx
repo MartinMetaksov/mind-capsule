@@ -2,6 +2,7 @@ import * as React from "react";
 import { Box, Paper, Typography } from "@mui/material";
 import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
 import WorkspacesOutlinedIcon from "@mui/icons-material/WorkspacesOutlined";
+import FolderOffOutlinedIcon from "@mui/icons-material/FolderOffOutlined";
 
 import { Loading } from "@/common/loading/Loading";
 import { useWorkspaces } from "./hooks/use-workspaces/useWorkspaces";
@@ -13,6 +14,7 @@ import type { Vertex } from "@/core/vertex";
 import { BreadcrumbsTrail } from "./components/breadcrumbs-trail/BreadcrumbsTrail";
 import { VerticalTabs } from "./components/vertical-tabs/VerticalTabs";
 import { ProjectsTab } from "./projects/ProjectsTab";
+import { DetachedProjectsTab } from "./projects/DetachedProjectsTab";
 import { WorkspacesTab } from "./workspaces/WorkspacesTab";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -23,7 +25,7 @@ import { detectOperatingSystem } from "@/utils/os";
 import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
 import { useTranslation } from "react-i18next";
 
-type RootTab = "projects" | "workspaces";
+type RootTab = "projects" | "workspaces" | "detached";
 
 type TrailItem = {
   vertex: Vertex;
@@ -52,6 +54,7 @@ export const WorkspaceOrchestrator: React.FC = () => {
   } = useVertices(workspaces);
 
   const [tab, setTab] = React.useState<RootTab>("projects");
+  const [detachedCount, setDetachedCount] = React.useState(0);
 
   const [trail, setTrail] = React.useState<TrailItem[]>([]);
   const location = useLocation();
@@ -60,21 +63,30 @@ export const WorkspaceOrchestrator: React.FC = () => {
     missingId: null,
   });
   const os = React.useMemo(() => detectOperatingSystem(), []);
-  const rootTabs = React.useMemo(
-    () => [
+  const rootTabs = React.useMemo(() => {
+    const base = [
       {
         value: "projects" as const,
         label: t("workspace.tabs.projects"),
         icon: <AccountTreeOutlinedIcon />,
       },
+      ...(detachedCount > 0
+        ? [
+            {
+              value: "detached" as const,
+              label: t("workspace.tabs.detached"),
+              icon: <FolderOffOutlinedIcon />,
+            },
+          ]
+        : []),
       {
         value: "workspaces" as const,
         label: t("workspace.tabs.workspaces"),
         icon: <WorkspacesOutlinedIcon />,
       },
-    ],
-    [t]
-  );
+    ];
+    return base;
+  }, [detachedCount, t]);
   const homeShortcut = React.useMemo(() => getShortcut("goHome", os), [os]);
 
   const active = trail.length > 0 ? trail[trail.length - 1] : null;
@@ -105,7 +117,11 @@ export const WorkspaceOrchestrator: React.FC = () => {
   }, [location.pathname, location.search, navigate, rootTabs]);
 
   React.useEffect(() => {
-    const shortcuts = [getShortcut("tab1", os), getShortcut("tab2", os)];
+    const shortcuts = [
+      getShortcut("tab1", os),
+      getShortcut("tab2", os),
+      getShortcut("tab3", os),
+    ];
     const handleKeyDown = (event: KeyboardEvent) => {
       shortcuts.forEach((shortcut, idx) => {
         if (matchesShortcut(event, shortcut) && rootTabs[idx]) {
@@ -117,6 +133,52 @@ export const WorkspaceOrchestrator: React.FC = () => {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [os, rootTabs]);
+
+  React.useEffect(() => {
+    let canceled = false;
+    const loadDetachedCount = async () => {
+      if (!workspaces || workspaces.length === 0) {
+        setDetachedCount(0);
+        return;
+      }
+      try {
+        const { isTauri } = await import("@tauri-apps/api/core");
+        if (!isTauri()) {
+          setDetachedCount(0);
+          return;
+        }
+        const fs = await getFileSystem();
+        const allVertices = await fs.getAllVertices();
+        const knownVertexIds = new Set(allVertices.map((v) => v.id));
+        const { readDir } = await import("@tauri-apps/plugin-fs");
+        let count = 0;
+        for (const ws of workspaces) {
+          const entries = await readDir(ws.path);
+          entries.forEach((entry) => {
+            if (!entry.isDirectory) return;
+            const name = entry.name?.trim();
+            if (!name) return;
+            if (name.startsWith(".")) return;
+            if (knownVertexIds.has(name)) return;
+            count += 1;
+          });
+        }
+        if (!canceled) setDetachedCount(count);
+      } catch {
+        if (!canceled) setDetachedCount(0);
+      }
+    };
+    loadDetachedCount();
+    return () => {
+      canceled = true;
+    };
+  }, [workspaces]);
+
+  React.useEffect(() => {
+    if (tab === "detached" && detachedCount === 0) {
+      setTab("projects");
+    }
+  }, [detachedCount, tab]);
 
   const error = workspacesError ?? verticesError;
 
@@ -412,6 +474,17 @@ export const WorkspaceOrchestrator: React.FC = () => {
           {tab === "workspaces" && (
             <WorkspacesTab
               workspaces={workspaces}
+              onChanged={async () => {
+                await refreshWorkspaces();
+                await reloadVertices();
+              }}
+            />
+          )}
+
+          {tab === "detached" && (
+            <DetachedProjectsTab
+              workspaces={workspaces}
+              onDetachedCountChange={setDetachedCount}
               onChanged={async () => {
                 await refreshWorkspaces();
                 await reloadVertices();
