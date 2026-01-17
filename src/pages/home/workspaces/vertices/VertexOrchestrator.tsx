@@ -69,11 +69,53 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
   const location = useLocation();
   const navigate = useNavigate();
   const [currentVertex, setCurrentVertex] = React.useState<Vertex>(vertex);
+  const [fsRefreshToken, setFsRefreshToken] = React.useState(0);
+  const lastRefreshAtRef = React.useRef(0);
   const os = React.useMemo(() => detectOperatingSystem(), []);
 
   React.useEffect(() => {
     setCurrentVertex(vertex);
   }, [vertex]);
+
+  React.useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    let canceled = false;
+    let debounce: number | null = null;
+
+    const setupWatch = async () => {
+      if (!currentVertex.asset_directory) {
+        return;
+      }
+      try {
+        const { isTauri } = await import("@tauri-apps/api/core");
+        if (!isTauri()) return;
+        const { watch } = await import("@tauri-apps/plugin-fs");
+        unlisten = await watch(
+          currentVertex.asset_directory,
+          () => {
+            if (canceled) return;
+            if (debounce) window.clearTimeout(debounce);
+            debounce = window.setTimeout(() => {
+              const now = Date.now();
+              if (now - lastRefreshAtRef.current < 2000) return;
+              lastRefreshAtRef.current = now;
+              setFsRefreshToken((prev) => prev + 1);
+            }, 200);
+          },
+          { recursive: false }
+        );
+      } catch (err) {
+        // ignore watch failures; tabs still load on mount
+      }
+    };
+
+    setupWatch();
+    return () => {
+      canceled = true;
+      if (debounce) window.clearTimeout(debounce);
+      unlisten?.();
+    };
+  }, [currentVertex.asset_directory]);
 
   const tabOrder: VertexTab[] = React.useMemo(() => {
     const base: VertexTab[] = [
@@ -335,18 +377,21 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
               {safeTab === "notes" && (
                 <NotesTab
                   vertex={currentVertex}
+                  refreshToken={fsRefreshToken}
                 />
               )}
 
               {safeTab === "images" && (
                 <ImagesTab
                   vertex={currentVertex}
+                  refreshToken={fsRefreshToken}
                 />
               )}
 
               {safeTab === "urls" && (
                 <LinksTab
                   vertex={currentVertex}
+                  refreshToken={fsRefreshToken}
                 />
               )}
 

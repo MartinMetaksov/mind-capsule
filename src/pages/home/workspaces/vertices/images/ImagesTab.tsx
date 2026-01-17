@@ -26,10 +26,12 @@ import { CreateFab } from "../../components/create-fab/CreateFab";
 
 type ImagesTabProps = {
   vertex: Vertex;
+  refreshToken?: number;
 };
 
 export const ImagesTab: React.FC<ImagesTabProps> = ({
   vertex,
+  refreshToken,
 }) => {
   const { t } = useTranslation("common");
   const [images, setImages] = React.useState<ImageEntry[]>([]);
@@ -46,10 +48,13 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
   const [loading, setLoading] = React.useState(false);
   const os = React.useMemo(() => detectOperatingSystem(), []);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const hasLoadedRef = React.useRef(false);
 
   React.useEffect(() => {
+    if (dialogOpen) return;
     const loadImages = async () => {
-      setLoading(true);
+      const isRefresh = hasLoadedRef.current;
+      if (!isRefresh) setLoading(true);
       setError(null);
       try {
         const fs = await getFileSystem();
@@ -61,11 +66,12 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
         setError(err instanceof Error ? err.message : t("imagesTab.errors.add"));
         setImages([]);
       } finally {
-        setLoading(false);
+        if (!isRefresh) setLoading(false);
+        hasLoadedRef.current = true;
       }
     };
     loadImages();
-  }, [t, vertex]);
+  }, [dialogOpen, refreshToken, t, vertex]);
 
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;

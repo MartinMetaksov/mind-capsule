@@ -20,9 +20,10 @@ import { useTranslation } from "react-i18next";
 
 type LinksTabProps = {
   vertex: Vertex;
+  refreshToken?: number;
 };
 
-export const LinksTab: React.FC<LinksTabProps> = ({ vertex }) => {
+export const LinksTab: React.FC<LinksTabProps> = ({ vertex, refreshToken }) => {
   const { t } = useTranslation("common");
   const [links, setLinks] = React.useState<UrlEntry[]>([]);
   const [url, setUrl] = React.useState("");
@@ -31,6 +32,7 @@ export const LinksTab: React.FC<LinksTabProps> = ({ vertex }) => {
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
   const urlRef = React.useRef<HTMLInputElement | null>(null);
+  const hasLoadedRef = React.useRef(false);
 
   const focusUrl = React.useCallback(() => {
     requestAnimationFrame(() => {
@@ -40,7 +42,8 @@ export const LinksTab: React.FC<LinksTabProps> = ({ vertex }) => {
 
   React.useEffect(() => {
     const loadLinks = async () => {
-      setLoading(true);
+      const isRefresh = hasLoadedRef.current;
+      if (!isRefresh) setLoading(true);
       setError(null);
       try {
         const fs = await getFileSystem();
@@ -50,12 +53,13 @@ export const LinksTab: React.FC<LinksTabProps> = ({ vertex }) => {
         setError(err instanceof Error ? err.message : t("linksTab.errors.update"));
         setLinks([]);
       } finally {
-        setLoading(false);
+        if (!isRefresh) setLoading(false);
+        hasLoadedRef.current = true;
         focusUrl();
       }
     };
     loadLinks();
-  }, [focusUrl, t, vertex]);
+  }, [focusUrl, refreshToken, t, vertex]);
 
   const handleAdd = async () => {
     const trimmedUrl = url.trim();

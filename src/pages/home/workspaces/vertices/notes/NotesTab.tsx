@@ -27,6 +27,7 @@ import { getFileSystem } from "@/integrations/fileSystem/integration";
 
 type NotesTabProps = {
   vertex: Vertex;
+  refreshToken?: number;
 };
 
 type Mode = "preview" | "edit";
@@ -52,7 +53,7 @@ const renderMarkdown = (text: string): string => {
   return html;
 };
 
-export const NotesTab: React.FC<NotesTabProps> = ({ vertex }) => {
+export const NotesTab: React.FC<NotesTabProps> = ({ vertex, refreshToken }) => {
   const { t } = useTranslation("common");
   const [notes, setNotes] = React.useState<NoteEntry[]>([]);
   const [selectedIdx, setSelectedIdx] = React.useState(0);
@@ -61,10 +62,12 @@ export const NotesTab: React.FC<NotesTabProps> = ({ vertex }) => {
   const [error, setError] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
+  const hasLoadedRef = React.useRef(false);
 
   React.useEffect(() => {
     const loadNotes = async () => {
-      setLoading(true);
+      const isRefresh = hasLoadedRef.current;
+      if (!isRefresh) setLoading(true);
       setError(null);
       try {
         const fs = await getFileSystem();
@@ -78,11 +81,12 @@ export const NotesTab: React.FC<NotesTabProps> = ({ vertex }) => {
         setError(err instanceof Error ? err.message : t("notesTab.errors.save"));
         setNotes([]);
       } finally {
-        setLoading(false);
+        if (!isRefresh) setLoading(false);
+        hasLoadedRef.current = true;
       }
     };
     loadNotes();
-  }, [t, vertex]);
+  }, [refreshToken, t, vertex]);
 
   const handleCreateVersion = async () => {
     setSaving(true);
