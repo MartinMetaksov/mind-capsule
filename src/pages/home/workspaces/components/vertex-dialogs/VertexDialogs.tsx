@@ -12,6 +12,7 @@ import {
 } from "@mui/material";
 import { DeleteConfirmDialog } from "../delete-confirm-dialog/DeleteConfirmDialog";
 import { useTranslation } from "react-i18next";
+import { useTauriImageDrop } from "@/utils/useTauriImageDrop";
 
 export type CreateVertexForm = {
   title: string;
@@ -40,8 +41,9 @@ export const ThumbnailPicker: React.FC<ThumbnailPickerProps> = ({
 }) => {
   const [dragging, setDragging] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const containerRef = React.useRef<HTMLDivElement | null>(null);
 
-  const applyImage = (file: File) => {
+  const applyImage = React.useCallback((file: File) => {
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === "string") {
@@ -50,7 +52,21 @@ export const ThumbnailPicker: React.FC<ThumbnailPickerProps> = ({
       }
     };
     reader.readAsDataURL(file);
-  };
+  }, [onChange]);
+
+  const handleDropFiles = React.useCallback(
+    async (files: File[]) => {
+      const [first] = files;
+      if (first) applyImage(first);
+    },
+    [applyImage]
+  );
+
+  useTauriImageDrop({
+    containerRef,
+    onHoverChange: setDragging,
+    onDropFiles: handleDropFiles,
+  });
 
   return (
     <Box>
@@ -58,6 +74,7 @@ export const ThumbnailPicker: React.FC<ThumbnailPickerProps> = ({
         Thumbnail
       </Typography>
       <Paper
+        ref={containerRef}
         variant="outlined"
         sx={{
           p: value ? 0 : 2,

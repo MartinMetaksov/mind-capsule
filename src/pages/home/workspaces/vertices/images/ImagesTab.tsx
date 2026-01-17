@@ -23,6 +23,7 @@ import { DeleteConfirmDialog } from "../../components/delete-confirm-dialog/Dele
 import { detectOperatingSystem } from "@/utils/os";
 import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
 import { CreateFab } from "../../components/create-fab/CreateFab";
+import { useTauriImageDrop } from "@/utils/useTauriImageDrop";
 
 type ImagesTabProps = {
   vertex: Vertex;
@@ -49,6 +50,7 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
   const os = React.useMemo(() => detectOperatingSystem(), []);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const hasLoadedRef = React.useRef(false);
+  const containerRef = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
     if (dialogOpen) return;
@@ -73,13 +75,13 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
     loadImages();
   }, [dialogOpen, refreshToken, t, vertex]);
 
-  const handleFiles = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
+  const handleFiles = React.useCallback(async (files: File[]) => {
+    if (!files.length) return;
     setError(null);
     try {
       const fs = await getFileSystem();
       const created = await Promise.all(
-        Array.from(files).map((file) => fs.createImage(vertex, file))
+        files.map((file) => fs.createImage(vertex, file))
       );
       setImages((prev) => [...prev, ...created]);
     } catch (err) {
@@ -88,7 +90,13 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
       setDragging(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
-  };
+  }, [t, vertex]);
+
+  useTauriImageDrop({
+    containerRef,
+    onHoverChange: setDragging,
+    onDropFiles: handleFiles,
+  });
 
   const openDialog = (idx: number) => {
     setSelectedIdx(idx);
@@ -212,6 +220,7 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
 
   return (
     <Box
+      ref={containerRef}
       sx={{
         display: "flex",
         flexDirection: "column",
@@ -239,7 +248,7 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
       }}
       onDrop={async (e) => {
         e.preventDefault();
-        await handleFiles(e.dataTransfer.files);
+        await handleFiles(Array.from(e.dataTransfer.files ?? []));
       }}
     >
       {dragging && (
@@ -640,7 +649,9 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
         accept="image/*"
         multiple
         style={{ display: "none" }}
-        onChange={(e) => handleFiles(e.target.files)}
+        onChange={(e) => {
+          void handleFiles(Array.from(e.target.files ?? []));
+        }}
       />
     </Box>
   );
