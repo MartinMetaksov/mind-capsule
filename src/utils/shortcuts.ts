@@ -72,14 +72,21 @@ export function getShortcut(
 ): ShortcutDefinition {
   const currentOs = os ?? detectOperatingSystem();
   const base = SHORTCUTS[action][currentOs] ?? SHORTCUTS[action].default;
+  const normalizedKeys =
+    currentOs === "macOS"
+      ? base.keys
+      : base.keys.map((key) => (key === "meta" ? "ctrl" : key));
+  const normalized = { ...base, keys: normalizedKeys };
 
-  const main = base.keys.find((k) => !["ctrl", "meta", "alt", "shift"].includes(k));
-  if (!main) return base;
+  const main = normalized.keys.find(
+    (k) => !["ctrl", "meta", "alt", "shift"].includes(k)
+  );
+  if (!main) return normalized;
 
-  const hasMeta = base.keys.includes("meta");
-  const hasCtrl = base.keys.includes("ctrl");
-  const hasAlt = base.keys.includes("alt");
-  const hasShift = base.keys.includes("shift");
+  const hasMeta = normalized.keys.includes("meta");
+  const hasCtrl = normalized.keys.includes("ctrl");
+  const hasAlt = normalized.keys.includes("alt");
+  const hasShift = normalized.keys.includes("shift");
 
   const pieces: string[] = [];
   if (main === "~") {
@@ -100,7 +107,7 @@ export function getShortcut(
     pieces.push(main.toUpperCase());
   }
 
-  return { ...base, display: pieces.join(" + ") };
+  return { ...normalized, display: pieces.join(" + ") };
 }
 
 export function matchesShortcut(
