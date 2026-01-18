@@ -32,71 +32,72 @@ export const VertexListView: React.FC<VertexListViewProps> = ({
     {items.map((item) => {
       const thumbnail = item.vertex.thumbnail_path;
       return (
-        <ListItem
-          key={item.vertex.id}
-          disableGutters
-          secondaryAction={
-            renderActions
-              ? renderActions(item)
-              : onDeleteVertex
-                ? (
-                    <IconButton
-                      edge="end"
-                      aria-label="delete"
-                      onClick={() => onDeleteVertex(item.vertex)}
-                    >
-                      <DeleteOutlineRoundedIcon fontSize="small" />
-                    </IconButton>
-                  )
-                : null
-          }
-        >
+        <ListItem key={item.vertex.id} disableGutters>
           <ListItemButton
             onClick={() => onSelect(item.vertex.id)}
-            sx={{ gap: 2, alignItems: "center" }}
+            sx={{
+              gap: 2,
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
           >
-            {thumbnail ? (
-              <Box
-                component="img"
-                src={thumbnail}
-                alt={item.vertex.thumbnail_alt ?? item.vertex.title}
-                sx={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: 1,
-                  objectFit: "cover",
-                  flexShrink: 0,
+            <Box sx={{ display: "flex", gap: 2, alignItems: "center", flex: 1 }}>
+              {thumbnail ? (
+                <Box
+                  component="img"
+                  src={thumbnail}
+                  alt={item.vertex.thumbnail_alt ?? item.vertex.title}
+                  sx={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: 1,
+                    objectFit: "cover",
+                    flexShrink: 0,
+                  }}
+                />
+              ) : (
+                <Box
+                  sx={(theme) => ({
+                    width: 56,
+                    height: 56,
+                    borderRadius: 1,
+                    flexShrink: 0,
+                    background:
+                      theme.palette.mode === "dark"
+                        ? "linear-gradient(145deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))"
+                        : "linear-gradient(145deg, rgba(0,0,0,0.05), rgba(0,0,0,0.02))",
+                  })}
+                />
+              )}
+              <ListItemText
+                primary={item.vertex.title}
+                secondary={
+                  showWorkspaceLabel ? (
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      noWrap
+                    >
+                      {item.workspace.name}
+                    </Typography>
+                  ) : null
+                }
+                primaryTypographyProps={{ noWrap: true }}
+              />
+            </Box>
+            {renderActions ? (
+              <Box onClick={(e) => e.stopPropagation()}>{renderActions(item)}</Box>
+            ) : onDeleteVertex ? (
+              <IconButton
+                aria-label="delete"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeleteVertex(item.vertex);
                 }}
-              />
-            ) : (
-              <Box
-                sx={(theme) => ({
-                  width: 56,
-                  height: 56,
-                  borderRadius: 1,
-                  flexShrink: 0,
-                  background:
-                    theme.palette.mode === "dark"
-                      ? "linear-gradient(145deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))"
-                      : "linear-gradient(145deg, rgba(0,0,0,0.05), rgba(0,0,0,0.02))",
-                })}
-              />
-            )}
-            <ListItemText
-              primary={item.vertex.title}
-              secondary={
-                showWorkspaceLabel ? (
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    noWrap
-                  >
-                    {item.workspace.name}
-                  </Typography>
-                ) : null
-              }
-              primaryTypographyProps={{ noWrap: true }}
-            />
+              >
+                <DeleteOutlineRoundedIcon fontSize="small" />
+              </IconButton>
+            ) : null}
           </ListItemButton>
         </ListItem>
       );

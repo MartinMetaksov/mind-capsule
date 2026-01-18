@@ -16,7 +16,7 @@ import { ItemsDialogs } from "./components/ItemsDialogs";
 import { ProjectsDialogs } from "./components/ProjectsDialogs";
 import { ProjectsWorkspacePopover } from "./components/ProjectsWorkspacePopover";
 import { DetachedDialogs } from "./components/DetachedDialogs";
-import { DetachedOverlayActions } from "./components/DetachedOverlayActions";
+import { VertexRowActions } from "./components/VertexRowActions";
 import { ViewModeTabs } from "./components/ViewModeTabs";
 import { useItemsOverview } from "./hooks/useItemsOverview";
 import { useProjectsOverview } from "./hooks/useProjectsOverview";
@@ -136,20 +136,53 @@ export const VertexOverviewTab: React.FC<VertexOverviewTabProps> = (props) => {
     }
   };
 
+  const handleOpenPath = React.useCallback(
+    async (path?: string | null) => {
+      if (!path) return;
+      try {
+        const { isTauri, invoke } = await import("@tauri-apps/api/core");
+        if (isTauri()) {
+          await invoke("fs_open_path", { path });
+          return;
+        }
+        window.open(encodeURI(`file://${path}`), "_blank", "noreferrer");
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Failed to open folder.";
+        if (itemsProps) {
+          itemsState.setError(message);
+        } else if (projectsProps) {
+          projectsState.setError(message);
+        } else if (detachedProps) {
+          detachedState.setError(message);
+        }
+      }
+    },
+    [detachedProps, itemsProps, projectsProps, itemsState, projectsState, detachedState]
+  );
+
   const renderOverlay = detachedProps
     ? (item: VertexItem) => {
         const target = detachedState.detachedById.get(item.vertex.id);
         if (!target) return null;
         return (
-          <DetachedOverlayActions
+          <VertexRowActions
             openLabel={t("detachedTab.openFolder")}
             deleteLabel={t("commonActions.delete")}
-            onOpenFolder={() => detachedState.handleOpenFolder(target.path)}
+            onOpenFolder={() => handleOpenPath(target.path)}
             onDelete={() => detachedState.setDeleteTarget(target)}
           />
         );
       }
-    : undefined;
+    : (item: VertexItem) => (
+        <VertexRowActions
+          openLabel={t("detachedTab.openFolder")}
+          deleteLabel={t("commonActions.delete")}
+          disableOpen={!item.vertex.asset_directory}
+          onOpenFolder={() => handleOpenPath(item.vertex.asset_directory)}
+          onDelete={() => handleGridDelete(item.vertex)}
+        />
+      );
 
   const headerLeft = itemsProps ? (
     <ItemsHeader

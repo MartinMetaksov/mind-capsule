@@ -5,7 +5,7 @@ import i18n from "@/i18n";
 
 import { ItemsHeader } from "./ItemsHeader";
 import { ProjectsWorkspacePopover } from "./ProjectsWorkspacePopover";
-import { DetachedOverlayActions } from "./DetachedOverlayActions";
+import { VertexRowActions } from "./VertexRowActions";
 import { ViewModeTabs } from "./ViewModeTabs";
 import type { Workspace } from "@/core/workspace";
 
@@ -103,13 +103,13 @@ describe("ProjectsWorkspacePopover", () => {
   });
 });
 
-describe("DetachedOverlayActions", () => {
+describe("VertexRowActions", () => {
   it("fires open and delete callbacks", () => {
     const onOpenFolder = vi.fn();
     const onDelete = vi.fn();
 
     render(
-      <DetachedOverlayActions
+      <VertexRowActions
         onOpenFolder={onOpenFolder}
         onDelete={onDelete}
         openLabel="Open folder"

@@ -30,6 +30,7 @@ export type DetachedOverviewActions = {
   setCreateTarget: (target: DetachedProject | null) => void;
   setDeleteTarget: (target: DetachedProject | null) => void;
   setCreateError: (error: string | null) => void;
+  setError: (error: string | null) => void;
   handleOpenFolder: (path: string) => Promise<void>;
   handleCreateFromDetached: (data: { title: string; thumbnail?: string }) => Promise<void>;
   handleDeleteDetached: (target: DetachedProject) => Promise<void>;
@@ -216,10 +217,11 @@ export const useDetachedOverview = ({
     createTarget,
     deleteTarget,
     createError,
-    setAssociateTarget,
-    setCreateTarget,
-    setDeleteTarget,
-    setCreateError,
+  setAssociateTarget,
+  setCreateTarget,
+  setDeleteTarget,
+  setCreateError,
+  setError,
     handleOpenFolder,
     handleCreateFromDetached,
     handleDeleteDetached,

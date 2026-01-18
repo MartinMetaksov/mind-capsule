@@ -26,6 +26,7 @@ export type ItemsOverviewActions = {
   setCreateOpen: (open: boolean) => void;
   setCreateError: (error: string | null) => void;
   setConfirmDelete: (item: VertexItem | null) => void;
+  setError: (error: string | null) => void;
   setEditingLabel: (editing: boolean) => void;
   setLabelDraft: (value: string) => void;
   commitLabel: (nextValue?: string) => Promise<void>;
@@ -205,9 +206,10 @@ export const useItemsOverview = ({
     labelInputRef,
     setCreateOpen,
     setCreateError,
-    setConfirmDelete,
-    setEditingLabel,
-    setLabelDraft,
+  setConfirmDelete,
+  setError,
+  setEditingLabel,
+  setLabelDraft,
     commitLabel,
     createItem,
     deleteItem,
