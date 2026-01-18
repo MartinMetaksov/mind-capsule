@@ -10,7 +10,7 @@ import type { Vertex, VertexTabId } from "@/core/vertex";
 import type { Workspace } from "@/core/workspace";
 import { BreadcrumbsTrail } from "../components/breadcrumbs-trail/BreadcrumbsTrail";
 import { VerticalTabs } from "../components/vertical-tabs/VerticalTabs";
-import { ItemsTab } from "./items/ItemsTab";
+import { VertexOverviewTab } from "../vertex-overview/VertexOverviewTab";
 import { PropertiesTab } from "./properties/PropertiesTab";
 import { TagsTab } from "./tags/TagsTab";
 import { LinksTab } from "./links/LinksTab";
@@ -359,7 +359,8 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
             >
               {/* TAB CONTENTS (no big rounded wrapper) */}
               {safeTab === "items" && (
-                <ItemsTab
+                <VertexOverviewTab
+                  variant="items"
                   label={itemsLabel}
                   vertex={currentVertex}
                   workspace={workspace}

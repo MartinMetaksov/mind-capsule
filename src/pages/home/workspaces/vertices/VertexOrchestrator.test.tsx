@@ -27,7 +27,9 @@ vi.mock("../components/VerticalTabs", () => ({
     <div>{items.map((i) => i.label).join("|")}</div>
   ),
 }));
-vi.mock("./items/ItemsTab", () => ({ ItemsTab: () => <div>ItemsTab</div> }));
+vi.mock("../vertex-overview/VertexOverviewTab", () => ({
+  VertexOverviewTab: () => <div>VertexOverviewTab</div>,
+}));
 vi.mock("./properties/PropertiesTab", () => ({ PropertiesTab: () => <div>PropertiesTab</div> }));
 vi.mock("./tags/TagsTab", () => ({ TagsTab: () => <div>TagsTab</div> }));
 vi.mock("./notes/NotesTab", () => ({ NotesTab: () => <div>NotesTab</div> }));
@@ -73,12 +75,12 @@ const renderOrchestrator = (vertex: Vertex) =>
 describe("VertexOrchestrator", () => {
   it("renders items tab by default for non-leaf vertices", () => {
     renderOrchestrator({ ...baseVertex, is_leaf: false, default_tab: "items" });
-    expect(screen.getByText("ItemsTab")).toBeInTheDocument();
+    expect(screen.getByText("VertexOverviewTab")).toBeInTheDocument();
   });
 
   it("omits items tab for leaf vertices and shows properties", () => {
     renderOrchestrator({ ...baseVertex, is_leaf: true, default_tab: "items" });
-    expect(screen.queryByText("ItemsTab")).not.toBeInTheDocument();
+    expect(screen.queryByText("VertexOverviewTab")).not.toBeInTheDocument();
     expect(screen.getByText("PropertiesTab")).toBeInTheDocument();
   });
 });

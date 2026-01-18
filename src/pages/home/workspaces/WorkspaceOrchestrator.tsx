@@ -13,8 +13,7 @@ import type { Workspace } from "@/core/workspace";
 import type { Vertex } from "@/core/vertex";
 import { BreadcrumbsTrail } from "./components/breadcrumbs-trail/BreadcrumbsTrail";
 import { VerticalTabs } from "./components/vertical-tabs/VerticalTabs";
-import { ProjectsTab } from "./projects/ProjectsTab";
-import { DetachedProjectsTab } from "./projects/DetachedProjectsTab";
+import { VertexOverviewTab } from "./vertex-overview/VertexOverviewTab";
 import { WorkspacesTab } from "./workspaces/WorkspacesTab";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -456,7 +455,8 @@ export const WorkspaceOrchestrator: React.FC = () => {
                   <Loading />
                 </Box>
               )}
-              <ProjectsTab
+              <VertexOverviewTab
+                variant="projects"
                 title={t("workspace.tabs.projects")}
                 items={vertexItems}
                 workspaces={workspaces}
@@ -482,7 +482,8 @@ export const WorkspaceOrchestrator: React.FC = () => {
           )}
 
           {tab === "detached" && (
-            <DetachedProjectsTab
+            <VertexOverviewTab
+              variant="detached"
               workspaces={workspaces}
               onDetachedCountChange={setDetachedCount}
               onChanged={async () => {
