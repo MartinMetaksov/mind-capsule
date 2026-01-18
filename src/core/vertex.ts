@@ -9,6 +9,7 @@ export type ItemsDisplayHint =
   | "grid"
   | "canvas"
   | "timeline"
+  | "graph"
   | `custom:${string}`;
 
 export type ItemsBehavior = {

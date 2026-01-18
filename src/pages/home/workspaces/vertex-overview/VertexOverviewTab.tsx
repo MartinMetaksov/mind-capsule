@@ -17,10 +17,17 @@ import { ProjectsDialogs } from "./components/ProjectsDialogs";
 import { ProjectsWorkspacePopover } from "./components/ProjectsWorkspacePopover";
 import { DetachedDialogs } from "./components/DetachedDialogs";
 import { DetachedOverlayActions } from "./components/DetachedOverlayActions";
+import { ViewModeTabs } from "./components/ViewModeTabs";
 import { useItemsOverview } from "./hooks/useItemsOverview";
 import { useProjectsOverview } from "./hooks/useProjectsOverview";
 import { useDetachedOverview } from "./hooks/useDetachedOverview";
-import type { VertexOverviewTabProps } from "./types";
+import type {
+  OverviewViewMode,
+  VertexOverviewTabProps,
+} from "./types";
+import { VertexListView } from "./views/list/VertexListView";
+import { TimelineView } from "./views/timeline/TimelineView";
+import { GraphView } from "./views/graph/GraphView";
 
 export { type VertexOverviewTabProps } from "./types";
 
@@ -40,6 +47,32 @@ export const VertexOverviewTab: React.FC<VertexOverviewTabProps> = (props) => {
   const itemsProps = props.variant === "items" ? props : null;
   const projectsProps = props.variant === "projects" ? props : null;
   const detachedProps = props.variant === "detached" ? props : null;
+
+  const resolveViewMode = React.useCallback(
+    (display?: string): OverviewViewMode => {
+      if (display === "list") return "list";
+      if (display === "timeline") return "timeline";
+      if (display === "graph") return "graph";
+      return "grid";
+    },
+    []
+  );
+
+  const [viewMode, setViewMode] = React.useState<OverviewViewMode>(() =>
+    resolveViewMode(
+      props.variant === "items"
+        ? itemsProps?.vertex?.items_behavior?.display
+        : undefined
+    )
+  );
+
+  React.useEffect(() => {
+    if (props.variant === "items") {
+      setViewMode(resolveViewMode(itemsProps?.vertex?.items_behavior?.display));
+      return;
+    }
+    setViewMode("grid");
+  }, [props.variant, itemsProps?.vertex?.items_behavior?.display, resolveViewMode]);
 
   const itemsFabRef = React.useRef<CreateFabHandle | null>(null);
   const projectsFabRef = React.useRef<CreateFabHandle | null>(null);
@@ -118,7 +151,7 @@ export const VertexOverviewTab: React.FC<VertexOverviewTabProps> = (props) => {
       }
     : undefined;
 
-  const header = itemsProps ? (
+  const headerLeft = itemsProps ? (
     <ItemsHeader
       labelDraft={itemsState.labelDraft}
       editingLabel={itemsState.editingLabel}
@@ -134,12 +167,26 @@ export const VertexOverviewTab: React.FC<VertexOverviewTabProps> = (props) => {
       {projectsProps.title ?? "Projects"}
     </Typography>
   ) : (
-    <>
-      <Typography variant="h6" sx={{ fontWeight: 900, mb: 1 }}>
+    <Box sx={{ mb: 1 }}>
+      <Typography variant="h6" sx={{ fontWeight: 900, mb: 0.5 }}>
         {t("detachedTab.title")}
       </Typography>
       <Typography color="text.secondary">{t("detachedTab.subtitle")}</Typography>
-    </>
+    </Box>
+  );
+
+  const header = (
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: itemsProps ? "center" : "flex-start",
+        justifyContent: "space-between",
+        gap: 2,
+      }}
+    >
+      <Box sx={{ minWidth: 0, flex: 1 }}>{headerLeft}</Box>
+      <ViewModeTabs value={viewMode} onChange={setViewMode} />
+    </Box>
   );
 
   const emptyState = itemsProps ? (
@@ -195,6 +242,30 @@ export const VertexOverviewTab: React.FC<VertexOverviewTabProps> = (props) => {
     </Typography>
   );
 
+  const contentView = viewMode === "grid" ? (
+    <VertexGrid
+      items={gridItems}
+      selectedVertexId={null}
+      onSelect={handleGridSelect}
+      onDeleteVertex={detachedProps ? undefined : handleGridDelete}
+      renderOverlay={renderOverlay}
+      scrollY={itemsProps ? true : undefined}
+      showWorkspaceLabel={!itemsProps}
+    />
+  ) : viewMode === "list" ? (
+    <VertexListView
+      items={gridItems}
+      onSelect={handleGridSelect}
+      onDeleteVertex={detachedProps ? undefined : handleGridDelete}
+      renderActions={renderOverlay}
+      showWorkspaceLabel={!itemsProps}
+    />
+  ) : viewMode === "timeline" ? (
+    <TimelineView items={gridItems} />
+  ) : (
+    <GraphView items={gridItems} />
+  );
+
   return (
     <Box
       sx={{
@@ -244,15 +315,7 @@ export const VertexOverviewTab: React.FC<VertexOverviewTabProps> = (props) => {
               itemsProps ? { flex: 1, minHeight: 0 } : { minHeight: 0 }
             }
           >
-            <VertexGrid
-              items={gridItems}
-              selectedVertexId={null}
-              onSelect={handleGridSelect}
-              onDeleteVertex={detachedProps ? undefined : handleGridDelete}
-              renderOverlay={renderOverlay}
-              scrollY={itemsProps ? true : undefined}
-              showWorkspaceLabel={!itemsProps}
-            />
+            {contentView}
           </Box>
         )}
       </Box>

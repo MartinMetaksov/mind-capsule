@@ -155,6 +155,25 @@ describe("VertexOverviewTab (items)", () => {
     expect(await screen.findByText("Item One")).toBeInTheDocument();
   });
 
+  it("uses default list view when set on vertex", async () => {
+    mockGetVertices.mockResolvedValue([item]);
+    renderItems({
+      vertex: {
+        ...parent,
+        items_behavior: { child_kind: "chapter", display: "list" },
+      },
+    });
+    expect(await screen.findByTestId("vertex-overview-list")).toBeInTheDocument();
+  });
+
+  it("switches to list view", async () => {
+    mockGetVertices.mockResolvedValue([item]);
+    renderItems();
+    const listButtons = screen.getAllByRole("button", { name: /List view/i });
+    fireEvent.click(listButtons[0]);
+    expect(await screen.findByTestId("vertex-overview-list")).toBeInTheDocument();
+  });
+
   it("opens create dialog via fab", () => {
     renderItems();
     const fab = screen.getByRole("button", { name: /Create item/i });

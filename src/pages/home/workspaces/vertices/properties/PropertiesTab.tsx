@@ -94,6 +94,7 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
     { value: "grid", label: t("propertiesTab.itemsDisplay.grid") },
     { value: "list", label: t("propertiesTab.itemsDisplay.list") },
     { value: "timeline", label: t("propertiesTab.itemsDisplay.timeline") },
+    { value: "graph", label: t("propertiesTab.itemsDisplay.graph") },
   ];
 
   const isDirty =
@@ -257,7 +258,6 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
             }
             fullWidth
             slotProps={{ inputLabel: { shrink: true } }}
-            disabled
           >
             {itemsDisplayOptions.map((opt) => (
               <MenuItem key={opt.value} value={opt.value}>

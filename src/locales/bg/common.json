@@ -230,7 +230,8 @@
     "itemsDisplay": {
       "grid": "Мрежа",
       "list": "Списък",
-      "timeline": "Линия на времето"
+      "timeline": "Линия на времето",
+      "graph": "Граф"
     },
     "errors": {
       "titleRequired": "Заглавието е задължително.",

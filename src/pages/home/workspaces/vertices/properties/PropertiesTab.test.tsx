@@ -68,4 +68,11 @@ describe("PropertiesTab", () => {
     fireEvent.click(screen.getByRole("button", { name: /Save/i }));
     await waitFor(() => expect(mockUpdateVertex).toHaveBeenCalled());
   });
+
+  it("allows selecting graph in items display", () => {
+    renderTab();
+    const select = screen.getByLabelText(/Items display/i);
+    fireEvent.mouseDown(select);
+    expect(screen.getByText(/Graph/i)).toBeInTheDocument();
+  });
 });

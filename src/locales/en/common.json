@@ -230,7 +230,8 @@
     "itemsDisplay": {
       "grid": "Grid",
       "list": "List",
-      "timeline": "Timeline"
+      "timeline": "Timeline",
+      "graph": "Graph"
     },
     "errors": {
       "titleRequired": "Title is required.",

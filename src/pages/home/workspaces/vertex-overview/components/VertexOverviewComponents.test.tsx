@@ -6,6 +6,7 @@ import i18n from "@/i18n";
 import { ItemsHeader } from "./ItemsHeader";
 import { ProjectsWorkspacePopover } from "./ProjectsWorkspacePopover";
 import { DetachedOverlayActions } from "./DetachedOverlayActions";
+import { ViewModeTabs } from "./ViewModeTabs";
 import type { Workspace } from "@/core/workspace";
 
 const renderWithI18n = (ui: React.ReactElement) =>
@@ -121,5 +122,17 @@ describe("DetachedOverlayActions", () => {
 
     expect(onOpenFolder).toHaveBeenCalledTimes(1);
     expect(onDelete).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("ViewModeTabs", () => {
+  it("switches view modes", () => {
+    const handleChange = vi.fn();
+
+    renderWithI18n(<ViewModeTabs value="grid" onChange={handleChange} />);
+
+    const listButtons = screen.getAllByRole("button", { name: "List view" });
+    fireEvent.click(listButtons[0]);
+    expect(handleChange).toHaveBeenCalledWith("list");
   });
 });
