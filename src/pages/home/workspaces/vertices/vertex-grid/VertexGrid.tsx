@@ -18,6 +18,7 @@ type VertexGridProps = {
   selectedVertexId: string | null;
   onSelect: (vertexId: string) => void;
   onDeleteVertex?: (vertex: Vertex) => void;
+  renderOverlay?: (item: VertexItem) => React.ReactNode;
   scrollY?: boolean;
   showWorkspaceLabel?: boolean;
 };
@@ -27,6 +28,7 @@ export const VertexGrid: React.FC<VertexGridProps> = ({
   selectedVertexId,
   onSelect,
   onDeleteVertex,
+  renderOverlay,
   scrollY = true,
   showWorkspaceLabel = true,
 }) => {
@@ -85,6 +87,7 @@ export const VertexGrid: React.FC<VertexGridProps> = ({
               width: VERTEX_NODE_WIDTH,
 
               height: VERTEX_NODE_HEIGHT + 10,
+              position: "relative",
               pointerEvents: "auto",
             }}
             onMouseDown={(e) => e.stopPropagation()}
@@ -97,6 +100,18 @@ export const VertexGrid: React.FC<VertexGridProps> = ({
               showWorkspaceLabel={showWorkspaceLabel}
               onDelete={onDeleteVertex}
             />
+            {renderOverlay && (
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: 8,
+                  right: 8,
+                  zIndex: 2,
+                }}
+              >
+                {renderOverlay({ vertex, workspace })}
+              </Box>
+            )}
           </Box>
         ))}
       </Box>
