@@ -148,6 +148,7 @@
       "items": "Items",
       "properties": "Properties",
       "tags": "Tags",
+      "files": "Files",
       "notes": "Notes",
       "images": "Images",
       "links": "Links"
@@ -244,6 +245,11 @@
     "subtitle": "Manage the core properties for this vertex.",
     "assetDirectoryLabel": "Asset directory",
     "defaultTab": "Default tab",
+    "sections": {
+      "general": "General",
+      "display": "Display behavior",
+      "tags": "Tags"
+    },
     "leaf": {
       "label": "Leaf node",
       "tooltip": "If yes, this vertex will not show an items tab.",

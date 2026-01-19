@@ -31,7 +31,7 @@ vi.mock("../vertex-overview/VertexOverviewTab", () => ({
   VertexOverviewTab: () => <div>VertexOverviewTab</div>,
 }));
 vi.mock("./properties/PropertiesTab", () => ({ PropertiesTab: () => <div>PropertiesTab</div> }));
-vi.mock("./tags/TagsTab", () => ({ TagsTab: () => <div>TagsTab</div> }));
+vi.mock("./files/FilesTab", () => ({ FilesTab: () => <div>FilesTab</div> }));
 vi.mock("./notes/NotesTab", () => ({ NotesTab: () => <div>NotesTab</div> }));
 vi.mock("./images/ImagesTab", () => ({ ImagesTab: () => <div>ImagesTab</div> }));
 vi.mock("./links/LinksTab", () => ({ LinksTab: () => <div>LinksTab</div> }));

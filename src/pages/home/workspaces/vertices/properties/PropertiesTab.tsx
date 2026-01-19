@@ -2,8 +2,9 @@ import * as React from "react";
 import {
   Alert,
   Box,
-  Button,
+  Chip,
   Divider,
+  IconButton,
   Link,
   MenuItem,
   Stack,
@@ -11,6 +12,8 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
+import ClearIcon from "@mui/icons-material/Clear";
 
 import type { Vertex } from "@/core/vertex";
 import type { Workspace } from "@/core/workspace";
@@ -29,6 +32,107 @@ type PropertiesTabProps = {
   hasItems: boolean;
   onVertexUpdated?: (vertex: Vertex) => Promise<void> | void;
   onSelectTab: (tab: VertexTabId) => void;
+};
+
+type TagsEditorProps = {
+  tags: string[];
+  saving: boolean;
+  onAdd: (tag: string) => Promise<void> | void;
+  onRemove: (tag: string) => Promise<void> | void;
+};
+
+const TagsEditor: React.FC<TagsEditorProps> = ({
+  tags,
+  saving,
+  onAdd,
+  onRemove,
+}) => {
+  const { t } = useTranslation("common");
+  const [input, setInput] = React.useState("");
+  const inputRef = React.useRef<HTMLInputElement | null>(null);
+
+  const focusInput = React.useCallback(() => {
+    requestAnimationFrame(() => {
+      inputRef.current?.focus({ preventScroll: true });
+    });
+  }, []);
+
+  React.useEffect(() => {
+    focusInput();
+  }, [focusInput]);
+
+  const handleAdd = async () => {
+    const trimmed = input.trim();
+    if (!trimmed) return;
+    if (tags.includes(trimmed)) {
+      setInput("");
+      focusInput();
+      return;
+    }
+    await onAdd(trimmed);
+    setInput("");
+    focusInput();
+  };
+
+  const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = async (
+    e
+  ) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      await handleAdd();
+    }
+  };
+
+  return (
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+      <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} alignItems="center">
+        <TextField
+          label={t("tagsTab.newTag")}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          inputRef={inputRef}
+          fullWidth
+          size="small"
+          InputLabelProps={{ shrink: true }}
+          placeholder={t("tagsTab.placeholder")}
+          disabled={saving}
+        />
+        <IconButton
+          color="primary"
+          onClick={handleAdd}
+          disabled={saving || !input.trim()}
+          aria-label={t("tagsTab.add")}
+          sx={{ border: 1, borderColor: "divider" }}
+        >
+          <AddIcon />
+        </IconButton>
+      </Stack>
+
+      {tags.length === 0 ? (
+        <Typography color="text.secondary">{t("tagsTab.empty")}</Typography>
+      ) : (
+        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+          {tags.map((tag) => (
+            <Chip
+              key={tag}
+              label={tag}
+              size="small"
+              variant="outlined"
+              onDelete={saving ? undefined : () => onRemove(tag)}
+              deleteIcon={
+                <ClearIcon
+                  fontSize="small"
+                  data-testid={`delete-tag-${tag}`}
+                  aria-label={`delete-tag-${tag}`}
+                />
+              }
+            />
+          ))}
+        </Box>
+      )}
+    </Box>
+  );
 };
 
 export const PropertiesTab: React.FC<PropertiesTabProps> = ({
@@ -50,9 +154,10 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
   const [thumbnail, setThumbnail] = React.useState<string | undefined>(
     vertex.thumbnail_path
   );
+  const [isLeaf, setIsLeaf] = React.useState<boolean>(Boolean(vertex.is_leaf));
+  const [tags, setTags] = React.useState<string[]>(vertex.tags ?? []);
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [isLeaf, setIsLeaf] = React.useState<boolean>(Boolean(vertex.is_leaf));
   const assetDirectory = vertex.asset_directory;
 
   React.useEffect(() => {
@@ -63,8 +168,9 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
       display: vertex.items_behavior?.display ?? "grid",
     });
     setThumbnail(vertex.thumbnail_path);
-    setError(null);
     setIsLeaf(Boolean(vertex.is_leaf));
+    setTags(vertex.tags ?? []);
+    setError(null);
   }, [vertex]);
 
   const handleOpenAssetDirectory = React.useCallback(async () => {
@@ -84,7 +190,7 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
   const tabOptions: { value: VertexTabId; label: string }[] = [
     { value: "items", label: t("vertex.tabs.items") },
     { value: "properties", label: t("vertex.tabs.properties") },
-    { value: "tags", label: t("vertex.tabs.tags") },
+    { value: "tags", label: t("vertex.tabs.files") },
     { value: "notes", label: t("vertex.tabs.notes") },
     { value: "images", label: t("vertex.tabs.images") },
     { value: "urls", label: t("vertex.tabs.links") },
@@ -96,47 +202,90 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
     { value: "graph", label: t("propertiesTab.itemsDisplay.graph") },
   ];
 
-  const isDirty =
-    title !== vertex.title ||
-    defaultTab !== (vertex.default_tab ?? "items") ||
-    itemsBehavior.child_kind !==
-      (vertex.items_behavior?.child_kind ?? "generic") ||
-    itemsBehavior.display !== (vertex.items_behavior?.display ?? "grid") ||
-    thumbnail !== vertex.thumbnail_path ||
-    isLeaf !== Boolean(vertex.is_leaf);
+  const buildUpdated = React.useCallback(
+    (overrides: Partial<Vertex>) => ({
+      ...vertex,
+      title: overrides.title ?? vertex.title,
+      default_tab: overrides.default_tab ?? defaultTab,
+      items_behavior: overrides.items_behavior ?? itemsBehavior,
+      thumbnail_path: overrides.thumbnail_path ?? thumbnail,
+      is_leaf: overrides.is_leaf ?? isLeaf,
+      tags: overrides.tags ?? tags,
+      updated_at: new Date().toISOString(),
+    }),
+    [defaultTab, isLeaf, itemsBehavior, tags, thumbnail, vertex]
+  );
 
-  const handleSave = async () => {
-    if (!title.trim()) {
+  const persistVertex = React.useCallback(
+    async (updated: Vertex, syncTab?: boolean) => {
+      setSaving(true);
+      setError(null);
+      try {
+        const fs = await getFileSystem();
+        await fs.updateVertex(updated);
+        await onVertexUpdated?.(updated);
+        if (syncTab) {
+          onSelectTab(
+            updated.is_leaf
+              ? ("properties" as VertexTabId)
+              : (updated.default_tab ?? "items")
+          );
+        }
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : t("propertiesTab.errors.save")
+        );
+      } finally {
+        setSaving(false);
+      }
+    },
+    [onSelectTab, onVertexUpdated, t]
+  );
+
+  const handleTitleBlur = React.useCallback(async () => {
+    const trimmed = title.trim();
+    if (!trimmed) {
       setError(t("propertiesTab.errors.titleRequired"));
+      setTitle(vertex.title);
       return;
     }
-    setSaving(true);
-    setError(null);
-    try {
-      const fs = await getFileSystem();
-      const updated: Vertex = {
-        ...vertex,
-        title: title.trim(),
-        default_tab: defaultTab,
-        items_behavior: itemsBehavior,
-        thumbnail_path: thumbnail,
-        updated_at: new Date().toISOString(),
-        is_leaf: isLeaf,
-      };
-      await fs.updateVertex(updated);
-      await onVertexUpdated?.(updated);
-      onSelectTab(
-        updated.is_leaf
-          ? ("properties" as VertexTabId)
-          : (updated.default_tab ?? "items")
-      );
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : t("propertiesTab.errors.save")
-      );
-    } finally {
-      setSaving(false);
-    }
+    if (trimmed === vertex.title) return;
+    const updated = buildUpdated({ title: trimmed });
+    setTitle(trimmed);
+    await persistVertex(updated);
+  }, [buildUpdated, persistVertex, t, title, vertex.title]);
+
+  const handleDefaultTabChange = async (next: VertexTabId) => {
+    setDefaultTab(next);
+    await persistVertex(buildUpdated({ default_tab: next }), true);
+  };
+
+  const handleItemsDisplayChange = async (next: ItemsDisplayHint) => {
+    const nextBehavior = { ...itemsBehavior, display: next };
+    setItemsBehavior(nextBehavior);
+    await persistVertex(buildUpdated({ items_behavior: nextBehavior }));
+  };
+
+  const handleLeafChange = async (next: boolean) => {
+    setIsLeaf(next);
+    await persistVertex(buildUpdated({ is_leaf: next }), true);
+  };
+
+  const handleThumbnailChange = async (next?: string) => {
+    setThumbnail(next);
+    await persistVertex(buildUpdated({ thumbnail_path: next }));
+  };
+
+  const handleAddTag = async (tag: string) => {
+    const next = [...tags, tag];
+    setTags(next);
+    await persistVertex(buildUpdated({ tags: next }));
+  };
+
+  const handleRemoveTag = async (tag: string) => {
+    const next = tags.filter((t) => t !== tag);
+    setTags(next);
+    await persistVertex(buildUpdated({ tags: next }));
   };
 
   return (
@@ -144,10 +293,11 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
       sx={{
         display: "flex",
         flexDirection: "column",
-        gap: 2,
+        gap: 3,
         maxWidth: 760,
         mx: "auto",
         width: "100%",
+        pb: 3,
       }}
     >
       <Box>
@@ -158,32 +308,26 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
           {t("propertiesTab.subtitle")}
         </Typography>
         <Box sx={{ mt: 1 }}>
-          <Typography variant="caption" color="text.secondary">
-            {t("propertiesTab.assetDirectoryLabel")}
-          </Typography>
           {assetDirectory ? (
-            <Link
-              component="button"
-              type="button"
-              variant="body2"
-              underline="hover"
-              onClick={handleOpenAssetDirectory}
-              sx={{
-                display: "block",
-                fontFamily: "monospace",
-                wordBreak: "break-all",
-                textAlign: "left",
-              }}
-            >
-              {assetDirectory}
-            </Link>
+            <Tooltip title={assetDirectory} placement="top-start">
+              <Link
+                component="button"
+                type="button"
+                variant="caption"
+                underline="hover"
+                onClick={handleOpenAssetDirectory}
+                sx={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  textAlign: "left",
+                }}
+              >
+                {t("propertiesTab.assetDirectoryLabel")}
+              </Link>
+            </Tooltip>
           ) : (
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{ fontFamily: "monospace", wordBreak: "break-all" }}
-            >
-              —
+            <Typography variant="caption" color="text.secondary">
+              {t("propertiesTab.assetDirectoryLabel")}
             </Typography>
           )}
         </Box>
@@ -197,21 +341,41 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
 
       <Divider />
 
-      <Stack spacing={2}>
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+          {t("propertiesTab.sections.general")}
+        </Typography>
+        <Box sx={{ width: 240, alignSelf: "center" }}>
+          <ThumbnailPicker
+            value={thumbnail}
+            onChange={handleThumbnailChange}
+            height={160}
+          />
+        </Box>
         <TextField
           label={t("vertexDialog.fields.title")}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
+          onBlur={handleTitleBlur}
           fullWidth
+          disabled={saving}
           slotProps={{ inputLabel: { shrink: true } }}
         />
+      </Box>
 
+      <Divider />
+
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+          {t("propertiesTab.sections.display")}
+        </Typography>
         <TextField
           label={t("propertiesTab.defaultTab")}
           select
           value={defaultTab}
-          onChange={(e) => setDefaultTab(e.target.value as VertexTabId)}
+          onChange={(e) => handleDefaultTabChange(e.target.value as VertexTabId)}
           fullWidth
+          disabled={saving}
           slotProps={{ inputLabel: { shrink: true } }}
         >
           {tabOptions.map((opt) => (
@@ -223,39 +387,14 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
 
         <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
           <TextField
-            label={t("propertiesTab.leaf.label")}
-            select
-            value={isLeaf ? "yes" : "no"}
-            onChange={(e) => setIsLeaf(e.target.value === "yes")}
-            fullWidth
-            slotProps={{
-              inputLabel: { shrink: true },
-              input: {
-                endAdornment: (
-                  <Tooltip title={t("propertiesTab.leaf.tooltip")}>
-                    <Typography component="span" sx={{ ml: 1, color: "text.secondary" }}>
-                      ?
-                    </Typography>
-                  </Tooltip>
-                ),
-              },
-            }}
-          >
-            <MenuItem value="no">{t("propertiesTab.leaf.no")}</MenuItem>
-            <MenuItem value="yes">{t("propertiesTab.leaf.yes")}</MenuItem>
-          </TextField>
-
-          <TextField
             label={t("propertiesTab.items.display")}
             select
             value={itemsBehavior.display}
             onChange={(e) =>
-              setItemsBehavior((prev) => ({
-                ...prev,
-                display: e.target.value as ItemsDisplayHint,
-              }))
+              handleItemsDisplayChange(e.target.value as ItemsDisplayHint)
             }
             fullWidth
+            disabled={saving}
             slotProps={{ inputLabel: { shrink: true } }}
           >
             {itemsDisplayOptions.map((opt) => (
@@ -264,23 +403,43 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
               </MenuItem>
             ))}
           </TextField>
+
+          <TextField
+            label={
+              <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}>
+                <span>{t("propertiesTab.leaf.label")}</span>
+                <Tooltip title={t("propertiesTab.leaf.tooltip")}>
+                  <Typography component="span" sx={{ color: "text.secondary" }}>
+                    ?
+                  </Typography>
+                </Tooltip>
+              </Box>
+            }
+            select
+            value={isLeaf ? "yes" : "no"}
+            onChange={(e) => handleLeafChange(e.target.value === "yes")}
+            fullWidth
+            disabled={saving}
+            slotProps={{ inputLabel: { shrink: true } }}
+          >
+            <MenuItem value="no">{t("propertiesTab.leaf.no")}</MenuItem>
+            <MenuItem value="yes">{t("propertiesTab.leaf.yes")}</MenuItem>
+          </TextField>
         </Stack>
+      </Box>
 
-        <ThumbnailPicker
-          value={thumbnail}
-          onChange={setThumbnail}
-          height={150}
+      <Divider />
+
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+          {t("propertiesTab.sections.tags")}
+        </Typography>
+        <TagsEditor
+          tags={tags}
+          saving={saving}
+          onAdd={handleAddTag}
+          onRemove={handleRemoveTag}
         />
-      </Stack>
-
-      <Box sx={{ display: "flex", gap: 1, pt: 1 }}>
-        <Button
-          variant="contained"
-          onClick={handleSave}
-          disabled={!isDirty || saving}
-        >
-          {saving ? t("propertiesTab.saving") : t("commonActions.save")}
-        </Button>
       </Box>
     </Box>
   );

@@ -12,7 +12,7 @@ import { BreadcrumbsTrail } from "../components/breadcrumbs-trail/BreadcrumbsTra
 import { VerticalTabs } from "../components/vertical-tabs/VerticalTabs";
 import { VertexOverviewTab } from "../vertex-overview/VertexOverviewTab";
 import { PropertiesTab } from "./properties/PropertiesTab";
-import { TagsTab } from "./tags/TagsTab";
+import { FilesTab } from "./files/FilesTab";
 import { LinksTab } from "./links/LinksTab";
 import { ImagesTab } from "./images/ImagesTab";
 import { NotesTab } from "./notes/NotesTab";
@@ -161,7 +161,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
       },
       {
         value: "tags" as const,
-        label: t("vertex.tabs.tags"),
+        label: t("vertex.tabs.files"),
         icon: <TagOutlinedIcon />,
       },
       {
@@ -431,7 +431,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
               )}
 
               {safeTab === "tags" && (
-                <TagsTab
+                <FilesTab
                   vertex={currentVertex}
                   onVertexUpdated={(v) => {
                     setCurrentVertex(v);

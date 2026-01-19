@@ -56,16 +56,19 @@ describe("PropertiesTab", () => {
   it("renders fields with initial values", () => {
     renderTab();
     expect(screen.getByDisplayValue("Vertex One")).toBeInTheDocument();
-    expect(screen.getByText("/tmp/assets/v-1")).toBeInTheDocument();
+    expect(
+      screen.getByText(i18n.t("propertiesTab.assetDirectoryLabel"))
+    ).toBeInTheDocument();
   });
 
-  it("requires title before saving and then calls update", async () => {
+  it("updates title on blur when valid", async () => {
     renderTab();
-    fireEvent.change(screen.getByLabelText(/Title/i), { target: { value: "" } });
-    fireEvent.click(screen.getByRole("button", { name: /Save/i }));
+    const input = screen.getByLabelText(/Title/i);
+    fireEvent.change(input, { target: { value: "" } });
+    fireEvent.blur(input);
     expect(mockUpdateVertex).not.toHaveBeenCalled();
-    fireEvent.change(screen.getByLabelText(/Title/i), { target: { value: "Updated" } });
-    fireEvent.click(screen.getByRole("button", { name: /Save/i }));
+    fireEvent.change(input, { target: { value: "Updated" } });
+    fireEvent.blur(input);
     await waitFor(() => expect(mockUpdateVertex).toHaveBeenCalled());
   });
 
@@ -74,5 +77,27 @@ describe("PropertiesTab", () => {
     const select = screen.getByLabelText(/Items display/i);
     fireEvent.mouseDown(select);
     expect(screen.getByText(/Graph/i)).toBeInTheDocument();
+  });
+
+  it("adds tags from the properties tab", async () => {
+    renderTab();
+    const input = screen.getByLabelText(i18n.t("tagsTab.newTag"));
+    fireEvent.change(input, { target: { value: "draft" } });
+    fireEvent.click(screen.getByLabelText(i18n.t("tagsTab.add")));
+    await waitFor(() =>
+      expect(mockUpdateVertex).toHaveBeenCalledWith(
+        expect.objectContaining({ tags: ["draft"] })
+      )
+    );
+  });
+
+  it("removes tags from the properties tab", async () => {
+    renderTab({ vertex: { ...vertex, tags: ["alpha"] } });
+    fireEvent.click(screen.getByTestId("delete-tag-alpha"));
+    await waitFor(() =>
+      expect(mockUpdateVertex).toHaveBeenCalledWith(
+        expect.objectContaining({ tags: [] })
+      )
+    );
   });
 });
