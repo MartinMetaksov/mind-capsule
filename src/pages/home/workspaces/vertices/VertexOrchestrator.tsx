@@ -4,7 +4,7 @@ import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
 import LinkOutlinedIcon from "@mui/icons-material/LinkOutlined";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import CommentOutlinedIcon from "@mui/icons-material/CommentOutlined";
-import TagOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
+import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutlined";
 import { TuneOutlined } from "@mui/icons-material";
 import type { Vertex, VertexTabId } from "@/core/vertex";
 import type { Workspace } from "@/core/workspace";
@@ -160,14 +160,14 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
         icon: <TuneOutlined />,
       },
       {
-        value: "tags" as const,
-        label: t("vertex.tabs.files"),
-        icon: <TagOutlinedIcon />,
-      },
-      {
         value: "notes" as const,
         label: t("vertex.tabs.notes"),
         icon: <CommentOutlinedIcon />,
+      },
+      {
+        value: "urls" as const,
+        label: t("vertex.tabs.links"),
+        icon: <LinkOutlinedIcon />,
       },
       {
         value: "images" as const,
@@ -175,9 +175,9 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
         icon: <ImageOutlinedIcon />,
       },
       {
-        value: "urls" as const,
-        label: t("vertex.tabs.links"),
-        icon: <LinkOutlinedIcon />,
+        value: "tags" as const,
+        label: t("vertex.tabs.files"),
+        icon: <InsertDriveFileOutlinedIcon />,
       },
       // {
       //   value: "files" as const,

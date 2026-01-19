@@ -186,10 +186,10 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
   const tabOptions: { value: VertexTabId; label: string }[] = [
     { value: "items", label: t("vertex.tabs.items") },
     { value: "properties", label: t("vertex.tabs.properties") },
-    { value: "tags", label: t("vertex.tabs.files") },
     { value: "notes", label: t("vertex.tabs.notes") },
-    { value: "images", label: t("vertex.tabs.images") },
     { value: "urls", label: t("vertex.tabs.links") },
+    { value: "images", label: t("vertex.tabs.images") },
+    { value: "tags", label: t("vertex.tabs.files") },
   ];
 
   const itemsDisplayOptions: { value: ItemsDisplayHint; label: string }[] = [

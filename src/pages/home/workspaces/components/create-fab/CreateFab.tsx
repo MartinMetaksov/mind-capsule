@@ -27,6 +27,7 @@ export const CreateFab = React.forwardRef<CreateFabHandle, CreateFabProps>(
         <Fab
           ref={buttonRef}
           color="primary"
+          aria-label={title}
           onClick={onClick}
           sx={{
             position: "absolute",

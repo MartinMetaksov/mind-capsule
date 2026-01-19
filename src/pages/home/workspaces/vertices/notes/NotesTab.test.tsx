@@ -51,20 +51,26 @@ describe("NotesTab", () => {
       </I18nextProvider>
     );
 
-  it("renders note preview by default", async () => {
+  it("renders note cards and opens a note", async () => {
     renderTab();
     expect(await screen.findByText(/First note/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Preview/i })).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(screen.getByText(/First note/i));
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Preview/i })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
   });
 
-  it("creates a new revision", async () => {
+  it("creates a new note", async () => {
     renderTab();
-    fireEvent.click(await screen.findByRole("button", { name: /Create new revision/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /New note/i }));
     await waitFor(() => expect(mockCreateNote).toHaveBeenCalled());
   });
 
   it("switches to edit mode and auto-saves on blur", async () => {
     renderTab();
+    fireEvent.click(await screen.findByText(/First note/i));
     fireEvent.click(await screen.findByRole("button", { name: /Edit/i }));
     const textarea = screen.getByRole("textbox");
     fireEvent.change(textarea, { target: { value: "Updated note" } });
@@ -72,5 +78,14 @@ describe("NotesTab", () => {
     await waitFor(() =>
       expect(mockUpdateNote).toHaveBeenCalledWith(vertex, "note-1.md", "Updated note")
     );
+  });
+
+  it("deletes a note", async () => {
+    renderTab();
+    const deleteButton = await screen.findByRole("button", { name: /Delete note/i });
+    fireEvent.click(deleteButton);
+    const confirmButton = await screen.findByRole("button", { name: /Delete/i });
+    fireEvent.click(confirmButton);
+    await waitFor(() => expect(mockDeleteNote).toHaveBeenCalledWith(vertex, "note-1.md"));
   });
 });
