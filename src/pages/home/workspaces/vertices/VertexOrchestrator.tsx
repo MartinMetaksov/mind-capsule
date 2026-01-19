@@ -132,15 +132,6 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
     return vertex.is_leaf ? base.filter((t) => t !== "items") : base;
   }, [vertex.is_leaf]);
 
-  const resolveInitialTab = React.useCallback((): VertexTab => {
-    const candidate = currentVertex.default_tab as VertexTabId | undefined;
-    const fallback = currentVertex.is_leaf ? "properties" : "items";
-    return tabOrder.includes(candidate as VertexTab)
-      ? (candidate as VertexTab)
-      : (fallback as VertexTab);
-  }, [tabOrder, currentVertex.default_tab, currentVertex.is_leaf]);
-
-  const [tab, setTab] = React.useState<VertexTab>(() => resolveInitialTab());
   const hasItems = false;
   const itemsLabel = React.useMemo(
     () => formatItemsLabel(currentVertex.items_behavior),
@@ -215,6 +206,24 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
     },
     [availableTabValues]
   );
+
+  const resolveInitialTab = React.useCallback((): VertexTab => {
+    const storedTab =
+      typeof window !== "undefined"
+        ? window.sessionStorage.getItem("vertexOverview.openTab")
+        : null;
+    if (storedTab) {
+      window.sessionStorage.removeItem("vertexOverview.openTab");
+      return resolveToAvailable(storedTab as VertexTabId);
+    }
+    const candidate = currentVertex.default_tab as VertexTabId | undefined;
+    const fallback = currentVertex.is_leaf ? "properties" : "items";
+    return tabOrder.includes(candidate as VertexTab)
+      ? (candidate as VertexTab)
+      : (fallback as VertexTab);
+  }, [tabOrder, currentVertex.default_tab, currentVertex.is_leaf, resolveToAvailable]);
+
+  const [tab, setTab] = React.useState<VertexTab>(() => resolveInitialTab());
 
   const safeTab = React.useMemo(
     () => resolveToAvailable(tab),

@@ -218,8 +218,12 @@ export const WorkspaceOrchestrator: React.FC = () => {
       let v = vertices.find((x) => x.id === vertexId) ?? null;
       let ws = v ? workspaceByVertexId[v.id] : undefined;
 
-      if (!v) {
-        v = (await fs.getVertex(vertexId)) ?? null;
+      const freshVertex = await fs.getVertex(vertexId);
+      if (freshVertex) {
+        v = freshVertex;
+        ws = workspaceByVertexId[freshVertex.id] ?? ws;
+      } else if (!v) {
+        v = null;
       }
 
       if (!v) return;
@@ -230,8 +234,21 @@ export const WorkspaceOrchestrator: React.FC = () => {
 
       if (!ws) return;
 
-      setTrail((prev) => {
-        const nextTrail = [...prev, { vertex: v, workspace: ws }];
+      const nextVertices: Vertex[] = [v];
+      let cursor: Vertex | null = v;
+      while (cursor?.parent_id) {
+        const parent = await fs.getVertex(cursor.parent_id);
+        if (!parent) break;
+        nextVertices.unshift(parent);
+        cursor = parent;
+      }
+
+      const nextTrail = nextVertices.map((vertex) => ({
+        vertex,
+        workspace: ws,
+      }));
+
+      setTrail(() => {
         navigate(`/${nextTrail.map((t) => t.vertex.id).join("/")}`, {
           replace: false,
         });
@@ -365,12 +382,18 @@ export const WorkspaceOrchestrator: React.FC = () => {
           onOpenVertex={(nextVertexId) => openVertex(nextVertexId)}
           onVertexUpdated={async (updated) => {
             // update active trail entry immediately
-            setTrail((prev) =>
-              prev.map((t) =>
+            let shouldRebuildTrail = false;
+            setTrail((prev) => {
+              shouldRebuildTrail = prev.some((t) => t.vertex.id === updated.id);
+              return prev.map((t) =>
                 t.vertex.id === updated.id ? { ...t, vertex: updated } : t
-              )
-            );
+              );
+            });
             await reloadVertices();
+            if (shouldRebuildTrail) {
+              await openVertex(updated.id);
+              return;
+            }
             // refresh the active vertex from storage to keep it in sync
             const fs = await getFileSystem();
             const fresh = await fs.getVertex(updated.id);

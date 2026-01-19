@@ -67,11 +67,18 @@ export const VertexOverviewTab: React.FC<VertexOverviewTabProps> = (props) => {
   );
 
   React.useEffect(() => {
+    let nextMode: OverviewViewMode = "grid";
     if (props.variant === "items") {
-      setViewMode(resolveViewMode(itemsProps?.vertex?.items_behavior?.display));
-      return;
+      nextMode = resolveViewMode(itemsProps?.vertex?.items_behavior?.display);
     }
-    setViewMode("grid");
+    if (typeof window !== "undefined") {
+      const stored = window.sessionStorage.getItem("vertexOverview.viewMode");
+      if (stored === "graph" || stored === "list" || stored === "timeline") {
+        nextMode = stored as OverviewViewMode;
+      }
+      window.sessionStorage.removeItem("vertexOverview.viewMode");
+    }
+    setViewMode(nextMode);
   }, [props.variant, itemsProps?.vertex?.items_behavior?.display, resolveViewMode]);
 
   const itemsFabRef = React.useRef<CreateFabHandle | null>(null);
@@ -296,7 +303,12 @@ export const VertexOverviewTab: React.FC<VertexOverviewTabProps> = (props) => {
   ) : viewMode === "timeline" ? (
     <TimelineView items={gridItems} />
   ) : (
-    <GraphView items={gridItems} />
+    <GraphView
+      items={gridItems}
+      currentVertex={itemsProps?.vertex ?? null}
+      onOpenVertex={itemsProps?.onOpenVertex}
+      onVertexUpdated={itemsProps?.onVertexUpdated}
+    />
   );
 
   return (
@@ -306,22 +318,25 @@ export const VertexOverviewTab: React.FC<VertexOverviewTabProps> = (props) => {
         inset: 0,
         pt: 6.5,
         minHeight: 0,
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
         overflow: itemsProps ? "hidden" : "visible",
       }}
       onMouseDown={projectsProps ? (e) => e.stopPropagation() : undefined}
     >
       <Box
         sx={
-          itemsProps
-            ? {
-                px: 2,
-                pb: 2,
-                pt: 2,
-                display: "flex",
-                flexDirection: "column",
-                gap: 1,
-              }
-            : { px: 2, pb: 2, pt: 2 }
+          {
+            px: 2,
+            pb: 2,
+            pt: 2,
+            display: "flex",
+            flexDirection: "column",
+            gap: itemsProps ? 1 : 1.5,
+            flex: 1,
+            minHeight: 0,
+          }
         }
       >
         {header}
@@ -340,14 +355,10 @@ export const VertexOverviewTab: React.FC<VertexOverviewTabProps> = (props) => {
         {(itemsProps && itemsState.loading) ||
         (detachedProps && detachedState.loading) ? (
           loadingState
-        ) : gridEmpty ? (
+        ) : viewMode !== "graph" && gridEmpty ? (
           emptyState
         ) : (
-          <Box
-            sx={
-              itemsProps ? { flex: 1, minHeight: 0 } : { minHeight: 0 }
-            }
-          >
+          <Box sx={{ flex: 1, minHeight: 0 }}>
             {contentView}
           </Box>
         )}

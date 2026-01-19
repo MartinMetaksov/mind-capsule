@@ -1,5 +1,13 @@
 import * as React from "react";
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography } from "@mui/material";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Typography,
+  type ButtonProps,
+} from "@mui/material";
 import { detectOperatingSystem } from "@/utils/os";
 import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
 import { useTranslation } from "react-i18next";
@@ -10,6 +18,8 @@ type DeleteConfirmDialogProps = {
   message: string;
   onCancel: () => void;
   onConfirm: () => void;
+  confirmLabel?: string;
+  confirmColor?: ButtonProps["color"];
 };
 
 export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
@@ -18,6 +28,8 @@ export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
   message,
   onCancel,
   onConfirm,
+  confirmLabel,
+  confirmColor = "error",
 }) => {
   const { t } = useTranslation("common");
   const os = React.useMemo(() => detectOperatingSystem(), []);
@@ -53,8 +65,8 @@ export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
       </DialogContent>
       <DialogActions>
         <Button onClick={onCancel}>{t("commonActions.cancel")}</Button>
-        <Button color="error" variant="contained" onClick={onConfirm}>
-          {t("commonActions.delete")}
+        <Button color={confirmColor} variant="contained" onClick={onConfirm}>
+          {confirmLabel ?? t("commonActions.delete")}
         </Button>
       </DialogActions>
     </Dialog>
