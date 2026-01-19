@@ -1,5 +1,7 @@
 import * as React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { I18nextProvider } from "react-i18next";
+import i18n from "@/i18n";
 import type { Workspace } from "@/core/workspace";
 import type { Vertex } from "@/core/vertex";
 import type { VertexItem } from "../../../vertices/vertex-grid/VertexGrid";
@@ -56,13 +58,16 @@ const items: VertexItem[] = [
 ];
 
 describe("GraphView", () => {
+  const renderWithI18n = (ui: React.ReactElement) =>
+    render(<I18nextProvider i18n={i18n}>{ui}</I18nextProvider>);
+
   beforeEach(() => {
     mockGetWorkspaces.mockResolvedValue([workspace]);
     mockGetAllVertices.mockResolvedValue([vertexOne, vertexTwo]);
   });
 
   it("renders workspace and vertex labels", async () => {
-    render(
+    renderWithI18n(
       <GraphView
         items={items}
         currentVertex={vertexOne}
@@ -76,7 +81,7 @@ describe("GraphView", () => {
   });
 
   it("highlights the current vertex with a pulse class", async () => {
-    const { container } = render(
+    const { container } = renderWithI18n(
       <GraphView items={items} currentVertex={vertexOne} />
     );
 
@@ -91,7 +96,7 @@ describe("GraphView", () => {
 
   it("allows opening a non-current vertex", async () => {
     const onOpenVertex = vi.fn();
-    const { container } = render(
+    const { container } = renderWithI18n(
       <GraphView
         items={items}
         currentVertex={vertexOne}

@@ -33,4 +33,4 @@ export type VertexOverviewTabProps =
   | ProjectsOverviewProps
   | DetachedOverviewProps;
 
-export type OverviewViewMode = "grid" | "list" | "timeline" | "graph";
+export type OverviewViewMode = "grid" | "list" | "graph";

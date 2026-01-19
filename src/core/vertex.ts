@@ -8,7 +8,6 @@ export type ItemsDisplayHint =
   | "list"
   | "grid"
   | "canvas"
-  | "timeline"
   | "graph"
   | `custom:${string}`;
 

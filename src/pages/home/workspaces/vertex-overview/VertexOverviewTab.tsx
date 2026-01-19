@@ -26,7 +26,6 @@ import type {
   VertexOverviewTabProps,
 } from "./types";
 import { VertexListView } from "./views/list/VertexListView";
-import { TimelineView } from "./views/timeline/TimelineView";
 import { GraphView } from "./views/graph/GraphView";
 
 export { type VertexOverviewTabProps } from "./types";
@@ -51,7 +50,6 @@ export const VertexOverviewTab: React.FC<VertexOverviewTabProps> = (props) => {
   const resolveViewMode = React.useCallback(
     (display?: string): OverviewViewMode => {
       if (display === "list") return "list";
-      if (display === "timeline") return "timeline";
       if (display === "graph") return "graph";
       return "grid";
     },
@@ -68,18 +66,49 @@ export const VertexOverviewTab: React.FC<VertexOverviewTabProps> = (props) => {
 
   React.useEffect(() => {
     let nextMode: OverviewViewMode = "grid";
+    const currentVertexId = itemsProps?.vertex?.id;
     if (props.variant === "items") {
       nextMode = resolveViewMode(itemsProps?.vertex?.items_behavior?.display);
     }
     if (typeof window !== "undefined") {
-      const stored = window.sessionStorage.getItem("vertexOverview.viewMode");
-      if (stored === "graph" || stored === "list" || stored === "timeline") {
-        nextMode = stored as OverviewViewMode;
+      const globalMode = (
+        window as unknown as {
+          __vertexOverviewViewMode?: { mode?: OverviewViewMode; vertexId?: string };
+        }
+      ).__vertexOverviewViewMode;
+      if (globalMode?.mode && globalMode.vertexId === currentVertexId) {
+        (
+          window as unknown as { __vertexOverviewViewMode?: unknown }
+        ).__vertexOverviewViewMode = undefined;
+        nextMode = globalMode.mode;
+      } else {
+        const stored = window.sessionStorage.getItem("vertexOverview.viewMode");
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored) as {
+              mode?: OverviewViewMode;
+              vertexId?: string;
+            };
+            if (parsed.mode && parsed.vertexId === currentVertexId) {
+              window.sessionStorage.removeItem("vertexOverview.viewMode");
+              nextMode = parsed.mode;
+            }
+          } catch {
+            if (stored === "graph" || stored === "list") {
+              window.sessionStorage.removeItem("vertexOverview.viewMode");
+              nextMode = stored as OverviewViewMode;
+            }
+          }
+        }
       }
-      window.sessionStorage.removeItem("vertexOverview.viewMode");
     }
     setViewMode(nextMode);
-  }, [props.variant, itemsProps?.vertex?.items_behavior?.display, resolveViewMode]);
+  }, [
+    props.variant,
+    itemsProps?.vertex?.id,
+    itemsProps?.vertex?.items_behavior?.display,
+    resolveViewMode,
+  ]);
 
   const itemsFabRef = React.useRef<CreateFabHandle | null>(null);
   const projectsFabRef = React.useRef<CreateFabHandle | null>(null);
@@ -204,7 +233,7 @@ export const VertexOverviewTab: React.FC<VertexOverviewTabProps> = (props) => {
     />
   ) : projectsProps ? (
     <Typography variant="h6" sx={{ fontWeight: 900, mb: 1 }}>
-      {projectsProps.title ?? "Projects"}
+      {projectsProps.title ?? t("projects.title")}
     </Typography>
   ) : (
     <Box sx={{ mb: 1 }}>
@@ -300,8 +329,6 @@ export const VertexOverviewTab: React.FC<VertexOverviewTabProps> = (props) => {
       renderActions={renderOverlay}
       showWorkspaceLabel={!itemsProps}
     />
-  ) : viewMode === "timeline" ? (
-    <TimelineView items={gridItems} />
   ) : (
     <GraphView
       items={gridItems}

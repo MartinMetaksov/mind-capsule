@@ -93,7 +93,6 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
   const itemsDisplayOptions: { value: ItemsDisplayHint; label: string }[] = [
     { value: "grid", label: t("propertiesTab.itemsDisplay.grid") },
     { value: "list", label: t("propertiesTab.itemsDisplay.list") },
-    { value: "timeline", label: t("propertiesTab.itemsDisplay.timeline") },
     { value: "graph", label: t("propertiesTab.itemsDisplay.graph") },
   ];
 

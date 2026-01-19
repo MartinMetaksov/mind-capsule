@@ -172,6 +172,7 @@
     "loadWorkspaces": "Failed to load workspaces."
   },
   "projects": {
+    "title": "Projects",
     "errors": {
       "selectWorkspace": "Select a workspace first.",
       "create": "Failed to create project."
@@ -191,6 +192,33 @@
       "load": "Failed to load items.",
       "create": "Failed to create item.",
       "update": "Failed to rename items."
+    }
+  },
+  "vertexOverview": {
+    "viewModes": {
+      "label": "View mode",
+      "grid": "Grid view",
+      "list": "List view",
+      "graph": "Graph view"
+    }
+  },
+  "graphView": {
+    "loading": "Loading graph…",
+    "recenter": "Recenter graph",
+    "actions": {
+      "openVertex": "Open vertex",
+      "relocateHere": "Relocate here",
+      "openFolder": "Open folder",
+      "delete": "Delete"
+    },
+    "dialogs": {
+      "deleteTitle": "Delete vertex",
+      "deleteMessage": "Delete {{label}}?",
+      "relocateTitle": "Relocate vertex",
+      "relocateMessage": "Relocate {{label}} here?",
+      "relocateConfirm": "Relocate",
+      "thisItem": "this item",
+      "currentItem": "current item"
     }
   },
   "filesTab": {
@@ -230,7 +258,6 @@
     "itemsDisplay": {
       "grid": "Grid",
       "list": "List",
-      "timeline": "Timeline",
       "graph": "Graph"
     },
     "errors": {

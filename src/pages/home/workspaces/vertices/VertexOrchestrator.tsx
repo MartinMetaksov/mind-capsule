@@ -207,23 +207,57 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
     [availableTabValues]
   );
 
-  const resolveInitialTab = React.useCallback((): VertexTab => {
+  const preferredInitialTab = React.useMemo(() => {
+    const globalTab =
+      typeof window !== "undefined"
+        ? (
+            window as unknown as {
+              __vertexOverviewOpenTab?: { tab?: VertexTabId; vertexId?: string };
+            }
+          ).__vertexOverviewOpenTab
+        : undefined;
+    if (globalTab?.tab && globalTab.vertexId === currentVertex.id) {
+      (
+        window as unknown as { __vertexOverviewOpenTab?: unknown }
+      ).__vertexOverviewOpenTab = undefined;
+      return resolveToAvailable(globalTab.tab);
+    }
+
     const storedTab =
       typeof window !== "undefined"
         ? window.sessionStorage.getItem("vertexOverview.openTab")
         : null;
     if (storedTab) {
-      window.sessionStorage.removeItem("vertexOverview.openTab");
-      return resolveToAvailable(storedTab as VertexTabId);
+      try {
+        const parsed = JSON.parse(storedTab) as {
+          tab?: VertexTabId;
+          vertexId?: string;
+        };
+        if (parsed.tab && parsed.vertexId === currentVertex.id) {
+          window.sessionStorage.removeItem("vertexOverview.openTab");
+          return resolveToAvailable(parsed.tab);
+        }
+      } catch {
+        // legacy plain string support
+        window.sessionStorage.removeItem("vertexOverview.openTab");
+        return resolveToAvailable(storedTab as VertexTabId);
+      }
     }
     const candidate = currentVertex.default_tab as VertexTabId | undefined;
     const fallback = currentVertex.is_leaf ? "properties" : "items";
-    return tabOrder.includes(candidate as VertexTab)
+    const preferred = tabOrder.includes(candidate as VertexTab)
       ? (candidate as VertexTab)
       : (fallback as VertexTab);
-  }, [tabOrder, currentVertex.default_tab, currentVertex.is_leaf, resolveToAvailable]);
+    return resolveToAvailable(preferred);
+  }, [
+    currentVertex.default_tab,
+    currentVertex.is_leaf,
+    currentVertex.id,
+    resolveToAvailable,
+    tabOrder,
+  ]);
 
-  const [tab, setTab] = React.useState<VertexTab>(() => resolveInitialTab());
+  const [tab, setTab] = React.useState<VertexTab>(() => preferredInitialTab);
 
   const safeTab = React.useMemo(
     () => resolveToAvailable(tab),
@@ -231,8 +265,8 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
   );
 
   React.useEffect(() => {
-    setTab(resolveToAvailable(resolveInitialTab()));
-  }, [currentVertex.id, resolveInitialTab, resolveToAvailable]);
+    setTab(preferredInitialTab);
+  }, [currentVertex.id, preferredInitialTab]);
 
   // Apply tab query param once (then strip it)
   React.useEffect(() => {

@@ -172,6 +172,7 @@
     "loadWorkspaces": "Неуспешно зареждане на работните пространства."
   },
   "projects": {
+    "title": "Проекти",
     "errors": {
       "selectWorkspace": "Първо изберете работно пространство.",
       "create": "Неуспешно създаване на проект."
@@ -191,6 +192,33 @@
       "load": "Неуспешно зареждане на елементите.",
       "create": "Неуспешно създаване на елемент.",
       "update": "Неуспешно преименуване на елементите."
+    }
+  },
+  "vertexOverview": {
+    "viewModes": {
+      "label": "Режим на изглед",
+      "grid": "Мрежов изглед",
+      "list": "Списъчен изглед",
+      "graph": "Графичен изглед"
+    }
+  },
+  "graphView": {
+    "loading": "Зареждане на графа…",
+    "recenter": "Центрирай графа",
+    "actions": {
+      "openVertex": "Отвори връх",
+      "relocateHere": "Премести тук",
+      "openFolder": "Отвори папка",
+      "delete": "Изтрий"
+    },
+    "dialogs": {
+      "deleteTitle": "Изтрий връх",
+      "deleteMessage": "Да се изтрие {{label}}?",
+      "relocateTitle": "Премести връх",
+      "relocateMessage": "Да се премести {{label}} тук?",
+      "relocateConfirm": "Премести",
+      "thisItem": "този елемент",
+      "currentItem": "текущ елемент"
     }
   },
   "filesTab": {
@@ -230,7 +258,6 @@
     "itemsDisplay": {
       "grid": "Мрежа",
       "list": "Списък",
-      "timeline": "Линия на времето",
       "graph": "Граф"
     },
     "errors": {
