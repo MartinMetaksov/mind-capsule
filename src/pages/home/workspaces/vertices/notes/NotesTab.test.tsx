@@ -1,5 +1,5 @@
 import * as React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { I18nextProvider } from "react-i18next";
 import i18n from "@/i18n";
 import { NotesTab } from "./NotesTab";
@@ -34,6 +34,7 @@ const vertex: Vertex = {
 describe("NotesTab", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.localStorage.clear();
     mockListNotes.mockResolvedValue([
       { name: "note-1.md", text: "First note" },
     ]);
@@ -87,5 +88,54 @@ describe("NotesTab", () => {
     const confirmButton = await screen.findByRole("button", { name: /Delete/i });
     fireEvent.click(confirmButton);
     await waitFor(() => expect(mockDeleteNote).toHaveBeenCalledWith(vertex, "note-1.md"));
+  });
+
+  it("removes a single history entry", async () => {
+    window.localStorage.setItem(
+      "notesHistory:v-1:note-1.md",
+      JSON.stringify([
+        { text: "Old note 1", at: "2024-01-01T10:00:00.000Z" },
+        { text: "Old note 2", at: "2024-01-02T10:00:00.000Z" },
+      ])
+    );
+    renderTab();
+    fireEvent.click(await screen.findByText(/First note/i));
+    fireEvent.click(await screen.findByRole("button", { name: /History/i }));
+    expect(await screen.findByText(/Old note 1/i)).toBeInTheDocument();
+    const historyRow = await screen.findByText(/Old note 1/i);
+    const historyCard = historyRow.closest("div");
+    if (!historyCard) throw new Error("History card not found");
+    const removeButton = within(historyCard).getByRole("button", {
+      name: /Remove version/i,
+    });
+    fireEvent.click(removeButton);
+    await waitFor(() => {
+      expect(screen.queryByText(/Old note 1/i)).not.toBeInTheDocument();
+    });
+    const stored = JSON.parse(
+      window.localStorage.getItem("notesHistory:v-1:note-1.md") ?? "[]"
+    ) as Array<{ text: string }>;
+    expect(stored).toHaveLength(1);
+  });
+
+  it("clears the history list", async () => {
+    window.localStorage.setItem(
+      "notesHistory:v-1:note-1.md",
+      JSON.stringify([
+        { text: "Old note 1", at: "2024-01-01T10:00:00.000Z" },
+      ])
+    );
+    renderTab();
+    fireEvent.click(await screen.findByText(/First note/i));
+    fireEvent.click(await screen.findByRole("button", { name: /History/i }));
+    expect(await screen.findByText(/Old note 1/i)).toBeInTheDocument();
+    fireEvent.click(await screen.findByRole("button", { name: /Clear history/i }));
+    await waitFor(() => {
+      expect(screen.queryByText(/Old note 1/i)).not.toBeInTheDocument();
+    });
+    const stored = JSON.parse(
+      window.localStorage.getItem("notesHistory:v-1:note-1.md") ?? "[]"
+    ) as Array<{ text: string }>;
+    expect(stored).toHaveLength(0);
   });
 });
