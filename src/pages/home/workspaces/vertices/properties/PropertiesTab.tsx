@@ -36,14 +36,12 @@ type PropertiesTabProps = {
 
 type TagsEditorProps = {
   tags: string[];
-  saving: boolean;
   onAdd: (tag: string) => Promise<void> | void;
   onRemove: (tag: string) => Promise<void> | void;
 };
 
 const TagsEditor: React.FC<TagsEditorProps> = ({
   tags,
-  saving,
   onAdd,
   onRemove,
 }) => {
@@ -96,12 +94,11 @@ const TagsEditor: React.FC<TagsEditorProps> = ({
           size="small"
           InputLabelProps={{ shrink: true }}
           placeholder={t("tagsTab.placeholder")}
-          disabled={saving}
         />
         <IconButton
           color="primary"
           onClick={handleAdd}
-          disabled={saving || !input.trim()}
+          disabled={!input.trim()}
           aria-label={t("tagsTab.add")}
           sx={{ border: 1, borderColor: "divider" }}
         >
@@ -119,7 +116,7 @@ const TagsEditor: React.FC<TagsEditorProps> = ({
               label={tag}
               size="small"
               variant="outlined"
-              onDelete={saving ? undefined : () => onRemove(tag)}
+              onDelete={() => onRemove(tag)}
               deleteIcon={
                 <ClearIcon
                   fontSize="small"
@@ -156,7 +153,6 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
   );
   const [isLeaf, setIsLeaf] = React.useState<boolean>(Boolean(vertex.is_leaf));
   const [tags, setTags] = React.useState<string[]>(vertex.tags ?? []);
-  const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const assetDirectory = vertex.asset_directory;
 
@@ -218,8 +214,6 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
 
   const persistVertex = React.useCallback(
     async (updated: Vertex, syncTab?: boolean) => {
-      setSaving(true);
-      setError(null);
       try {
         const fs = await getFileSystem();
         await fs.updateVertex(updated);
@@ -235,8 +229,6 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
         setError(
           err instanceof Error ? err.message : t("propertiesTab.errors.save")
         );
-      } finally {
-        setSaving(false);
       }
     },
     [onSelectTab, onVertexUpdated, t]
@@ -358,7 +350,6 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
           onChange={(e) => setTitle(e.target.value)}
           onBlur={handleTitleBlur}
           fullWidth
-          disabled={saving}
           slotProps={{ inputLabel: { shrink: true } }}
         />
       </Box>
@@ -375,7 +366,6 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
           value={defaultTab}
           onChange={(e) => handleDefaultTabChange(e.target.value as VertexTabId)}
           fullWidth
-          disabled={saving}
           slotProps={{ inputLabel: { shrink: true } }}
         >
           {tabOptions.map((opt) => (
@@ -394,7 +384,6 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
               handleItemsDisplayChange(e.target.value as ItemsDisplayHint)
             }
             fullWidth
-            disabled={saving}
             slotProps={{ inputLabel: { shrink: true } }}
           >
             {itemsDisplayOptions.map((opt) => (
@@ -419,7 +408,6 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
             value={isLeaf ? "yes" : "no"}
             onChange={(e) => handleLeafChange(e.target.value === "yes")}
             fullWidth
-            disabled={saving}
             slotProps={{ inputLabel: { shrink: true } }}
           >
             <MenuItem value="no">{t("propertiesTab.leaf.no")}</MenuItem>
@@ -436,7 +424,6 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
         </Typography>
         <TagsEditor
           tags={tags}
-          saving={saving}
           onAdd={handleAddTag}
           onRemove={handleRemoveTag}
         />
