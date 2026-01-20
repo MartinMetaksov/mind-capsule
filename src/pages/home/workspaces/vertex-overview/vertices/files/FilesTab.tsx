@@ -20,6 +20,9 @@ import { useTranslation } from "react-i18next";
 import type { Vertex } from "@/core/vertex";
 import { DeleteConfirmDialog } from "../../../components/delete-confirm-dialog/DeleteConfirmDialog";
 import { CreateFab } from "../../../components/create-fab/CreateFab";
+import { ReorderableGrid } from "../../common/ReorderableGrid";
+import DragIndicatorRoundedIcon from "@mui/icons-material/DragIndicatorRounded";
+import { getFileSystem } from "@/integrations/fileSystem/integration";
 
 type FilesTabProps = {
   vertex: Vertex;
@@ -102,6 +105,7 @@ const resolveIcon = (ext: string) => {
 export const FilesTab: React.FC<FilesTabProps> = ({
   vertex,
   refreshToken,
+  onVertexUpdated,
 }) => {
   const { t } = useTranslation("common");
   const [files, setFiles] = React.useState<FileEntry[]>([]);
@@ -112,6 +116,50 @@ export const FilesTab: React.FC<FilesTabProps> = ({
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const hasLoadedRef = React.useRef(false);
+
+  const orderMap = React.useMemo(() => {
+    if (vertex.files_layout?.mode !== "linear") return null;
+    return vertex.files_layout.order;
+  }, [vertex.files_layout]);
+
+  const sortFiles = React.useCallback(
+    (list: FileEntry[]) => {
+      if (!orderMap) {
+        return [...list].sort((a, b) => a.name.localeCompare(b.name));
+      }
+      return [...list].sort((a, b) => {
+        const aOrder = orderMap[a.name];
+        const bOrder = orderMap[b.name];
+        if (aOrder != null && bOrder != null) return aOrder - bOrder;
+        if (aOrder != null) return -1;
+        if (bOrder != null) return 1;
+        return a.name.localeCompare(b.name);
+      });
+    },
+    [orderMap]
+  );
+
+  const buildOrderMap = React.useCallback(
+    (list: FileEntry[]) =>
+      list.reduce<Record<string, number>>((acc, file, idx) => {
+        acc[file.name] = idx;
+        return acc;
+      }, {}),
+    []
+  );
+
+  const moveItem = React.useCallback(
+    (list: FileEntry[], sourceId: string, targetId: string) => {
+      const fromIndex = list.findIndex((item) => item.name === sourceId);
+      const toIndex = list.findIndex((item) => item.name === targetId);
+      if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) return list;
+      const next = [...list];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return next;
+    },
+    []
+  );
 
   const loadFiles = React.useCallback(async () => {
     if (!vertex.asset_directory) {
@@ -139,8 +187,7 @@ export const FilesTab: React.FC<FilesTabProps> = ({
         const path = await join(vertex.asset_directory, name);
         next.push({ name, path, ext: getExtension(name) });
       }
-      next.sort((a, b) => a.name.localeCompare(b.name));
-      setFiles(next);
+      setFiles(sortFiles(next));
     } catch (err) {
       setError(
         err instanceof Error ? err.message : t("filesTab.errors.load")
@@ -150,7 +197,7 @@ export const FilesTab: React.FC<FilesTabProps> = ({
       if (!isRefresh) setLoading(false);
       hasLoadedRef.current = true;
     }
-  }, [t, vertex.asset_directory]);
+  }, [sortFiles, t, vertex.asset_directory]);
 
   React.useEffect(() => {
     void loadFiles();
@@ -290,6 +337,29 @@ export const FilesTab: React.FC<FilesTabProps> = ({
     [loadFiles, t]
   );
 
+  const handleReorder = React.useCallback(
+    async (sourceId: string, targetId: string) => {
+      const next = moveItem(files, sourceId, targetId);
+      setFiles(next);
+      const nextOrder = buildOrderMap(next);
+      try {
+        const fs = await getFileSystem();
+        const updated: Vertex = {
+          ...vertex,
+          files_layout: { mode: "linear", order: nextOrder },
+          updated_at: new Date().toISOString(),
+        };
+        await fs.updateVertex(updated);
+        await onVertexUpdated?.(updated);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : t("filesTab.errors.add")
+        );
+      }
+    },
+    [buildOrderMap, files, moveItem, onVertexUpdated, t, vertex]
+  );
+
   return (
     <Box
       ref={containerRef}
@@ -375,23 +445,19 @@ export const FilesTab: React.FC<FilesTabProps> = ({
             {t("filesTab.empty")}
           </Typography>
         ) : (
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "repeat(2, minmax(0, 1fr))",
-                sm: "repeat(3, minmax(0, 1fr))",
-                md: "repeat(4, minmax(0, 1fr))",
-                lg: "repeat(5, minmax(0, 1fr))",
-              },
-              gap: 2,
-              width: "100%",
-            }}
-          >
-            {files.map((file) => {
+          <ReorderableGrid
+            items={files}
+            getId={(item) => item.name}
+            itemWidth={200}
+            itemHeight={160}
+            gap={24}
+            scrollY={false}
+            onReorder={handleReorder}
+            dragLabel={t("commonActions.reorder")}
+            renderItem={(file, state) => {
               const Icon = resolveIcon(file.ext);
               return (
-                <Box key={file.path} sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1, height: "100%" }}>
                   <Box
                     sx={{
                       position: "relative",
@@ -446,6 +512,25 @@ export const FilesTab: React.FC<FilesTabProps> = ({
                         <DeleteOutlineIcon fontSize="small" />
                       </IconButton>
                     </Box>
+                    <Box sx={{ position: "absolute", top: 8, left: 8 }}>
+                      <IconButton
+                        size="small"
+                        draggable={false}
+                        aria-label={t("commonActions.reorder")}
+                        onPointerDown={state.dragHandleProps?.onPointerDown}
+                        sx={{
+                          cursor: "grab",
+                          bgcolor: "rgba(0,0,0,0.45)",
+                          color: "common.white",
+                          boxShadow: 2,
+                          "&:hover": {
+                            bgcolor: "rgba(0,0,0,0.6)",
+                          },
+                        }}
+                      >
+                        <DragIndicatorRoundedIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
                   </Box>
                   <Typography
                     variant="caption"
@@ -458,8 +543,8 @@ export const FilesTab: React.FC<FilesTabProps> = ({
                   </Typography>
                 </Box>
               );
-            })}
-          </Box>
+            }}
+          />
         )}
       </Box>
 

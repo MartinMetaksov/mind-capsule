@@ -5,6 +5,17 @@ import i18n from "@/i18n";
 import { ImagesTab } from "./ImagesTab";
 import type { Vertex } from "@/core/vertex";
 
+// Mock ResizeObserver for layout calculations
+beforeAll(() => {
+  class MockResizeObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+  (globalThis as unknown as { ResizeObserver: typeof MockResizeObserver }).ResizeObserver =
+    MockResizeObserver;
+});
+
 const mockListImages = vi.fn();
 const mockDeleteImage = vi.fn();
 const mockUpdateImageMetadata = vi.fn();

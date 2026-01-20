@@ -451,6 +451,10 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
                 <ImagesTab
                   vertex={currentVertex}
                   refreshToken={fsRefreshToken}
+                  onVertexUpdated={(v: Vertex) => {
+                    setCurrentVertex(v);
+                    return onVertexUpdated?.(v);
+                  }}
                 />
               )}
 

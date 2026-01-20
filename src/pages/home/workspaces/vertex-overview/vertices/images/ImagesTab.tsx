@@ -24,15 +24,19 @@ import { detectOperatingSystem } from "@/utils/os";
 import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
 import { CreateFab } from "../../../components/create-fab/CreateFab";
 import { useTauriImageDrop } from "@/utils/useTauriImageDrop";
+import { ReorderableGrid } from "../../common/ReorderableGrid";
+import DragIndicatorRoundedIcon from "@mui/icons-material/DragIndicatorRounded";
 
 type ImagesTabProps = {
   vertex: Vertex;
   refreshToken?: number;
+  onVertexUpdated?: (vertex: Vertex) => Promise<void> | void;
 };
 
 export const ImagesTab: React.FC<ImagesTabProps> = ({
   vertex,
   refreshToken,
+  onVertexUpdated,
 }) => {
   const { t } = useTranslation("common");
   const [images, setImages] = React.useState<ImageEntry[]>([]);
@@ -52,6 +56,50 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
   const hasLoadedRef = React.useRef(false);
   const containerRef = React.useRef<HTMLDivElement | null>(null);
 
+  const orderMap = React.useMemo(() => {
+    if (vertex.images_layout?.mode !== "linear") return null;
+    return vertex.images_layout.order;
+  }, [vertex.images_layout]);
+
+  const sortImages = React.useCallback(
+    (list: ImageEntry[]) => {
+      if (!orderMap) {
+        return [...list].sort((a, b) => a.name.localeCompare(b.name));
+      }
+      return [...list].sort((a, b) => {
+        const aOrder = orderMap[a.name];
+        const bOrder = orderMap[b.name];
+        if (aOrder != null && bOrder != null) return aOrder - bOrder;
+        if (aOrder != null) return -1;
+        if (bOrder != null) return 1;
+        return a.name.localeCompare(b.name);
+      });
+    },
+    [orderMap]
+  );
+
+  const buildOrderMap = React.useCallback(
+    (list: ImageEntry[]) =>
+      list.reduce<Record<string, number>>((acc, img, idx) => {
+        acc[img.name] = idx;
+        return acc;
+      }, {}),
+    []
+  );
+
+  const moveItem = React.useCallback(
+    (list: ImageEntry[], sourceId: string, targetId: string) => {
+      const fromIndex = list.findIndex((item) => item.name === sourceId);
+      const toIndex = list.findIndex((item) => item.name === targetId);
+      if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) return list;
+      const next = [...list];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return next;
+    },
+    []
+  );
+
   React.useEffect(() => {
     if (dialogOpen) return;
     const loadImages = async () => {
@@ -61,7 +109,7 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
       try {
         const fs = await getFileSystem();
         const list = await fs.listImages(vertex);
-        setImages(list);
+        setImages(sortImages(list));
         setSelectedIdx(null);
         setDialogOpen(false);
       } catch (err) {
@@ -73,7 +121,7 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
       }
     };
     loadImages();
-  }, [dialogOpen, refreshToken, t, vertex]);
+  }, [dialogOpen, refreshToken, sortImages, t, vertex]);
 
   const handleFiles = React.useCallback(async (files: File[]) => {
     if (!files.length) return;
@@ -207,6 +255,27 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
     }
   };
 
+  const handleReorder = React.useCallback(
+    async (sourceId: string, targetId: string) => {
+      const next = moveItem(images, sourceId, targetId);
+      setImages(next);
+      const nextOrder = buildOrderMap(next);
+      try {
+        const fs = await getFileSystem();
+        const updated: Vertex = {
+          ...vertex,
+          images_layout: { mode: "linear", order: nextOrder },
+          updated_at: new Date().toISOString(),
+        };
+        await fs.updateVertex(updated);
+        await onVertexUpdated?.(updated);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : t("imagesTab.errors.add"));
+      }
+    },
+    [buildOrderMap, images, moveItem, onVertexUpdated, t, vertex]
+  );
+
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
     const deletingName = deleteTarget.name;
@@ -305,28 +374,24 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
             {t("imagesTab.empty")}
           </Typography>
         ) : (
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "1fr",
-                sm: "repeat(2, minmax(0, 1fr))",
-                md: "repeat(3, minmax(0, 1fr))",
-              },
-              gap: 2,
-              width: "100%",
-            }}
-          >
-            {images.map((img, idx) => (
+          <ReorderableGrid
+            items={images}
+            getId={(item) => item.name}
+            itemWidth={260}
+            itemHeight={195}
+            gap={24}
+            scrollY={false}
+            onReorder={handleReorder}
+            dragLabel={t("commonActions.reorder")}
+            renderItem={(img, state) => (
               <Box
-                key={img.name}
                 sx={{
                   position: "relative",
                   borderRadius: 0,
                   overflow: "hidden",
                   boxShadow: 2,
                   cursor: "pointer",
-                  aspectRatio: "4 / 3",
+                  height: "100%",
                   backgroundColor: "background.paper",
                   transition: "transform 150ms ease, box-shadow 150ms ease",
                   "&:hover": {
@@ -340,12 +405,12 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
                     opacity: 1,
                   },
                 }}
-                onClick={() => openDialog(idx)}
+                onClick={() => openDialog(images.findIndex((entry) => entry.name === img.name))}
               >
                 <Box
                   component="img"
                   src={img.path}
-                  alt={img.alt ?? `Image ${idx + 1}`}
+                  alt={img.alt ?? img.name}
                   sx={{
                     width: "100%",
                     height: "100%",
@@ -406,7 +471,7 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
                     sx={{ color: "common.white" }}
                     onClick={(e) => {
                       e.stopPropagation();
-                      openDialog(idx);
+                      openDialog(images.findIndex((entry) => entry.name === img.name));
                     }}
                   >
                     <ZoomInIcon fontSize="small" />
@@ -427,9 +492,28 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
                     <DeleteOutlineIcon fontSize="small" />
                   </IconButton>
                 </Box>
+                <Box sx={{ position: "absolute", top: 8, left: 8 }}>
+                  <IconButton
+                    size="small"
+                    draggable={false}
+                    aria-label={t("commonActions.reorder")}
+                    onPointerDown={state.dragHandleProps?.onPointerDown}
+                    sx={{
+                      cursor: "grab",
+                      bgcolor: "rgba(0,0,0,0.45)",
+                      color: "common.white",
+                      boxShadow: 2,
+                      "&:hover": {
+                        bgcolor: "rgba(0,0,0,0.6)",
+                      },
+                    }}
+                  >
+                    <DragIndicatorRoundedIcon fontSize="small" />
+                  </IconButton>
+                </Box>
               </Box>
-            ))}
-          </Box>
+            )}
+          />
         )}
       </Box>
 

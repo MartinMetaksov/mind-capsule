@@ -5,6 +5,17 @@ import i18n from "@/i18n";
 import type { Vertex } from "@/core/vertex";
 import { FilesTab } from "./FilesTab";
 
+// Mock ResizeObserver for layout calculations
+beforeAll(() => {
+  class MockResizeObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+  (globalThis as unknown as { ResizeObserver: typeof MockResizeObserver }).ResizeObserver =
+    MockResizeObserver;
+});
+
 const mockIsTauri = vi.fn();
 const mockInvoke = vi.fn();
 const mockReadDir = vi.fn();
