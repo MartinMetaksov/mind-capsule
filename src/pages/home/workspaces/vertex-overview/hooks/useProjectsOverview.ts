@@ -5,7 +5,7 @@ import type { Vertex } from "@/core/vertex";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
 import { matchesShortcut, type ShortcutDefinition } from "@/utils/shortcuts";
 import type { CreateFabHandle } from "../../components/create-fab/CreateFab";
-import type { VertexItem } from "../../vertices/vertex-grid/VertexGrid";
+import type { VertexItem } from "../views/grid/VertexGrid";
 import type { ProjectsOverviewProps } from "../types";
 
 export type ProjectsOverviewState = {

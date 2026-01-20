@@ -4,7 +4,7 @@ import type { TFunction } from "i18next";
 import type { Vertex } from "@/core/vertex";
 import type { Workspace } from "@/core/workspace";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
-import type { VertexItem } from "../../vertices/vertex-grid/VertexGrid";
+import type { VertexItem } from "../views/grid/VertexGrid";
 import type { DetachedOverviewProps } from "../types";
 
 export type DetachedProject = {

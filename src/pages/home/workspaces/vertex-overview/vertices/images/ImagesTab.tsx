@@ -19,10 +19,10 @@ import type { Vertex } from "@/core/vertex";
 import type { ImageEntry } from "@/integrations/fileSystem/fileSystem";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
 import { useTranslation } from "react-i18next";
-import { DeleteConfirmDialog } from "../../components/delete-confirm-dialog/DeleteConfirmDialog";
+import { DeleteConfirmDialog } from "../../../components/delete-confirm-dialog/DeleteConfirmDialog";
 import { detectOperatingSystem } from "@/utils/os";
 import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
-import { CreateFab } from "../../components/create-fab/CreateFab";
+import { CreateFab } from "../../../components/create-fab/CreateFab";
 import { useTauriImageDrop } from "@/utils/useTauriImageDrop";
 
 type ImagesTabProps = {

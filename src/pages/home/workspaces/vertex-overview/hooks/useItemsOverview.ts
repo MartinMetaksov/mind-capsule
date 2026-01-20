@@ -5,7 +5,7 @@ import type { Vertex } from "@/core/vertex";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
 import { matchesShortcut, type ShortcutDefinition } from "@/utils/shortcuts";
 import type { CreateFabHandle } from "../../components/create-fab/CreateFab";
-import type { VertexItem } from "../../vertices/vertex-grid/VertexGrid";
+import type { VertexItem } from "../views/grid/VertexGrid";
 import type { ItemsOverviewProps } from "../types";
 
 export type ItemsOverviewState = {
@@ -32,7 +32,7 @@ export type ItemsOverviewActions = {
   commitLabel: (nextValue?: string) => Promise<void>;
   createItem: (data: { title: string; thumbnail?: string }) => Promise<void>;
   deleteItem: (item: VertexItem) => Promise<void>;
-  refreshItems: () => Promise<void>;
+  refreshItems: (options?: { silent?: boolean }) => Promise<void>;
 };
 
 type UseItemsOverviewParams = {
@@ -60,6 +60,11 @@ export const useItemsOverview = ({
   const [labelDraft, setLabelDraft] = React.useState(props?.label ?? "");
   const [labelSaving, setLabelSaving] = React.useState(false);
   const labelInputRef = React.useRef<HTMLInputElement | null>(null);
+  const propsRef = React.useRef(props);
+
+  React.useEffect(() => {
+    propsRef.current = props;
+  }, [props]);
 
   const emptyLabel = React.useMemo(() => {
     if (!props) return "items";
@@ -114,27 +119,49 @@ export const useItemsOverview = ({
     [labelDraft, props, t]
   );
 
-  const refreshItems = React.useCallback(async () => {
-    if (!props) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const fs = await getFileSystem();
-      const vertices = await fs.getVertices(props.vertex.id);
-      setItems(vertices.map((v) => ({ vertex: v, workspace: props.workspace })));
-    } catch (err) {
-      console.error("Failed to load item vertices:", err);
-      setError(err instanceof Error ? err.message : t("itemsTab.errors.load"));
-      setItems([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [props, t]);
+  const refreshItems = React.useCallback(
+    async (options?: { silent?: boolean }) => {
+      const currentProps = propsRef.current;
+      if (!currentProps) return;
+      if (!options?.silent) {
+        setLoading(true);
+      }
+      setError(null);
+      try {
+        const fs = await getFileSystem();
+        const vertices = await fs.getVertices(currentProps.vertex.id);
+        setItems(
+          vertices.map((v) => ({ vertex: v, workspace: currentProps.workspace }))
+        );
+      } catch (err) {
+        console.error("Failed to load item vertices:", err);
+        setError(err instanceof Error ? err.message : t("itemsTab.errors.load"));
+        setItems([]);
+      } finally {
+        if (!options?.silent) {
+          setLoading(false);
+        }
+      }
+    },
+    [t]
+  );
 
   React.useEffect(() => {
-    if (!props) return;
+    if (!props?.vertex.id) return;
     refreshItems();
-  }, [props?.vertex.id, refreshItems, props]);
+  }, [props?.vertex.id, refreshItems]);
+
+  const prevLayoutRef = React.useRef(props?.vertex.items_layout);
+  const itemsLayout = props?.vertex.items_layout;
+  React.useEffect(() => {
+    if (!propsRef.current) return;
+    const prev = prevLayoutRef.current;
+    const next = itemsLayout;
+    prevLayoutRef.current = next;
+    if (prev !== next) {
+      refreshItems({ silent: true });
+    }
+  }, [itemsLayout, refreshItems]);
 
   React.useEffect(() => {
     if (!props) return;

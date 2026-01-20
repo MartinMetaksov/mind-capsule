@@ -8,9 +8,9 @@ import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutl
 import { TuneOutlined } from "@mui/icons-material";
 import type { Vertex, VertexTabId } from "@/core/vertex";
 import type { Workspace } from "@/core/workspace";
-import { BreadcrumbsTrail } from "../components/breadcrumbs-trail/BreadcrumbsTrail";
-import { VerticalTabs } from "../components/vertical-tabs/VerticalTabs";
-import { VertexOverviewTab } from "../vertex-overview/VertexOverviewTab";
+import { BreadcrumbsTrail } from "../../components/breadcrumbs-trail/BreadcrumbsTrail";
+import { VerticalTabs } from "../../components/vertical-tabs/VerticalTabs";
+import { VertexOverviewTab } from "../VertexOverviewTab";
 import { PropertiesTab } from "./properties/PropertiesTab";
 import { FilesTab } from "./files/FilesTab";
 import { LinksTab } from "./links/LinksTab";
@@ -408,7 +408,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
                   vertex={currentVertex}
                   workspace={workspace}
                   onOpenVertex={handleOpenVertex}
-                  onVertexUpdated={(v) => {
+                  onVertexUpdated={(v: Vertex) => {
                     setCurrentVertex(v);
                     return onVertexUpdated?.(v);
                   }}
@@ -420,7 +420,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
                   vertex={currentVertex}
                   workspace={workspace}
                   hasItems={hasItems}
-                  onVertexUpdated={(v) => {
+                  onVertexUpdated={(v: Vertex) => {
                     setCurrentVertex(v);
                     return onVertexUpdated?.(v);
                   }}
@@ -433,7 +433,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
               {safeTab === "tags" && (
                 <FilesTab
                   vertex={currentVertex}
-                  onVertexUpdated={(v) => {
+                  onVertexUpdated={(v: Vertex) => {
                     setCurrentVertex(v);
                     return onVertexUpdated?.(v);
                   }}

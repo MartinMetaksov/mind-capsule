@@ -4,13 +4,19 @@ import { I18nextProvider } from "react-i18next";
 import i18n from "@/i18n";
 import type { Workspace } from "@/core/workspace";
 import type { Vertex } from "@/core/vertex";
-import type { VertexItem } from "../../../vertices/vertex-grid/VertexGrid";
+import type { VertexItem } from "../grid/VertexGrid";
 import { GraphView } from "./GraphView";
 
 const mockGetWorkspaces = vi.fn();
 const mockGetAllVertices = vi.fn();
 const mockRemoveVertex = vi.fn();
 const mockUpdateVertex = vi.fn();
+const mockReadDir = vi.fn();
+const mockReadFile = vi.fn();
+const mockWriteFile = vi.fn();
+const mockRemove = vi.fn();
+const mockMkdir = vi.fn();
+const mockIsTauri = vi.fn();
 
 vi.mock("@/integrations/fileSystem/integration", () => ({
   getFileSystem: async () => ({
@@ -19,6 +25,23 @@ vi.mock("@/integrations/fileSystem/integration", () => ({
     removeVertex: mockRemoveVertex,
     updateVertex: mockUpdateVertex,
   }),
+}));
+
+vi.mock("@tauri-apps/api/core", () => ({
+  isTauri: () => mockIsTauri(),
+  invoke: vi.fn(),
+}));
+
+vi.mock("@tauri-apps/api/path", () => ({
+  join: async (...parts: string[]) => parts.join("/"),
+}));
+
+vi.mock("@tauri-apps/plugin-fs", () => ({
+  readDir: (...args: unknown[]) => mockReadDir(...args),
+  readFile: (...args: unknown[]) => mockReadFile(...args),
+  writeFile: (...args: unknown[]) => mockWriteFile(...args),
+  remove: (...args: unknown[]) => mockRemove(...args),
+  mkdir: (...args: unknown[]) => mockMkdir(...args),
 }));
 
 const workspace: Workspace = {
@@ -57,13 +80,29 @@ const items: VertexItem[] = [
   { vertex: vertexTwo, workspace },
 ];
 
+const workspaceTwo: Workspace = {
+  id: "ws-2",
+  name: "Workspace Two",
+  path: "/tmp/ws-two",
+  created_at: "2024-01-01T00:00:00.000Z",
+  updated_at: "2024-01-02T00:00:00.000Z",
+  tags: [],
+};
+
 describe("GraphView", () => {
   const renderWithI18n = (ui: React.ReactElement) =>
     render(<I18nextProvider i18n={i18n}>{ui}</I18nextProvider>);
 
   beforeEach(() => {
-    mockGetWorkspaces.mockResolvedValue([workspace]);
+    mockGetWorkspaces.mockResolvedValue([workspace, workspaceTwo]);
     mockGetAllVertices.mockResolvedValue([vertexOne, vertexTwo]);
+    mockReadDir.mockResolvedValue([]);
+    mockReadFile.mockResolvedValue(new Uint8Array());
+    mockWriteFile.mockResolvedValue(undefined);
+    mockRemove.mockResolvedValue(undefined);
+    mockMkdir.mockResolvedValue(undefined);
+    mockIsTauri.mockReturnValue(false);
+    mockUpdateVertex.mockResolvedValue(undefined);
   });
 
   it("renders workspace and vertex labels", async () => {
@@ -133,5 +172,61 @@ describe("GraphView", () => {
     await waitFor(() =>
       expect(onOpenVertex).toHaveBeenCalledWith(vertexTwo.id)
     );
+  });
+
+  it("moves the asset directory when relocating to another workspace", async () => {
+    mockIsTauri.mockReturnValue(true);
+    const currentVertex = { ...vertexOne, asset_directory: "" };
+    const { container } = renderWithI18n(
+      <GraphView
+        items={items}
+        currentVertex={currentVertex}
+        currentWorkspace={workspace}
+      />
+    );
+
+    await screen.findByText("Workspace Two");
+    const workspaceCircle = await waitFor(() => {
+      const match = container.querySelector(
+        'circle.graph-node[data-node-id="ws:ws-2"]'
+      );
+      if (!match) {
+        throw new Error("Workspace Two circle not found yet.");
+      }
+      return match as SVGCircleElement;
+    });
+    fireEvent.click(workspaceCircle);
+
+    const relocateButton = await waitFor(() => {
+      const buttons = screen.getAllByRole("button", { name: /Relocate here/i });
+      const enabled = buttons.find(
+        (button) => !(button as HTMLButtonElement).disabled
+      );
+      if (!enabled) {
+        throw new Error("Relocate button not enabled yet.");
+      }
+      return enabled as HTMLButtonElement;
+    });
+    fireEvent.click(relocateButton);
+
+    const confirm = await screen.findByRole("button", { name: /Relocate/i });
+    fireEvent.click(confirm);
+
+    await waitFor(() => {
+      expect(mockMkdir).toHaveBeenCalledWith("/tmp/ws-two/v-1", {
+        recursive: true,
+      });
+      expect(mockRemove).toHaveBeenCalledWith("/tmp/ws/v-1", {
+        recursive: true,
+      });
+      expect(mockUpdateVertex).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: "v-1",
+          workspace_id: "ws-2",
+          parent_id: null,
+          asset_directory: "/tmp/ws-two/v-1",
+        })
+      );
+    });
   });
 });

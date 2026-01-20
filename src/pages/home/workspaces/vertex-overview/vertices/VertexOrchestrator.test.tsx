@@ -19,15 +19,15 @@ beforeAll(() => {
 });
 
 // Simplify heavy child components
-vi.mock("../components/BreadcrumbsTrail", () => ({
+vi.mock("../../components/BreadcrumbsTrail", () => ({
   BreadcrumbsTrail: () => <div>Breadcrumbs</div>,
 }));
-vi.mock("../components/VerticalTabs", () => ({
+vi.mock("../../components/VerticalTabs", () => ({
   VerticalTabs: ({ items }: { items: { label: string }[] }) => (
     <div>{items.map((i) => i.label).join("|")}</div>
   ),
 }));
-vi.mock("../vertex-overview/VertexOverviewTab", () => ({
+vi.mock("../VertexOverviewTab", () => ({
   VertexOverviewTab: () => <div>VertexOverviewTab</div>,
 }));
 vi.mock("./properties/PropertiesTab", () => ({ PropertiesTab: () => <div>PropertiesTab</div> }));

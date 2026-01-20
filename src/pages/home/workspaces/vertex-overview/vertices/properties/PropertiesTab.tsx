@@ -22,7 +22,7 @@ import type {
   ItemsDisplayHint,
   VertexTabId,
 } from "@/core/vertex";
-import { ThumbnailPicker } from "../../components/vertex-dialogs/VertexDialogs";
+import { ThumbnailPicker } from "../../../components/vertex-dialogs/VertexDialogs";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
 import { useTranslation } from "react-i18next";
 
@@ -38,12 +38,14 @@ type TagsEditorProps = {
   tags: string[];
   onAdd: (tag: string) => Promise<void> | void;
   onRemove: (tag: string) => Promise<void> | void;
+  autoFocus?: boolean;
 };
 
 const TagsEditor: React.FC<TagsEditorProps> = ({
   tags,
   onAdd,
   onRemove,
+  autoFocus = false,
 }) => {
   const { t } = useTranslation("common");
   const [input, setInput] = React.useState("");
@@ -56,8 +58,10 @@ const TagsEditor: React.FC<TagsEditorProps> = ({
   }, []);
 
   React.useEffect(() => {
-    focusInput();
-  }, [focusInput]);
+    if (autoFocus) {
+      focusInput();
+    }
+  }, [autoFocus, focusInput]);
 
   const handleAdd = async () => {
     const trimmed = input.trim();
@@ -141,6 +145,7 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
 }) => {
   const { t } = useTranslation("common");
   const [title, setTitle] = React.useState(vertex.title);
+  const titleInputRef = React.useRef<HTMLInputElement | null>(null);
   const [defaultTab, setDefaultTab] = React.useState<VertexTabId>(
     vertex.default_tab ?? "items"
   );
@@ -167,6 +172,13 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
     setIsLeaf(Boolean(vertex.is_leaf));
     setTags(vertex.tags ?? []);
     setError(null);
+    requestAnimationFrame(() => {
+      const input = titleInputRef.current;
+      if (!input) return;
+      input.focus({ preventScroll: true });
+      const length = input.value.length;
+      input.setSelectionRange(length, length);
+    });
   }, [vertex]);
 
   const handleOpenAssetDirectory = React.useCallback(async () => {
@@ -350,6 +362,7 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
           onChange={(e) => setTitle(e.target.value)}
           onBlur={handleTitleBlur}
           fullWidth
+          inputRef={titleInputRef}
           slotProps={{ inputLabel: { shrink: true } }}
         />
       </Box>
@@ -426,6 +439,7 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
           tags={tags}
           onAdd={handleAddTag}
           onRemove={handleRemoveTag}
+          autoFocus={false}
         />
       </Box>
     </Box>

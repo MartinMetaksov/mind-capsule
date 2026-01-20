@@ -1,6 +1,15 @@
 import * as React from "react";
 import * as d3 from "d3";
-import { Box, Typography, useTheme } from "@mui/material";
+import {
+  Box,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  LinearProgress,
+  Stack,
+  Typography,
+  useTheme,
+} from "@mui/material";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import FolderOpenOutlinedIcon from "@mui/icons-material/FolderOpenOutlined";
 import DriveFileMoveOutlinedIcon from "@mui/icons-material/DriveFileMoveOutlined";
@@ -8,9 +17,10 @@ import OpenInNewOutlinedIcon from "@mui/icons-material/OpenInNewOutlined";
 import { useTranslation } from "react-i18next";
 
 import type { Vertex } from "@/core/vertex";
+import type { Workspace } from "@/core/workspace";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
 import { DeleteConfirmDialog } from "../../../components/delete-confirm-dialog/DeleteConfirmDialog";
-import type { VertexItem } from "../../../vertices/vertex-grid/VertexGrid";
+import type { VertexItem } from "../grid/VertexGrid";
 import { ACTION_RADIUS } from "./constants";
 import type { GraphNode } from "./types";
 import { GraphActionRing } from "./components/GraphActionRing";
@@ -21,6 +31,7 @@ import { useGraphData } from "./hooks/useGraphData";
 export type GraphViewProps = {
   items: VertexItem[];
   currentVertex?: Vertex | null;
+  currentWorkspace?: Workspace | null;
   onOpenVertex?: (vertexId: string) => void;
   onVertexUpdated?: (vertex: Vertex) => Promise<void> | void;
 };
@@ -28,6 +39,7 @@ export type GraphViewProps = {
 export const GraphView: React.FC<GraphViewProps> = ({
   items: _items,
   currentVertex,
+  currentWorkspace,
   onOpenVertex,
   onVertexUpdated,
 }) => {
@@ -47,6 +59,13 @@ export const GraphView: React.FC<GraphViewProps> = ({
   const [confirmDeleteOpen, setConfirmDeleteOpen] = React.useState(false);
   const [confirmRelocateOpen, setConfirmRelocateOpen] = React.useState(false);
   const [isPanned, setIsPanned] = React.useState(false);
+  const [moveState, setMoveState] = React.useState<{
+    stage: "scan" | "move";
+    moved: number;
+    total: number;
+    current?: string;
+    workspaceName?: string;
+  } | null>(null);
 
   const currentVertexId = currentVertex?.id ?? null;
   const persistViewKey = "vertexOverview.viewMode";
@@ -125,6 +144,79 @@ export const GraphView: React.FC<GraphViewProps> = ({
     }
   }, [currentVertexId, loadGraph, onOpenVertex, selectedNode, setError]);
 
+  const buildAssetDirectory = React.useCallback(
+    (workspacePath: string, vertexId: string) => {
+      const trimmed = workspacePath.replace(/[\\/]+$/, "");
+      return `${trimmed}/${vertexId}`;
+    },
+    []
+  );
+
+  const moveDirectoryWithProgress = React.useCallback(
+    async (
+      sourceDir: string,
+      targetDir: string,
+      onProgress: (progress: {
+        stage: "scan" | "move";
+        moved: number;
+        total: number;
+        current?: string;
+      }) => void
+    ) => {
+      const { readDir, readFile, writeFile, remove, mkdir } = await import(
+        "@tauri-apps/plugin-fs"
+      );
+      const { join } = await import("@tauri-apps/api/path");
+
+      const walk = async (
+        dir: string
+      ): Promise<{ files: string[]; dirs: string[] }> => {
+        const entries = await readDir(dir);
+        const files: string[] = [];
+        const dirs: string[] = [];
+        for (const entry of entries) {
+          const entryPath = entry.name ? await join(dir, entry.name) : null;
+          if (!entryPath) continue;
+          if (entry.isDirectory) {
+            dirs.push(entryPath);
+            const nested = await walk(entryPath);
+            files.push(...nested.files);
+            dirs.push(...nested.dirs);
+          } else {
+            files.push(entryPath);
+          }
+        }
+        return { files, dirs };
+      };
+
+      const { files, dirs } = await walk(sourceDir);
+      onProgress({ stage: "scan", moved: 0, total: files.length });
+
+      await mkdir(targetDir, { recursive: true });
+      const sortedDirs = dirs.sort((a, b) => a.length - b.length);
+      for (const dir of sortedDirs) {
+        const rel = dir.slice(sourceDir.length + 1);
+        if (!rel) continue;
+        const dest = await join(targetDir, rel);
+        await mkdir(dest, { recursive: true });
+      }
+
+      let moved = 0;
+      for (const file of files) {
+        const rel = file.slice(sourceDir.length + 1);
+        const dest = await join(targetDir, rel);
+        const data = await readFile(file);
+        await writeFile(dest, data);
+        await remove(file);
+        moved += 1;
+        onProgress({ stage: "move", moved, total: files.length, current: rel });
+      }
+
+      await remove(sourceDir, { recursive: true });
+    },
+    []
+  );
+
   const handleRelocate = React.useCallback(async () => {
     if (!selectedNode || !currentVertex) return;
     if (selectedNode.id === currentVertex.id) return;
@@ -132,10 +224,40 @@ export const GraphView: React.FC<GraphViewProps> = ({
       const fs = await getFileSystem();
       let updated: Vertex;
       if (selectedNode.kind === "workspace" && selectedNode.workspace) {
+        let nextAssetDirectory = currentVertex.asset_directory;
+        const { isTauri } = await import("@tauri-apps/api/core");
+        if (isTauri() && selectedNode.workspace.path) {
+          const targetDir = buildAssetDirectory(
+            selectedNode.workspace.path,
+            currentVertex.id
+          );
+          const sourceDir =
+            currentVertex.asset_directory ||
+            (currentWorkspace?.path
+              ? buildAssetDirectory(currentWorkspace.path, currentVertex.id)
+              : "");
+          const shouldMove = Boolean(sourceDir) && targetDir !== sourceDir;
+          if (shouldMove) {
+            setMoveState({
+              stage: "scan",
+              moved: 0,
+              total: 0,
+              workspaceName: selectedNode.workspace.name,
+            });
+            await moveDirectoryWithProgress(
+              sourceDir,
+              targetDir,
+              (progress) =>
+                setMoveState((prev) => (prev ? { ...prev, ...progress } : prev))
+            );
+          }
+          nextAssetDirectory = targetDir;
+        }
         updated = {
           ...currentVertex,
           parent_id: null,
           workspace_id: selectedNode.workspace.id,
+          asset_directory: nextAssetDirectory,
           updated_at: new Date().toISOString(),
         };
       } else if (selectedNode.kind === "vertex" && selectedNode.vertex) {
@@ -150,12 +272,23 @@ export const GraphView: React.FC<GraphViewProps> = ({
       }
       await fs.updateVertex(updated);
       await onVertexUpdated?.(updated);
+      setMoveState(null);
       setSelectedId(null);
       await loadGraph();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to relocate vertex.");
+      setMoveState(null);
     }
-  }, [currentVertex, loadGraph, onVertexUpdated, selectedNode, setError]);
+  }, [
+    buildAssetDirectory,
+    currentVertex,
+    currentWorkspace,
+    loadGraph,
+    moveDirectoryWithProgress,
+    onVertexUpdated,
+    selectedNode,
+    setError,
+  ]);
 
   const canOpen = Boolean(selectedNode?.path);
   const canDelete = Boolean(selectedNode?.kind === "vertex");
@@ -302,6 +435,53 @@ export const GraphView: React.FC<GraphViewProps> = ({
           </Typography>
         </Box>
       )}
+
+      <Dialog
+        open={Boolean(moveState)}
+        disableEscapeKeyDown
+        onClose={() => undefined}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>{t("graphView.move.title")}</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2}>
+            <Typography>
+              {moveState?.workspaceName
+                ? t("graphView.move.subtitle", {
+                    workspace: moveState.workspaceName,
+                  })
+                : t("graphView.move.subtitleFallback")}
+            </Typography>
+            {moveState?.stage === "move" && moveState.total > 0 ? (
+              <>
+                <LinearProgress
+                  variant="determinate"
+                  value={Math.round((moveState.moved / moveState.total) * 100)}
+                />
+                <Typography color="text.secondary">
+                  {t("graphView.move.progress", {
+                    moved: moveState.moved,
+                    total: moveState.total,
+                  })}
+                </Typography>
+                {moveState.current && (
+                  <Typography color="text.secondary" noWrap>
+                    {moveState.current}
+                  </Typography>
+                )}
+              </>
+            ) : (
+              <>
+                <LinearProgress />
+                <Typography color="text.secondary">
+                  {t("graphView.move.scanning")}
+                </Typography>
+              </>
+            )}
+          </Stack>
+        </DialogContent>
+      </Dialog>
 
       <GraphCanvas
         graphData={graphData}

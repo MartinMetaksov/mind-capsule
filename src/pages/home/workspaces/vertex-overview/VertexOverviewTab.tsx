@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Alert, Box, Typography } from "@mui/material";
 
-import { VertexGrid, VertexItem } from "../vertices/vertex-grid/VertexGrid";
+import { VertexGrid, VertexItem } from "./views/grid/VertexGrid";
 import {
   CreateFab,
   type CreateFabHandle,
@@ -10,6 +10,7 @@ import type { Vertex } from "@/core/vertex";
 import { detectOperatingSystem } from "@/utils/os";
 import { getShortcut } from "@/utils/shortcuts";
 import { useTranslation } from "react-i18next";
+import { getFileSystem } from "@/integrations/fileSystem/integration";
 
 import { ItemsHeader } from "./components/ItemsHeader";
 import { ItemsDialogs } from "./components/ItemsDialogs";
@@ -30,6 +31,42 @@ import { GraphView } from "./views/graph/GraphView";
 
 export { type VertexOverviewTabProps } from "./types";
 
+const buildOrderMap = (items: VertexItem[]) =>
+  Object.fromEntries(items.map((item, index) => [item.vertex.id, index]));
+
+const sortItems = (items: VertexItem[], orderMap: Record<string, number>) => {
+  return [...items].sort((a, b) => {
+    const aOrder = orderMap[a.vertex.id];
+    const bOrder = orderMap[b.vertex.id];
+    if (aOrder === undefined && bOrder === undefined) {
+      return a.vertex.title.localeCompare(b.vertex.title);
+    }
+    if (aOrder === undefined) return 1;
+    if (bOrder === undefined) return -1;
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    return a.vertex.title.localeCompare(b.vertex.title);
+  });
+};
+
+const REORDER_END_ID = "__end__";
+
+const moveItem = (items: VertexItem[], sourceId: string, targetId: string) => {
+  const fromIndex = items.findIndex((item) => item.vertex.id === sourceId);
+  if (fromIndex < 0) return items;
+  if (targetId === REORDER_END_ID) {
+    const next = [...items];
+    const [moved] = next.splice(fromIndex, 1);
+    next.push(moved);
+    return next;
+  }
+  const toIndex = items.findIndex((item) => item.vertex.id === targetId);
+  if (toIndex < 0 || fromIndex === toIndex) return items;
+  const next = [...items];
+  const [moved] = next.splice(fromIndex, 1);
+  next.splice(toIndex, 0, moved);
+  return next;
+};
+
 export const VertexOverviewTab: React.FC<VertexOverviewTabProps> = (props) => {
   const { t } = useTranslation("common");
   const os = React.useMemo(() => detectOperatingSystem(), []);
@@ -46,6 +83,21 @@ export const VertexOverviewTab: React.FC<VertexOverviewTabProps> = (props) => {
   const itemsProps = props.variant === "items" ? props : null;
   const projectsProps = props.variant === "projects" ? props : null;
   const detachedProps = props.variant === "detached" ? props : null;
+
+  const projectWorkspaceId =
+    projectsProps?.items[0]?.workspace.id ?? projectsProps?.workspaces[0]?.id;
+
+  const orderKey = React.useMemo(() => {
+    if (projectsProps) {
+      return projectWorkspaceId
+        ? `vertexOverview.order.projects:${projectWorkspaceId}`
+        : "vertexOverview.order.projects";
+    }
+    if (detachedProps) {
+      return "vertexOverview.order.detached";
+    }
+    return "";
+  }, [detachedProps, projectWorkspaceId, projectsProps]);
 
   const resolveViewMode = React.useCallback(
     (display?: string): OverviewViewMode => {
@@ -134,11 +186,45 @@ export const VertexOverviewTab: React.FC<VertexOverviewTabProps> = (props) => {
     t,
   });
 
+  const [orderMap, setOrderMap] = React.useState<Record<string, number>>({});
+
+  React.useEffect(() => {
+    if (itemsProps) {
+      const layout = itemsProps.vertex.items_layout;
+      if (layout?.mode === "linear") {
+        setOrderMap(layout.order ?? {});
+        return;
+      }
+      setOrderMap({});
+      return;
+    }
+    if (!orderKey || typeof window === "undefined") {
+      setOrderMap({});
+      return;
+    }
+    const stored = window.sessionStorage.getItem(orderKey);
+    if (!stored) {
+      setOrderMap({});
+      return;
+    }
+    try {
+      const parsed = JSON.parse(stored) as Record<string, number>;
+      setOrderMap(parsed ?? {});
+    } catch {
+      setOrderMap({});
+    }
+  }, [itemsProps, itemsProps?.vertex.id, itemsProps?.vertex.items_layout, orderKey]);
+
   const gridItems: VertexItem[] = itemsProps
     ? itemsState.items
     : projectsProps
       ? projectsProps.items
       : detachedState.vertexItems;
+
+  const orderedItems = React.useMemo(
+    () => sortItems(gridItems, orderMap),
+    [gridItems, orderMap]
+  );
 
   const gridEmpty =
     (itemsProps && itemsState.items.length === 0) ||
@@ -195,6 +281,42 @@ export const VertexOverviewTab: React.FC<VertexOverviewTabProps> = (props) => {
       }
     },
     [detachedProps, itemsProps, projectsProps, itemsState, projectsState, detachedState]
+  );
+
+  const persistItemsOrder = React.useCallback(
+    async (nextOrder: Record<string, number>) => {
+      if (!itemsProps) return;
+      try {
+        const fs = await getFileSystem();
+        const updated: Vertex = {
+          ...itemsProps.vertex,
+          items_layout: { mode: "linear", order: nextOrder },
+          updated_at: new Date().toISOString(),
+        };
+        await fs.updateVertex(updated);
+        await itemsProps.onVertexUpdated?.(updated);
+      } catch (err) {
+        itemsState.setError(
+          err instanceof Error ? err.message : t("itemsTab.errors.update")
+        );
+      }
+    },
+    [itemsProps, itemsState, t]
+  );
+
+  const handleReorder = React.useCallback(
+    (sourceId: string, targetId: string) => {
+      if (sourceId === targetId) return;
+      const nextItems = moveItem(orderedItems, sourceId, targetId);
+      const nextOrder = buildOrderMap(nextItems);
+      setOrderMap(nextOrder);
+      if (itemsProps) {
+        void persistItemsOrder(nextOrder);
+      } else if (orderKey && typeof window !== "undefined") {
+        window.sessionStorage.setItem(orderKey, JSON.stringify(nextOrder));
+      }
+    },
+    [itemsProps, orderKey, orderedItems, persistItemsOrder]
   );
 
   const renderOverlay = detachedProps
@@ -311,29 +433,36 @@ export const VertexOverviewTab: React.FC<VertexOverviewTabProps> = (props) => {
     </Typography>
   );
 
+  const graphOpenVertex = itemsProps?.onOpenVertex ?? projectsProps?.onOpenVertex;
+
   const contentView = viewMode === "grid" ? (
     <VertexGrid
-      items={gridItems}
+      items={orderedItems}
       selectedVertexId={null}
       onSelect={handleGridSelect}
       onDeleteVertex={detachedProps ? undefined : handleGridDelete}
       renderOverlay={renderOverlay}
       scrollY={itemsProps ? true : undefined}
       showWorkspaceLabel={!itemsProps}
+      onReorder={handleReorder}
+      dragLabel={t("commonActions.reorder")}
     />
   ) : viewMode === "list" ? (
     <VertexListView
-      items={gridItems}
+      items={orderedItems}
       onSelect={handleGridSelect}
       onDeleteVertex={detachedProps ? undefined : handleGridDelete}
       renderActions={renderOverlay}
       showWorkspaceLabel={!itemsProps}
+      onReorder={handleReorder}
+      dragLabel={t("commonActions.reorder")}
     />
   ) : (
     <GraphView
       items={gridItems}
       currentVertex={itemsProps?.vertex ?? null}
-      onOpenVertex={itemsProps?.onOpenVertex}
+      currentWorkspace={itemsProps?.workspace ?? null}
+      onOpenVertex={graphOpenVertex}
       onVertexUpdated={itemsProps?.onVertexUpdated}
     />
   );

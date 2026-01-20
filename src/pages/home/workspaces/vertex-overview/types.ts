@@ -1,6 +1,6 @@
 import type { Vertex } from "@/core/vertex";
 import type { Workspace } from "@/core/workspace";
-import type { VertexItem } from "../vertices/vertex-grid/VertexGrid";
+import type { VertexItem } from "./views/grid/VertexGrid";
 
 export type ItemsOverviewProps = {
   variant: "items";

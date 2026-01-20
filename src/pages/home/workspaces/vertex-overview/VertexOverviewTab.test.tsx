@@ -1,5 +1,5 @@
 import * as React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { I18nextProvider } from "react-i18next";
 import { BrowserRouter } from "react-router-dom";
 import i18n from "@/i18n";
@@ -172,6 +172,48 @@ describe("VertexOverviewTab (items)", () => {
     const listButtons = screen.getAllByRole("button", { name: /List view/i });
     fireEvent.click(listButtons[0]);
     expect(await screen.findByTestId("vertex-overview-list")).toBeInTheDocument();
+  });
+
+  it("sorts items alphabetically by default", async () => {
+    mockGetVertices.mockResolvedValue([
+      { ...item, id: "item-b", title: "Bravo" },
+      { ...item, id: "item-a", title: "Alpha" },
+    ]);
+    renderItems({
+      vertex: {
+        ...parent,
+        items_behavior: { child_kind: "chapter", display: "list" },
+      },
+    });
+    const list = await screen.findByTestId("vertex-overview-list");
+    const alpha = within(list).getByText("Alpha");
+    const bravo = within(list).getByText("Bravo");
+    expect(
+      alpha.compareDocumentPosition(bravo) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+  });
+
+  it("respects manual order when provided", async () => {
+    mockGetVertices.mockResolvedValue([
+      { ...item, id: "item-b", title: "Bravo" },
+      { ...item, id: "item-a", title: "Alpha" },
+    ]);
+    renderItems({
+      vertex: {
+        ...parent,
+        items_behavior: { child_kind: "chapter", display: "list" },
+        items_layout: {
+          mode: "linear",
+          order: { "item-b": 0, "item-a": 1 },
+        },
+      },
+    });
+    const list = await screen.findByTestId("vertex-overview-list");
+    const alpha = within(list).getByText("Alpha");
+    const bravo = within(list).getByText("Bravo");
+    expect(
+      bravo.compareDocumentPosition(alpha) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
   });
 
   it("opens create dialog via fab", () => {

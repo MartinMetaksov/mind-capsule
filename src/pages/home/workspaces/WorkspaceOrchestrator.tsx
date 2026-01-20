@@ -8,7 +8,7 @@ import { Loading } from "@/common/loading/Loading";
 import { useWorkspaces } from "./hooks/use-workspaces/useWorkspaces";
 import { WorkspaceSetup } from "./workspace-setup/WorkspaceSetup";
 import { useVertices } from "./hooks/use-vertices/useVertices";
-import type { VertexItem } from "./vertices/vertex-grid/VertexGrid";
+import type { VertexItem } from "./vertex-overview/views/grid/VertexGrid";
 import type { Workspace } from "@/core/workspace";
 import type { Vertex } from "@/core/vertex";
 import { BreadcrumbsTrail } from "./components/breadcrumbs-trail/BreadcrumbsTrail";
@@ -19,7 +19,7 @@ import { getFileSystem } from "@/integrations/fileSystem/integration";
 import { useLocation, useNavigate } from "react-router-dom";
 import { VertexNotFound } from "./components/vertex-not-found/VertexNotFound";
 
-import { VertexOrchestrator } from "./vertices/VertexOrchestrator";
+import { VertexOrchestrator } from "./vertex-overview/vertices/VertexOrchestrator";
 import { detectOperatingSystem } from "@/utils/os";
 import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
 import { useTranslation } from "react-i18next";

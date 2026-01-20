@@ -7,7 +7,7 @@ import {
   DeleteVertexDialog,
   CreateVertexForm,
 } from "../../components/vertex-dialogs/VertexDialogs";
-import type { VertexItem } from "../../vertices/vertex-grid/VertexGrid";
+import type { VertexItem } from "../views/grid/VertexGrid";
 
 type ItemsDialogsProps = {
   createOpen: boolean;

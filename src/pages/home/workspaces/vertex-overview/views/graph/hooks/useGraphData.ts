@@ -1,6 +1,6 @@
 import * as React from "react";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
-import type { VertexItem } from "../../../../vertices/vertex-grid/VertexGrid";
+import type { VertexItem } from "../../grid/VertexGrid";
 import type { GraphData } from "../types";
 import { buildGraph } from "../utils/buildGraph";
 

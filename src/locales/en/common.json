@@ -158,7 +158,8 @@
     "cancel": "Cancel",
     "save": "Save",
     "create": "Create",
-    "delete": "Delete"
+    "delete": "Delete",
+    "reorder": "Reorder"
   },
   "header": {
     "search": "Search",
@@ -206,6 +207,13 @@
   "graphView": {
     "loading": "Loading graph…",
     "recenter": "Recenter graph",
+    "move": {
+      "title": "Moving vertex files",
+      "subtitle": "Moving files to {{workspace}}…",
+      "subtitleFallback": "Moving files…",
+      "scanning": "Scanning files…",
+      "progress": "{{moved}} / {{total}} files moved"
+    },
     "actions": {
       "openVertex": "Open vertex",
       "relocateHere": "Relocate here",
@@ -224,7 +232,21 @@
   },
   "filesTab": {
     "title": "Files",
-    "description": "References of type file."
+    "description": "References of type file.",
+    "loading": "Loading files...",
+    "empty": "No files yet.",
+    "upload": "Upload files",
+    "open": "Open file",
+    "deleteTitle": "Delete file",
+    "deletePrompt": "Delete {{name}}?",
+    "deleteFallback": "this file",
+    "errors": {
+      "load": "Failed to load files.",
+      "add": "Failed to add files.",
+      "delete": "Failed to delete file.",
+      "open": "Failed to open file.",
+      "unavailable": "Files are available only in the desktop app."
+    }
   },
   "referencesTab": {
     "title": "Vertex references",
