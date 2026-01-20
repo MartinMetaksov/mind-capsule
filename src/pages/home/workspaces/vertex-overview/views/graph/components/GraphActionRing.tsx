@@ -2,7 +2,7 @@ import * as React from "react";
 import { Box, IconButton, Tooltip } from "@mui/material";
 import { ACTION_EXIT_MS, ACTION_STAGGER_MS } from "../constants";
 
-type GraphAction = {
+export type GraphAction = {
   key: string;
   label: string;
   icon: React.ReactNode;

@@ -444,6 +444,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
                 <NotesTab
                   vertex={currentVertex}
                   refreshToken={fsRefreshToken}
+                  onOpenVertex={handleOpenVertex}
                 />
               )}
 

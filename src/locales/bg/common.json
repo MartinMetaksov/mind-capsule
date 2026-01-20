@@ -230,6 +230,16 @@
       "currentItem": "текущ елемент"
     }
   },
+  "graphReferenceModal": {
+    "title": "Свържи съдържание",
+    "subtitle": "Изберете връх за връзка.",
+    "actions": {
+      "vertex": "Свържи връх",
+      "note": "Свържи бележка",
+      "image": "Свържи изображение",
+      "file": "Свържи файл"
+    }
+  },
   "filesTab": {
     "title": "Файлове",
     "description": "Референции от тип файл.",
@@ -348,6 +358,8 @@
     "historyEmpty": "Няма история.",
     "currentVersion": "Текуща версия",
     "close": "Затвори",
+    "insertLink": "Вмъкни връзка",
+    "linkFallback": "Връх",
     "errors": {
       "save": "Неуспешно запазване на бележката."
     }

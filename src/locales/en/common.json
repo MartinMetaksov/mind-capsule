@@ -230,6 +230,16 @@
       "currentItem": "current item"
     }
   },
+  "graphReferenceModal": {
+    "title": "Link to content",
+    "subtitle": "Choose a vertex to link.",
+    "actions": {
+      "vertex": "Link vertex",
+      "note": "Link note",
+      "image": "Link image",
+      "file": "Link file"
+    }
+  },
   "filesTab": {
     "title": "Files",
     "description": "References of type file.",
@@ -348,6 +358,8 @@
     "historyEmpty": "No history yet.",
     "currentVersion": "Current version",
     "close": "Close",
+    "insertLink": "Insert link",
+    "linkFallback": "Vertex",
     "errors": {
       "save": "Failed to save note."
     }

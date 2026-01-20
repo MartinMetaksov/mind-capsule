@@ -18,6 +18,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditIcon from "@mui/icons-material/Edit";
 import HistoryIcon from "@mui/icons-material/History";
+import LinkOutlinedIcon from "@mui/icons-material/LinkOutlined";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import { useTranslation } from "react-i18next";
 
@@ -28,10 +29,14 @@ import { DeleteConfirmDialog } from "../../../components/delete-confirm-dialog/D
 import { detectOperatingSystem } from "@/utils/os";
 import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
 import { CreateFab } from "../../../components/create-fab/CreateFab";
+import { GraphReferenceModal } from "../../views/graph/components/GraphReferenceModal";
+import type { GraphNode } from "../../views/graph/types";
+import type { VertexItem } from "../../views/grid/VertexGrid";
 
 type NotesTabProps = {
   vertex: Vertex;
   refreshToken?: number;
+  onOpenVertex?: (vertexId: string) => void;
 };
 
 type Mode = "preview" | "edit";
@@ -82,7 +87,11 @@ const saveHistory = (vertexId: string, name: string, history: NoteHistoryItem[])
   window.localStorage.setItem(historyKeyFor(vertexId, name), JSON.stringify(history));
 };
 
-export const NotesTab: React.FC<NotesTabProps> = ({ vertex, refreshToken }) => {
+export const NotesTab: React.FC<NotesTabProps> = ({
+  vertex,
+  refreshToken,
+  onOpenVertex,
+}) => {
   const { t } = useTranslation("common");
   const theme = useTheme();
   const [notes, setNotes] = React.useState<NoteEntry[]>([]);
@@ -90,13 +99,16 @@ export const NotesTab: React.FC<NotesTabProps> = ({ vertex, refreshToken }) => {
   const [mode, setMode] = React.useState<Mode>("preview");
   const [draft, setDraft] = React.useState("");
   const [historyOpen, setHistoryOpen] = React.useState(false);
+  const [referenceOpen, setReferenceOpen] = React.useState(false);
   const [historyMap, setHistoryMap] = React.useState<Record<string, NoteHistoryItem[]>>({});
   const [error, setError] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const [confirmDelete, setConfirmDelete] = React.useState<NoteEntry | null>(null);
   const hasLoadedRef = React.useRef(false);
+  const editorRef = React.useRef<HTMLTextAreaElement | null>(null);
   const os = React.useMemo(() => detectOperatingSystem(), []);
+  const graphItems = React.useMemo<VertexItem[]>(() => [], []);
 
   const selectedNote = selectedName
     ? notes.find((note) => note.name === selectedName) ?? null
@@ -273,6 +285,33 @@ export const NotesTab: React.FC<NotesTabProps> = ({ vertex, refreshToken }) => {
       return { ...prev, [noteName]: [] };
     });
   };
+
+  const insertMarkdownLink = React.useCallback((label: string, url: string) => {
+    setDraft((prev) => {
+      const safeLabel = label.trim() || t("notesTab.linkFallback");
+      const link = `[${safeLabel}](${url})`;
+      const input = editorRef.current;
+      const start = input?.selectionStart ?? prev.length;
+      const end = input?.selectionEnd ?? prev.length;
+      const next = prev.slice(0, start) + link + prev.slice(end);
+      requestAnimationFrame(() => {
+        if (editorRef.current) {
+          const pos = start + link.length;
+          editorRef.current.setSelectionRange(pos, pos);
+          editorRef.current.focus({ preventScroll: true });
+        }
+      });
+      return next;
+    });
+  }, [t]);
+
+  const handleSelectVertex = React.useCallback(
+    (node: GraphNode) => {
+      insertMarkdownLink(node.label, `mindcapsule://vertex/${node.id}`);
+      setReferenceOpen(false);
+    },
+    [insertMarkdownLink]
+  );
 
   const noteCardBg =
     theme.palette.mode === "dark" ? theme.palette.background.paper : "#fdf4b2";
@@ -451,6 +490,17 @@ export const NotesTab: React.FC<NotesTabProps> = ({ vertex, refreshToken }) => {
                   <HistoryIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
+              <Tooltip title={t("notesTab.insertLink")}>
+                <span>
+                  <IconButton
+                    onClick={() => setReferenceOpen(true)}
+                    aria-label={t("notesTab.insertLink")}
+                    disabled={mode !== "edit"}
+                  >
+                    <LinkOutlinedIcon fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
               <Tooltip title={t("notesTab.close")}>
                 <IconButton
                   onClick={handleCloseModal}
@@ -480,6 +530,16 @@ export const NotesTab: React.FC<NotesTabProps> = ({ vertex, refreshToken }) => {
                     "& h1,h2,h3,h4,h5,h6": { margin: "0.5em 0 0.25em" },
                     "& p": { margin: "0.25em 0" },
                   }}
+                  onClick={(event) => {
+                    const target = event.target as HTMLElement | null;
+                    const anchor = target?.closest("a");
+                    if (!anchor) return;
+                    const href = anchor.getAttribute("href") ?? "";
+                    if (!href.startsWith("mindcapsule://vertex/")) return;
+                    event.preventDefault();
+                    const id = href.replace("mindcapsule://vertex/", "").trim();
+                    if (id) onOpenVertex?.(id);
+                  }}
                   dangerouslySetInnerHTML={{
                     __html: renderMarkdown(draft || ""),
                   }}
@@ -494,6 +554,7 @@ export const NotesTab: React.FC<NotesTabProps> = ({ vertex, refreshToken }) => {
                   placeholder={t("notesTab.placeholder")}
                   minRows={12}
                   sx={{ height: "100%", flex: 1 }}
+                  inputRef={editorRef}
                   slotProps={{
                     inputLabel: { shrink: true },
                     input: { sx: { alignItems: "flex-start", height: "100%" } },
@@ -591,6 +652,13 @@ export const NotesTab: React.FC<NotesTabProps> = ({ vertex, refreshToken }) => {
           </Box>
         </DialogContent>
       </Dialog>
+
+      <GraphReferenceModal
+        open={referenceOpen}
+        items={graphItems}
+        onClose={() => setReferenceOpen(false)}
+        onSelectVertex={handleSelectVertex}
+      />
 
       <DeleteConfirmDialog
         open={Boolean(confirmDelete)}

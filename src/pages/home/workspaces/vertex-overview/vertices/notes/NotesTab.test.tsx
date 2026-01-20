@@ -48,6 +48,7 @@ describe("NotesTab", () => {
       <I18nextProvider i18n={i18n}>
         <NotesTab
           vertex={{ ...vertex, ...(override?.vertex ?? {}) }}
+          onOpenVertex={override?.onOpenVertex}
         />
       </I18nextProvider>
     );
@@ -79,6 +80,21 @@ describe("NotesTab", () => {
     await waitFor(() =>
       expect(mockUpdateNote).toHaveBeenCalledWith(vertex, "note-1.md", "Updated note")
     );
+  });
+
+  it("opens vertex links from preview", async () => {
+    const onOpenVertex = vi.fn();
+    mockListNotes.mockResolvedValueOnce([
+      {
+        name: "note-1.md",
+        text: "[My Vertex](mindcapsule://vertex/v-2)",
+      },
+    ]);
+    renderTab({ onOpenVertex });
+    fireEvent.click(await screen.findByText(/My Vertex/i));
+    const link = await screen.findByRole("link", { name: "My Vertex" });
+    fireEvent.click(link);
+    expect(onOpenVertex).toHaveBeenCalledWith("v-2");
   });
 
   it("deletes a note", async () => {
