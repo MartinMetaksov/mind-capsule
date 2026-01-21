@@ -98,6 +98,11 @@ const TagsEditor: React.FC<TagsEditorProps> = ({
           size="small"
           InputLabelProps={{ shrink: true }}
           placeholder={t("tagsTab.placeholder")}
+          sx={{
+            "& .MuiInputBase-root": {
+              bgcolor: "background.paper",
+            },
+          }}
         />
         <IconButton
           color="primary"
@@ -121,6 +126,7 @@ const TagsEditor: React.FC<TagsEditorProps> = ({
               size="small"
               variant="outlined"
               onDelete={() => onRemove(tag)}
+              sx={{ bgcolor: "background.paper" }}
               deleteIcon={
                 <ClearIcon
                   fontSize="small"
@@ -364,6 +370,11 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
           fullWidth
           inputRef={titleInputRef}
           slotProps={{ inputLabel: { shrink: true } }}
+          sx={{
+            "& .MuiInputBase-root": {
+              bgcolor: "background.paper",
+            },
+          }}
         />
       </Box>
 
@@ -380,6 +391,11 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
           onChange={(e) => handleDefaultTabChange(e.target.value as VertexTabId)}
           fullWidth
           slotProps={{ inputLabel: { shrink: true } }}
+          sx={{
+            "& .MuiInputBase-root": {
+              bgcolor: "background.paper",
+            },
+          }}
         >
           {tabOptions.map((opt) => (
             <MenuItem key={opt.value} value={opt.value}>
@@ -398,6 +414,11 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
             }
             fullWidth
             slotProps={{ inputLabel: { shrink: true } }}
+            sx={{
+              "& .MuiInputBase-root": {
+                bgcolor: "background.paper",
+              },
+            }}
           >
             {itemsDisplayOptions.map((opt) => (
               <MenuItem key={opt.value} value={opt.value}>
@@ -422,6 +443,11 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
             onChange={(e) => handleLeafChange(e.target.value === "yes")}
             fullWidth
             slotProps={{ inputLabel: { shrink: true } }}
+            sx={{
+              "& .MuiInputBase-root": {
+                bgcolor: "background.paper",
+              },
+            }}
           >
             <MenuItem value="no">{t("propertiesTab.leaf.no")}</MenuItem>
             <MenuItem value="yes">{t("propertiesTab.leaf.yes")}</MenuItem>

@@ -149,6 +149,11 @@ export const LinksTab: React.FC<LinksTabProps> = ({ vertex, refreshToken }) => {
             placeholder={t("linksTab.urlPlaceholder")}
             disabled={saving}
             type="url"
+            sx={{
+              "& .MuiInputBase-root": {
+                bgcolor: "background.paper",
+              },
+            }}
           />
           <TextField
             label={t("linksTab.titleLabel")}
@@ -160,6 +165,11 @@ export const LinksTab: React.FC<LinksTabProps> = ({ vertex, refreshToken }) => {
             slotProps={{ inputLabel: { shrink: true } }}
             placeholder={t("linksTab.titlePlaceholder")}
             disabled={saving}
+            sx={{
+              "& .MuiInputBase-root": {
+                bgcolor: "background.paper",
+              },
+            }}
           />
           <Button
             variant="contained"

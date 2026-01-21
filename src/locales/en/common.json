@@ -233,11 +233,30 @@
   "graphReferenceModal": {
     "title": "Link to content",
     "subtitle": "Choose a vertex to link.",
+    "close": "Close",
     "actions": {
       "vertex": "Link vertex",
       "note": "Link note",
       "image": "Link image",
       "file": "Link file"
+    },
+    "tabs": {
+      "notes": "Notes",
+      "images": "Images",
+      "files": "Files"
+    },
+    "rail": {
+      "emptyTitle": "No vertex selected",
+      "emptySelect": "Select a vertex to browse its content.",
+      "emptyHint": "Pick an item to link.",
+      "loading": "Loading content...",
+      "emptyNotes": "No notes found.",
+      "emptyImages": "No images found.",
+      "emptyFiles": "No files found.",
+      "emptyNote": "Empty note"
+    },
+    "errors": {
+      "load": "Failed to load reference content."
     }
   },
   "filesTab": {

@@ -245,8 +245,22 @@ export const SettingsDialog: React.FC<Props> = ({
                 <Typography variant="body2" color="text.secondary">
                   {t("settings.languageDescription")}
                 </Typography>
-                <FormControl fullWidth size="small">
-                  <InputLabel id="language-select-label">{t("settings.language")}</InputLabel>
+                <FormControl
+                  fullWidth
+                  size="small"
+                  sx={{
+                    "& .MuiInputLabel-root": {
+                      bgcolor: "background.paper",
+                      px: 0.5,
+                    },
+                    "& .MuiOutlinedInput-root": {
+                      bgcolor: "background.paper",
+                    },
+                  }}
+                >
+                  <InputLabel id="language-select-label">
+                    {t("settings.language")}
+                  </InputLabel>
                   <Select
                     labelId="language-select-label"
                     label={t("settings.language")}
@@ -255,6 +269,11 @@ export const SettingsDialog: React.FC<Props> = ({
                       const next = (e.target.value as string) || "en";
                       setLanguage(next);
                       void i18n.changeLanguage(next);
+                    }}
+                    sx={{
+                      "& .MuiSelect-select": {
+                        bgcolor: "transparent",
+                      },
                     }}
                   >
                     <MenuItem value="en">{t("languages.en")}</MenuItem>

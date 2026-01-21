@@ -9,6 +9,26 @@ const mockListNotes = vi.fn();
 const mockCreateNote = vi.fn();
 const mockUpdateNote = vi.fn();
 const mockDeleteNote = vi.fn();
+const mockGetVertex = vi.fn();
+const mockGetNote = vi.fn();
+const mockGetImage = vi.fn();
+const mockIsTauri = vi.fn();
+const mockInvoke = vi.fn();
+const mockReadDir = vi.fn();
+const mockJoin = vi.fn();
+
+vi.mock("@tauri-apps/api/core", () => ({
+  isTauri: () => mockIsTauri(),
+  invoke: (...args: unknown[]) => mockInvoke(...args),
+}));
+
+vi.mock("@tauri-apps/plugin-fs", () => ({
+  readDir: (...args: unknown[]) => mockReadDir(...args),
+}));
+
+vi.mock("@tauri-apps/api/path", () => ({
+  join: (...args: string[]) => mockJoin(...args),
+}));
 
 vi.mock("@/integrations/fileSystem/integration", () => ({
   getFileSystem: async () => ({
@@ -16,6 +36,9 @@ vi.mock("@/integrations/fileSystem/integration", () => ({
     createNote: mockCreateNote,
     updateNote: mockUpdateNote,
     deleteNote: mockDeleteNote,
+    getVertex: mockGetVertex,
+    getNote: mockGetNote,
+    getImage: mockGetImage,
   }),
 }));
 
@@ -35,12 +58,22 @@ describe("NotesTab", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     window.localStorage.clear();
+    mockIsTauri.mockResolvedValue(false);
+    mockJoin.mockImplementation(async (...parts: string[]) => parts.join("/"));
     mockListNotes.mockResolvedValue([
       { name: "note-1.md", text: "First note" },
     ]);
     mockCreateNote.mockResolvedValue({ name: "note-2.md", text: "" });
     mockUpdateNote.mockResolvedValue({ name: "note-1.md", text: "Updated note" });
     mockDeleteNote.mockResolvedValue(undefined);
+    mockGetVertex.mockImplementation(async (id: string) =>
+      id
+        ? { ...vertex, id, asset_directory: `/tmp/assets/${id}` }
+        : null
+    );
+    mockGetNote.mockResolvedValue(null);
+    mockGetImage.mockResolvedValue(null);
+    mockReadDir.mockResolvedValue([]);
   });
 
   const renderTab = (override?: Partial<React.ComponentProps<typeof NotesTab>>) =>
@@ -57,7 +90,7 @@ describe("NotesTab", () => {
     renderTab();
     expect(await screen.findByText(/First note/i)).toBeInTheDocument();
     fireEvent.click(screen.getByText(/First note/i));
-    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /Preview/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Preview/i })).toHaveAttribute(
       "aria-pressed",
       "true"
@@ -90,11 +123,84 @@ describe("NotesTab", () => {
         text: "[My Vertex](mindcapsule://vertex/v-2)",
       },
     ]);
+    mockGetVertex.mockResolvedValueOnce({ ...vertex, id: "v-2" });
     renderTab({ onOpenVertex });
     fireEvent.click(await screen.findByText(/My Vertex/i));
     const link = await screen.findByRole("link", { name: "My Vertex" });
     fireEvent.click(link);
     expect(onOpenVertex).toHaveBeenCalledWith("v-2");
+  });
+
+  it("marks broken links in preview", async () => {
+    mockListNotes.mockResolvedValueOnce([
+      {
+        name: "note-1.md",
+        text: "[Missing](mindcapsule://vertex/v-404)",
+      },
+    ]);
+    mockGetVertex.mockResolvedValueOnce(null);
+    renderTab();
+    fireEvent.click(await screen.findByText(/Missing/i));
+    expect(await screen.findByText("[N/A]")).toBeInTheDocument();
+  });
+
+  it("opens image links in a full-screen preview", async () => {
+    mockListNotes.mockResolvedValueOnce([
+      {
+        name: "note-1.md",
+        text: "[Photo](mindcapsule://image/v-2/photo.jpg)",
+      },
+    ]);
+    mockGetVertex.mockResolvedValueOnce({ ...vertex, id: "v-2" });
+    mockGetImage.mockResolvedValue({
+      name: "photo.jpg",
+      path: "/tmp/assets/v-2/photo.jpg",
+      alt: "Photo",
+    });
+    renderTab();
+    fireEvent.click(await screen.findByText(/Photo/i));
+    fireEvent.click(await screen.findByRole("link", { name: "Photo" }));
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Photo" })).toBeInTheDocument();
+  });
+
+  it("opens note links in a full-screen preview", async () => {
+    mockListNotes.mockResolvedValueOnce([
+      {
+        name: "note-1.md",
+        text: "[Other note](mindcapsule://note/v-2/other.md)",
+      },
+    ]);
+    mockGetVertex.mockResolvedValueOnce({ ...vertex, id: "v-2" });
+    mockGetNote.mockResolvedValue({
+      name: "other.md",
+      text: "# Heading",
+    });
+    renderTab();
+    fireEvent.click(await screen.findByText(/Other note/i));
+    fireEvent.click(await screen.findByRole("link", { name: "Other note" }));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText(/Heading/i)).toBeInTheDocument();
+  });
+
+  it("opens file links using the OS handler", async () => {
+    mockListNotes.mockResolvedValueOnce([
+      {
+        name: "note-1.md",
+        text: "[Report](mindcapsule://file/v-2/report.pdf)",
+      },
+    ]);
+    mockIsTauri.mockResolvedValue(true);
+    mockGetVertex.mockResolvedValueOnce({ ...vertex, id: "v-2" });
+    mockReadDir.mockResolvedValue([{ name: "report.pdf", isDirectory: false }]);
+    renderTab();
+    fireEvent.click(await screen.findByText(/Report/i));
+    fireEvent.click(await screen.findByRole("link", { name: "Report" }));
+    await waitFor(() =>
+      expect(mockInvoke).toHaveBeenCalledWith("fs_open_path", {
+        path: "/tmp/assets/v-2/report.pdf",
+      })
+    );
   });
 
   it("deletes a note", async () => {
@@ -153,5 +259,17 @@ describe("NotesTab", () => {
       window.localStorage.getItem("notesHistory:v-1:note-1.md") ?? "[]"
     ) as Array<{ text: string }>;
     expect(stored).toHaveLength(0);
+  });
+
+  it("closes the editor on Escape and restores the create button", async () => {
+    renderTab();
+    fireEvent.click(await screen.findByText(/First note/i));
+    expect(await screen.findByRole("button", { name: /Preview/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /New note/i })).not.toBeInTheDocument();
+    fireEvent.keyDown(window, { key: "Escape" });
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: /Preview/i })).not.toBeInTheDocument();
+    }, { timeout: 2000 });
+    expect(await screen.findByRole("button", { name: /New note/i })).toBeInTheDocument();
   });
 });

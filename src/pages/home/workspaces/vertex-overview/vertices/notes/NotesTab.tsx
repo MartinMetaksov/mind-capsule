@@ -2,28 +2,33 @@ import * as React from "react";
 import {
   Alert,
   Box,
+  Collapse,
   Dialog,
   DialogContent,
+  DialogTitle,
   IconButton,
   Paper,
   Stack,
-  TextField,
   ToggleButton,
   ToggleButtonGroup,
   Tooltip,
   Typography,
   useTheme,
 } from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditIcon from "@mui/icons-material/Edit";
 import HistoryIcon from "@mui/icons-material/History";
 import LinkOutlinedIcon from "@mui/icons-material/LinkOutlined";
+import CloseIcon from "@mui/icons-material/Close";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import { useTranslation } from "react-i18next";
 
 import type { Vertex } from "@/core/vertex";
-import type { NoteEntry } from "@/integrations/fileSystem/fileSystem";
+import type {
+  ImageEntry,
+  NoteEntry,
+} from "@/integrations/fileSystem/fileSystem";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
 import { DeleteConfirmDialog } from "../../../components/delete-confirm-dialog/DeleteConfirmDialog";
 import { detectOperatingSystem } from "@/utils/os";
@@ -41,12 +46,24 @@ type NotesTabProps = {
 
 type Mode = "preview" | "edit";
 
+type BrokenLinkMap = Record<string, boolean>;
+
 type NoteHistoryItem = {
   text: string;
   at: string;
 };
 
-const renderMarkdown = (text: string): string => {
+type NotePreview = {
+  title: string;
+  text: string;
+};
+
+type ImagePreview = {
+  title: string;
+  path: string;
+};
+
+const renderMarkdown = (text: string, brokenLinks?: BrokenLinkMap): string => {
   let html = text;
   html = html.replace(/^###### (.*)$/gm, "<h6>$1</h6>");
   html = html.replace(/^##### (.*)$/gm, "<h5>$1</h5>");
@@ -57,10 +74,12 @@ const renderMarkdown = (text: string): string => {
   html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
   html = html.replace(/\*(.+?)\*/g, "<em>$1</em>");
   html = html.replace(/`(.+?)`/g, "<code>$1</code>");
-  html = html.replace(
-    /\[([^\]]+)\]\(([^)]+)\)/g,
-    '<a href="$2" target="_blank" rel="noreferrer">$1</a>'
-  );
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_match, label, url) => {
+    const indicator = brokenLinks?.[url]
+      ? ' <span class="broken-link-indicator">[N/A]</span>'
+      : "";
+    return `<a href="${url}" target="_blank" rel="noreferrer">${label}</a>${indicator}`;
+  });
   html = html.replace(/^- (.*)$/gm, "<li>$1</li>");
   html = html.replace(/(<li>.*<\/li>)/gs, "<ul>$1</ul>");
   html = html.replace(/\n/g, "<br/>");
@@ -100,11 +119,18 @@ export const NotesTab: React.FC<NotesTabProps> = ({
   const [draft, setDraft] = React.useState("");
   const [historyOpen, setHistoryOpen] = React.useState(false);
   const [referenceOpen, setReferenceOpen] = React.useState(false);
+  const [referenceClosing, setReferenceClosing] = React.useState(false);
   const [historyMap, setHistoryMap] = React.useState<Record<string, NoteHistoryItem[]>>({});
+  const [brokenLinks, setBrokenLinks] = React.useState<BrokenLinkMap>({});
+  const [imagePreview, setImagePreview] = React.useState<ImagePreview | null>(null);
+  const [notePreview, setNotePreview] = React.useState<NotePreview | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const [confirmDelete, setConfirmDelete] = React.useState<NoteEntry | null>(null);
+  const [isClosing, setIsClosing] = React.useState(false);
+  const closeTimerRef = React.useRef<number | null>(null);
+  const referenceCloseTimerRef = React.useRef<number | null>(null);
   const hasLoadedRef = React.useRef(false);
   const editorRef = React.useRef<HTMLTextAreaElement | null>(null);
   const os = React.useMemo(() => detectOperatingSystem(), []);
@@ -113,6 +139,20 @@ export const NotesTab: React.FC<NotesTabProps> = ({
   const selectedNote = selectedName
     ? notes.find((note) => note.name === selectedName) ?? null
     : null;
+
+  const selectedNoteIndex = React.useMemo(() => {
+    if (!selectedNote) return -1;
+    return notes.findIndex((note) => note.name === selectedNote.name);
+  }, [notes, selectedNote]);
+
+  const selectedNoteLabel = React.useMemo(() => {
+    if (!selectedNote) return "";
+    if (selectedNoteIndex >= 0) {
+      return t("notesTab.noteLabel", { number: selectedNoteIndex + 1 });
+    }
+    return selectedNote.name;
+  }, [selectedNote, selectedNoteIndex, t]);
+
 
   const noteHistory = selectedNote
     ? historyMap[selectedNote.name] ?? []
@@ -149,6 +189,11 @@ export const NotesTab: React.FC<NotesTabProps> = ({
 
   const handleOpenNote = React.useCallback(
     (note: NoteEntry) => {
+      if (closeTimerRef.current) {
+        window.clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = null;
+      }
+      setIsClosing(false);
       setSelectedName(note.name);
       setDraft(note.text ?? "");
       setMode("preview");
@@ -159,10 +204,51 @@ export const NotesTab: React.FC<NotesTabProps> = ({
   );
 
   const handleCloseModal = React.useCallback(() => {
-    setSelectedName(null);
-    setDraft("");
-    setHistoryOpen(false);
-    setMode("preview");
+    if (!selectedNote || isClosing) return;
+    setIsClosing(true);
+    closeTimerRef.current = window.setTimeout(() => {
+      setSelectedName(null);
+      setDraft("");
+      setHistoryOpen(false);
+      setMode("preview");
+      setIsClosing(false);
+      closeTimerRef.current = null;
+    }, 180);
+  }, [isClosing, selectedNote]);
+
+  React.useEffect(() => {
+    if (!selectedNote || referenceOpen) return;
+    const handler = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        handleCloseModal();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [handleCloseModal, referenceOpen, selectedNote]);
+
+  React.useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) {
+        window.clearTimeout(closeTimerRef.current);
+      }
+      if (referenceCloseTimerRef.current) {
+        window.clearTimeout(referenceCloseTimerRef.current);
+      }
+    };
+  }, []);
+
+  const handleReferenceClose = React.useCallback(() => {
+    if (referenceCloseTimerRef.current) {
+      window.clearTimeout(referenceCloseTimerRef.current);
+    }
+    setReferenceOpen(false);
+    setReferenceClosing(true);
+    referenceCloseTimerRef.current = window.setTimeout(() => {
+      setReferenceClosing(false);
+      referenceCloseTimerRef.current = null;
+    }, 180);
   }, []);
 
   const handleCreateNote = React.useCallback(async () => {
@@ -265,6 +351,26 @@ export const NotesTab: React.FC<NotesTabProps> = ({
     [handlePersistDraft, mode]
   );
 
+  const handleOpenEditMode = React.useCallback(() => {
+    if (mode === "edit") return;
+    setMode("edit");
+    window.requestAnimationFrame(() => {
+      editorRef.current?.focus();
+    });
+  }, [mode]);
+
+  const handleExitEditOnOutsideClick = React.useCallback(
+    (event: React.MouseEvent<HTMLElement>) => {
+      if (mode !== "edit" || referenceOpen) return;
+      const target = event.target as HTMLElement | null;
+      if (!target) return;
+      if (editorRef.current?.contains(target)) return;
+      if (target.closest("[data-notes-controls]")) return;
+      void handleModeChange(null, "preview");
+    },
+    [handleModeChange, mode, referenceOpen]
+  );
+
   const handleSelectHistory = (text: string) => {
     setDraft(text);
     setMode("preview");
@@ -285,6 +391,90 @@ export const NotesTab: React.FC<NotesTabProps> = ({
       return { ...prev, [noteName]: [] };
     });
   };
+
+  React.useEffect(() => {
+    if (!selectedNote) {
+      setBrokenLinks({});
+      return;
+    }
+    let active = true;
+    const validateLinks = async () => {
+      const matches = Array.from(
+        draft.matchAll(/\[[^\]]+]\(([^)]+)\)/g)
+      ).map((match) => match[1]);
+      const uniqueLinks = Array.from(new Set(matches)).filter((link) =>
+        link.startsWith("mindcapsule://")
+      );
+      if (uniqueLinks.length === 0) {
+        if (active) setBrokenLinks({});
+        return;
+      }
+
+      const fs = await getFileSystem();
+      const results: BrokenLinkMap = {};
+      const { isTauri } = await import("@tauri-apps/api/core");
+
+      const checkFileExists = async (targetVertex: Vertex, name: string) => {
+        if (!(await isTauri())) return true;
+        const { readDir } = await import("@tauri-apps/plugin-fs");
+        const entries = await readDir(targetVertex.asset_directory);
+        return entries.some((entry) => entry.name === name);
+      };
+
+      for (const link of uniqueLinks) {
+        let broken = false;
+        try {
+          if (link.startsWith("mindcapsule://vertex/")) {
+            const id = link.replace("mindcapsule://vertex/", "").trim();
+            const target = id ? await fs.getVertex(id) : null;
+            broken = !target;
+          } else if (link.startsWith("mindcapsule://note/")) {
+            const parts = link.replace("mindcapsule://note/", "").split("/");
+            const vertexId = parts[0];
+            const name = decodeURIComponent(parts.slice(1).join("/"));
+            const targetVertex = vertexId ? await fs.getVertex(vertexId) : null;
+            if (!targetVertex || !name) {
+              broken = true;
+            } else {
+              const note = await fs.getNote(targetVertex, name);
+              broken = !note;
+            }
+          } else if (link.startsWith("mindcapsule://image/")) {
+            const parts = link.replace("mindcapsule://image/", "").split("/");
+            const vertexId = parts[0];
+            const name = decodeURIComponent(parts.slice(1).join("/"));
+            const targetVertex = vertexId ? await fs.getVertex(vertexId) : null;
+            if (!targetVertex || !name) {
+              broken = true;
+            } else {
+              const image = await fs.getImage(targetVertex, name);
+              broken = !image;
+            }
+          } else if (link.startsWith("mindcapsule://file/")) {
+            const parts = link.replace("mindcapsule://file/", "").split("/");
+            const vertexId = parts[0];
+            const name = decodeURIComponent(parts.slice(1).join("/"));
+            const targetVertex = vertexId ? await fs.getVertex(vertexId) : null;
+            if (!targetVertex || !name) {
+              broken = true;
+            } else {
+              const exists = await checkFileExists(targetVertex, name);
+              broken = !exists;
+            }
+          }
+        } catch {
+          broken = true;
+        }
+        if (broken) results[link] = true;
+      }
+
+      if (active) setBrokenLinks(results);
+    };
+    void validateLinks();
+    return () => {
+      active = false;
+    };
+  }, [draft, selectedNote, vertex.id]);
 
   const insertMarkdownLink = React.useCallback((label: string, url: string) => {
     setDraft((prev) => {
@@ -313,10 +503,109 @@ export const NotesTab: React.FC<NotesTabProps> = ({
     [insertMarkdownLink]
   );
 
-  const noteCardBg =
-    theme.palette.mode === "dark" ? theme.palette.background.paper : "#fdf4b2";
-  const noteCardBorder =
-    theme.palette.mode === "dark" ? theme.palette.divider : "#f2e2a4";
+  const handleSelectNote = React.useCallback(
+    (note: NoteEntry, noteVertex: Vertex) => {
+      const label = note.name.replace(/\.md$/i, "");
+      insertMarkdownLink(
+        label,
+        `mindcapsule://note/${noteVertex.id}/${encodeURIComponent(note.name)}`
+      );
+      setReferenceOpen(false);
+    },
+    [insertMarkdownLink]
+  );
+
+  const handleSelectImage = React.useCallback(
+    (image: ImageEntry, imageVertex: Vertex) => {
+      const label = image.alt || image.name;
+      insertMarkdownLink(
+        label,
+        `mindcapsule://image/${imageVertex.id}/${encodeURIComponent(image.name)}`
+      );
+      setReferenceOpen(false);
+    },
+    [insertMarkdownLink]
+  );
+
+  const handleSelectFile = React.useCallback(
+    (file: { name: string }, fileVertex: Vertex) => {
+      insertMarkdownLink(
+        file.name,
+        `mindcapsule://file/${fileVertex.id}/${encodeURIComponent(file.name)}`
+      );
+      setReferenceOpen(false);
+    },
+    [insertMarkdownLink]
+  );
+
+  const handleOpenFile = React.useCallback(async (path: string) => {
+    try {
+      const { isTauri, invoke } = await import("@tauri-apps/api/core");
+      if (isTauri()) {
+        await invoke("fs_open_path", { path });
+        return;
+      }
+      window.open(encodeURI(`file://${path}`), "_blank", "noreferrer");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("filesTab.errors.open"));
+    }
+  }, [t]);
+
+  const handlePreviewLink = React.useCallback(
+    async (href: string) => {
+      if (brokenLinks[href]) return;
+      if (href.startsWith("mindcapsule://vertex/")) {
+        const id = href.replace("mindcapsule://vertex/", "").trim();
+        if (id) onOpenVertex?.(id);
+        return;
+      }
+
+      const fs = await getFileSystem();
+      if (href.startsWith("mindcapsule://note/")) {
+        const parts = href.replace("mindcapsule://note/", "").split("/");
+        const vertexId = parts[0];
+        const name = decodeURIComponent(parts.slice(1).join("/"));
+        const targetVertex = vertexId ? await fs.getVertex(vertexId) : null;
+        if (!targetVertex || !name) return;
+        const note = await fs.getNote(targetVertex, name);
+        if (!note) return;
+        setNotePreview({ title: note.name.replace(/\.md$/i, ""), text: note.text });
+        return;
+      }
+
+      if (href.startsWith("mindcapsule://image/")) {
+        const parts = href.replace("mindcapsule://image/", "").split("/");
+        const vertexId = parts[0];
+        const name = decodeURIComponent(parts.slice(1).join("/"));
+        const targetVertex = vertexId ? await fs.getVertex(vertexId) : null;
+        if (!targetVertex || !name) return;
+        const image = await fs.getImage(targetVertex, name);
+        if (!image) return;
+        setImagePreview({ title: image.alt || image.name, path: image.path });
+        return;
+      }
+
+      if (href.startsWith("mindcapsule://file/")) {
+        const parts = href.replace("mindcapsule://file/", "").split("/");
+        const vertexId = parts[0];
+        const name = decodeURIComponent(parts.slice(1).join("/"));
+        const targetVertex = vertexId ? await fs.getVertex(vertexId) : null;
+        if (!targetVertex || !name) return;
+        const { isTauri } = await import("@tauri-apps/api/core");
+        if (isTauri()) {
+          const { join } = await import("@tauri-apps/api/path");
+          const path = await join(targetVertex.asset_directory, name);
+          await handleOpenFile(path);
+          return;
+        }
+        await handleOpenFile(`${targetVertex.asset_directory}/${name}`);
+      }
+    },
+    [brokenLinks, handleOpenFile, onOpenVertex]
+  );
+
+  const noteCardBg = theme.palette.background.paper;
+  const noteCardBorder = theme.palette.divider;
 
   return (
     <Box
@@ -325,6 +614,8 @@ export const NotesTab: React.FC<NotesTabProps> = ({
         flexDirection: "column",
         gap: 2,
         height: "100%",
+        flex: 1,
+        minHeight: 0,
         position: "relative",
       }}
     >
@@ -411,7 +702,7 @@ export const NotesTab: React.FC<NotesTabProps> = ({
                     disabled={saving}
                     aria-label={t("notesTab.delete")}
                     sx={{
-                      bgcolor: theme.palette.mode === "dark" ? "#1d1a0b" : "#f7e691",
+                      bgcolor: theme.palette.background.paper,
                     }}
                   >
                     <DeleteOutlineIcon fontSize="small" />
@@ -435,43 +726,83 @@ export const NotesTab: React.FC<NotesTabProps> = ({
         </Box>
       )}
 
-      <CreateFab
-        title={t("notesTab.create")}
-        onClick={() => {
-          void handleCreateNote();
-        }}
-        sx={{ position: "fixed", right: 20, bottom: 94, zIndex: 1300 }}
-      />
+      {!selectedNote && !isClosing && !referenceOpen && (
+        <CreateFab
+          title={t("notesTab.create")}
+          onClick={() => {
+            void handleCreateNote();
+          }}
+          sx={{ position: "fixed", right: 20, bottom: 94, zIndex: 1300 }}
+        />
+      )}
 
-      <Dialog
-        fullScreen
-        open={Boolean(selectedNote)}
-        onClose={handleCloseModal}
-      >
-        <DialogContent
+      {selectedNote && (
+        <Box
           sx={{
-            p: { xs: 2, md: 3 },
-            height: "100%",
+            position: "absolute",
+            inset: 0,
+            bgcolor: "background.default",
+            zIndex: 5,
+            p: 0,
             display: "flex",
             flexDirection: "column",
             gap: 2,
+            animation: `${isClosing ? "notesSlideOut" : "notesSlideIn"} 180ms ease`,
+            "@keyframes notesSlideIn": {
+              from: { opacity: 0, transform: "translateX(-20px)" },
+              to: { opacity: 1, transform: "translateX(0)" },
+            },
+            "@keyframes notesSlideOut": {
+              from: { opacity: 1, transform: "translateX(0)" },
+              to: { opacity: 0, transform: "translateX(-20px)" },
+            },
           }}
+          onMouseDownCapture={handleExitEditOnOutsideClick}
         >
           <Stack
             direction={{ xs: "column", sm: "row" }}
             alignItems={{ xs: "flex-start", sm: "center" }}
             justifyContent="space-between"
             spacing={2}
+            sx={{ width: "100%" }}
           >
-            <Typography variant="h6" sx={{ fontWeight: 900 }}>
-              {t("notesTab.noteTitle")}
-            </Typography>
-            <Stack direction="row" spacing={1} alignItems="center">
+            <Stack
+              direction="row"
+              spacing={1}
+              alignItems="center"
+              data-notes-controls
+            >
+              <Tooltip title={t("notesTab.close")}>
+                <IconButton
+                  onClick={handleCloseModal}
+                  aria-label={t("notesTab.close")}
+                >
+                  <ArrowBackIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title={t("notesTab.insertLink")}>
+                <span>
+                  <IconButton
+                    onClick={() => {
+                      setReferenceClosing(false);
+                      setReferenceOpen(true);
+                    }}
+                    aria-label={t("notesTab.insertLink")}
+                    disabled={mode !== "edit"}
+                  >
+                    <LinkOutlinedIcon fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
               <ToggleButtonGroup
                 size="small"
                 value={mode}
                 exclusive
                 onChange={handleModeChange}
+                sx={{
+                  borderRadius: 1,
+                  bgcolor: "background.paper",
+                }}
               >
                 <ToggleButton value="preview" sx={{ px: 2.4 }}>
                   <VisibilityIcon fontSize="small" sx={{ mr: 0.5 }} />
@@ -490,90 +821,142 @@ export const NotesTab: React.FC<NotesTabProps> = ({
                   <HistoryIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
-              <Tooltip title={t("notesTab.insertLink")}>
-                <span>
-                  <IconButton
-                    onClick={() => setReferenceOpen(true)}
-                    aria-label={t("notesTab.insertLink")}
-                    disabled={mode !== "edit"}
-                  >
-                    <LinkOutlinedIcon fontSize="small" />
-                  </IconButton>
-                </span>
-              </Tooltip>
-              <Tooltip title={t("notesTab.close")}>
-                <IconButton
-                  onClick={handleCloseModal}
-                  aria-label={t("notesTab.close")}
-                >
-                  <CloseIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
             </Stack>
+            <Typography variant="h6" sx={{ fontWeight: 900, ml: "auto" }}>
+              {selectedNoteLabel || t("notesTab.noteTitle")}
+            </Typography>
           </Stack>
 
-          <Box sx={{ display: "flex", flex: 1, minHeight: 0, gap: 2 }}>
+          <Box
+            sx={{
+              display: "flex",
+              flex: 1,
+              minHeight: 0,
+              gap: 2,
+            }}
+          >
             <Box
               sx={{
                 flex: 1,
                 minWidth: 0,
                 minHeight: 0,
-                overflow: "auto",
                 display: "flex",
               }}
             >
-              {mode === "preview" ? (
-                <Box
-                  sx={{
-                    color: "text.primary",
-                    flex: 1,
-                    "& h1,h2,h3,h4,h5,h6": { margin: "0.5em 0 0.25em" },
-                    "& p": { margin: "0.25em 0" },
-                  }}
-                  onClick={(event) => {
-                    const target = event.target as HTMLElement | null;
-                    const anchor = target?.closest("a");
-                    if (!anchor) return;
-                    const href = anchor.getAttribute("href") ?? "";
-                    if (!href.startsWith("mindcapsule://vertex/")) return;
-                    event.preventDefault();
-                    const id = href.replace("mindcapsule://vertex/", "").trim();
-                    if (id) onOpenVertex?.(id);
-                  }}
-                  dangerouslySetInnerHTML={{
-                    __html: renderMarkdown(draft || ""),
-                  }}
-                />
-              ) : (
-                <TextField
-                  multiline
-                  fullWidth
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  onBlur={handlePersistDraft}
-                  placeholder={t("notesTab.placeholder")}
-                  minRows={12}
-                  sx={{ height: "100%", flex: 1 }}
-                  inputRef={editorRef}
-                  slotProps={{
-                    inputLabel: { shrink: true },
-                    input: { sx: { alignItems: "flex-start", height: "100%" } },
-                  }}
-                />
-              )}
-            </Box>
-
-            {historyOpen && (
-              <Paper
-                variant="outlined"
+              <Box
                 sx={{
-                  width: { xs: "100%", md: 280 },
-                  flexShrink: 0,
-                  p: 2,
-                  height: "100%",
-                  overflow: "auto",
+                  flex: 1,
+                  minHeight: 0,
+                  display: "flex",
                 }}
               >
+                <Box
+                  sx={(theme) => ({
+                    flex: 1,
+                    minHeight: 0,
+                    display: "flex",
+                    borderRadius: '15px',
+                    border: `1px solid ${theme.palette.divider}`,
+                    bgcolor: "background.paper",
+                    overflow: "hidden",
+                  })}
+                >
+                  {mode === "preview" ? (
+                    <Box
+                      sx={{
+                        color: "text.primary",
+                        flex: 1,
+                        overflow: "auto",
+                        bgcolor: "transparent",
+                        p: 2,
+                        "& h1,h2,h3,h4,h5,h6": { margin: "0.5em 0 0.25em" },
+                        "& p": { margin: "0.25em 0" },
+                        "& .broken-link-indicator": {
+                          color: "error.main",
+                          fontWeight: 600,
+                          fontSize: "0.85em",
+                        },
+                      }}
+                      onDoubleClick={(event) => {
+                        event.preventDefault();
+                        handleOpenEditMode();
+                      }}
+                      onClick={(event) => {
+                        const target = event.target as HTMLElement | null;
+                        const anchor = target?.closest("a");
+                        if (!anchor) return;
+                        const href = anchor.getAttribute("href") ?? "";
+                        if (!href.startsWith("mindcapsule://")) return;
+                        event.preventDefault();
+                        void handlePreviewLink(href);
+                      }}
+                      dangerouslySetInnerHTML={{
+                        __html: renderMarkdown(draft || "", brokenLinks),
+                      }}
+                    />
+                  ) : (
+                    <Box
+                      component="textarea"
+                      ref={editorRef}
+                      value={draft}
+                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                        setDraft(e.target.value)
+                      }
+                      onBlur={handlePersistDraft}
+                      placeholder={t("notesTab.placeholder")}
+                      sx={{
+                        width: "100%",
+                        minHeight: 0,
+                        flex: 1,
+                        resize: "none",
+                        border: "none",
+                        outline: "none",
+                        backgroundColor: "transparent",
+                        color: "text.primary",
+                        fontFamily: "inherit",
+                        fontSize: "1rem",
+                        lineHeight: 1.6,
+                        p: 2,
+                        overflow: "auto",
+                        display: "block",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                  )}
+                </Box>
+              </Box>
+            </Box>
+
+            <Collapse
+              in={historyOpen}
+              orientation="horizontal"
+              timeout={180}
+              sx={{
+                display: "flex",
+                flexShrink: 0,
+                height: "100%",
+                overflow: "hidden",
+              }}
+            >
+              <Box
+                sx={{
+                  width: { xs: "100%", md: 280 },
+                  height: "100%",
+                  opacity: historyOpen ? 1 : 0,
+                  transform: historyOpen ? "translateX(0)" : "translateX(16px)",
+                  transition: "transform 180ms ease, opacity 180ms ease",
+                  pointerEvents: historyOpen ? "auto" : "none",
+                }}
+              >
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    width: "100%",
+                    p: 2,
+                    height: "100%",
+                    overflow: "auto",
+                  }}
+                >
                 <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
                   <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
                     {t("notesTab.history")}
@@ -647,18 +1030,125 @@ export const NotesTab: React.FC<NotesTabProps> = ({
                       ))
                   )}
                 </Stack>
-              </Paper>
-            )}
+                </Paper>
+              </Box>
+            </Collapse>
           </Box>
+        </Box>
+      )}
+
+      {(referenceOpen || referenceClosing) && (
+        <Box
+          sx={{
+            position: "absolute",
+            inset: -20,
+            zIndex: 6,
+            opacity: referenceOpen ? 1 : 0,
+            transition: "opacity 180ms ease",
+            pointerEvents: referenceOpen ? "auto" : "none",
+          }}
+        >
+          <Box sx={{ position: "relative", width: "100%", height: "100%" }}>
+            <GraphReferenceModal
+              open={referenceOpen || referenceClosing}
+              items={graphItems}
+              onClose={handleReferenceClose}
+              onSelectVertex={handleSelectVertex}
+              onSelectNote={handleSelectNote}
+              onSelectImage={handleSelectImage}
+              onSelectFile={handleSelectFile}
+            />
+          </Box>
+        </Box>
+      )}
+
+      <Dialog
+        fullScreen
+        open={Boolean(imagePreview)}
+        onClose={() => setImagePreview(null)}
+      >
+        <DialogTitle
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            bgcolor: "background.paper",
+          }}
+        >
+          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+            {imagePreview?.title}
+          </Typography>
+          <Box sx={{ flex: 1 }} />
+          <IconButton onClick={() => setImagePreview(null)} aria-label={t("notesTab.close")}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent
+          sx={{
+            p: 0,
+            bgcolor: "background.default",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          {imagePreview && (
+            <Box
+              component="img"
+              src={imagePreview.path}
+              alt={imagePreview.title}
+              sx={{
+                maxWidth: "100%",
+                maxHeight: "100%",
+                objectFit: "contain",
+              }}
+            />
+          )}
         </DialogContent>
       </Dialog>
 
-      <GraphReferenceModal
-        open={referenceOpen}
-        items={graphItems}
-        onClose={() => setReferenceOpen(false)}
-        onSelectVertex={handleSelectVertex}
-      />
+      <Dialog
+        fullScreen
+        open={Boolean(notePreview)}
+        onClose={() => setNotePreview(null)}
+      >
+        <DialogTitle
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            bgcolor: "background.paper",
+          }}
+        >
+          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+            {notePreview?.title}
+          </Typography>
+          <Box sx={{ flex: 1 }} />
+          <IconButton onClick={() => setNotePreview(null)} aria-label={t("notesTab.close")}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent
+          sx={{
+            p: 2,
+            bgcolor: "background.default",
+            color: "text.primary",
+            "& h1,h2,h3,h4,h5,h6": { margin: "0.5em 0 0.25em" },
+            "& p": { margin: "0.25em 0" },
+            "& .broken-link-indicator": {
+              color: "error.main",
+              fontWeight: 600,
+              fontSize: "0.85em",
+            },
+          }}
+        >
+          <Box
+            dangerouslySetInnerHTML={{
+              __html: notePreview ? renderMarkdown(notePreview.text || "") : "",
+            }}
+          />
+        </DialogContent>
+      </Dialog>
 
       <DeleteConfirmDialog
         open={Boolean(confirmDelete)}
