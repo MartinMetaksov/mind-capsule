@@ -2,25 +2,17 @@ import * as React from "react";
 import {
   Alert,
   Box,
-  Collapse,
-  Dialog,
-  DialogContent,
-  DialogTitle,
   IconButton,
-  Paper,
   Stack,
   ToggleButton,
   ToggleButtonGroup,
   Tooltip,
   Typography,
-  useTheme,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditIcon from "@mui/icons-material/Edit";
 import HistoryIcon from "@mui/icons-material/History";
 import LinkOutlinedIcon from "@mui/icons-material/LinkOutlined";
-import CloseIcon from "@mui/icons-material/Close";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import { useTranslation } from "react-i18next";
 
@@ -34,9 +26,19 @@ import { DeleteConfirmDialog } from "../../../components/delete-confirm-dialog/D
 import { detectOperatingSystem } from "@/utils/os";
 import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
 import { CreateFab } from "../../../components/create-fab/CreateFab";
-import { GraphReferenceModal } from "../../views/graph/components/GraphReferenceModal";
 import type { GraphNode } from "../../views/graph/types";
 import type { VertexItem } from "../../views/grid/VertexGrid";
+import { GraphReferenceOverlay } from "../../common/GraphReferenceOverlay";
+import { NotesList } from "./components/NotesList";
+import { NoteHistoryPanel } from "./components/NoteHistoryPanel";
+import { ImagePreviewDialog } from "./components/ImagePreviewDialog";
+import { NotePreviewDialog } from "./components/NotePreviewDialog";
+import { renderMarkdown, type BrokenLinkMap } from "./utils/markdown";
+import {
+  loadHistory,
+  saveHistory,
+  type NoteHistoryItem,
+} from "./utils/history";
 
 type NotesTabProps = {
   vertex: Vertex;
@@ -45,13 +47,6 @@ type NotesTabProps = {
 };
 
 type Mode = "preview" | "edit";
-
-type BrokenLinkMap = Record<string, boolean>;
-
-type NoteHistoryItem = {
-  text: string;
-  at: string;
-};
 
 type NotePreview = {
   title: string;
@@ -63,56 +58,12 @@ type ImagePreview = {
   path: string;
 };
 
-const renderMarkdown = (text: string, brokenLinks?: BrokenLinkMap): string => {
-  let html = text;
-  html = html.replace(/^###### (.*)$/gm, "<h6>$1</h6>");
-  html = html.replace(/^##### (.*)$/gm, "<h5>$1</h5>");
-  html = html.replace(/^#### (.*)$/gm, "<h4>$1</h4>");
-  html = html.replace(/^### (.*)$/gm, "<h3>$1</h3>");
-  html = html.replace(/^## (.*)$/gm, "<h2>$1</h2>");
-  html = html.replace(/^# (.*)$/gm, "<h1>$1</h1>");
-  html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-  html = html.replace(/\*(.+?)\*/g, "<em>$1</em>");
-  html = html.replace(/`(.+?)`/g, "<code>$1</code>");
-  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_match, label, url) => {
-    const indicator = brokenLinks?.[url]
-      ? ' <span class="broken-link-indicator">[N/A]</span>'
-      : "";
-    return `<a href="${url}" target="_blank" rel="noreferrer">${label}</a>${indicator}`;
-  });
-  html = html.replace(/^- (.*)$/gm, "<li>$1</li>");
-  html = html.replace(/(<li>.*<\/li>)/gs, "<ul>$1</ul>");
-  html = html.replace(/\n/g, "<br/>");
-  return html;
-};
-
-const historyKeyFor = (vertexId: string, name: string) =>
-  `notesHistory:${vertexId}:${name}`;
-
-const loadHistory = (vertexId: string, name: string): NoteHistoryItem[] => {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(historyKeyFor(vertexId, name));
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as NoteHistoryItem[];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-};
-
-const saveHistory = (vertexId: string, name: string, history: NoteHistoryItem[]) => {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(historyKeyFor(vertexId, name), JSON.stringify(history));
-};
-
 export const NotesTab: React.FC<NotesTabProps> = ({
   vertex,
   refreshToken,
   onOpenVertex,
 }) => {
   const { t } = useTranslation("common");
-  const theme = useTheme();
   const [notes, setNotes] = React.useState<NoteEntry[]>([]);
   const [selectedName, setSelectedName] = React.useState<string | null>(null);
   const [mode, setMode] = React.useState<Mode>("preview");
@@ -604,9 +555,6 @@ export const NotesTab: React.FC<NotesTabProps> = ({
     [brokenLinks, handleOpenFile, onOpenVertex]
   );
 
-  const noteCardBg = theme.palette.background.paper;
-  const noteCardBorder = theme.palette.divider;
-
   return (
     <Box
       sx={{
@@ -659,71 +607,12 @@ export const NotesTab: React.FC<NotesTabProps> = ({
           <Typography color="text.secondary">{t("notesTab.empty")}</Typography>
         </Box>
       ) : (
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-            gap: 2,
-          }}
-        >
-          {notes.map((note, idx) => (
-            <Paper
-              key={note.name}
-              variant="outlined"
-              sx={{
-                p: 2,
-                minHeight: 160,
-                bgcolor: noteCardBg,
-                borderColor: noteCardBorder,
-                position: "relative",
-                cursor: "pointer",
-                display: "flex",
-                flexDirection: "column",
-                gap: 1,
-                boxShadow:
-                  theme.palette.mode === "dark"
-                    ? "0 8px 18px rgba(0,0,0,0.3)"
-                    : "0 10px 22px rgba(0,0,0,0.08)",
-              }}
-              onClick={() => handleOpenNote(note)}
-            >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                  {t("notesTab.noteLabel", { number: idx + 1 })}
-                </Typography>
-                <Box sx={{ flex: 1 }} />
-                <Tooltip title={t("notesTab.delete")}>
-                  <IconButton
-                    size="small"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      setConfirmDelete(note);
-                    }}
-                    disabled={saving}
-                    aria-label={t("notesTab.delete")}
-                    sx={{
-                      bgcolor: theme.palette.background.paper,
-                    }}
-                  >
-                    <DeleteOutlineIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              </Box>
-              <Typography
-                variant="body2"
-                sx={{
-                  whiteSpace: "pre-line",
-                  overflow: "hidden",
-                  display: "-webkit-box",
-                  WebkitLineClamp: 6,
-                  WebkitBoxOrient: "vertical",
-                }}
-              >
-                {note.text || t("notesTab.emptyNote")}
-              </Typography>
-            </Paper>
-          ))}
-        </Box>
+        <NotesList
+          notes={notes}
+          saving={saving}
+          onOpenNote={handleOpenNote}
+          onDeleteNote={setConfirmDelete}
+        />
       )}
 
       {!selectedNote && !isClosing && !referenceOpen && (
@@ -927,228 +816,46 @@ export const NotesTab: React.FC<NotesTabProps> = ({
               </Box>
             </Box>
 
-            <Collapse
-              in={historyOpen}
-              orientation="horizontal"
-              timeout={180}
-              sx={{
-                display: "flex",
-                flexShrink: 0,
-                height: "100%",
-                overflow: "hidden",
+            <NoteHistoryPanel
+              open={historyOpen}
+              noteText={selectedNote?.text ?? ""}
+              history={noteHistory}
+              onSelect={handleSelectHistory}
+              onClear={() => {
+                if (selectedNote) handleClearHistory(selectedNote.name);
               }}
-            >
-              <Box
-                sx={{
-                  width: { xs: "100%", md: 280 },
-                  height: "100%",
-                  opacity: historyOpen ? 1 : 0,
-                  transform: historyOpen ? "translateX(0)" : "translateX(16px)",
-                  transition: "transform 180ms ease, opacity 180ms ease",
-                  pointerEvents: historyOpen ? "auto" : "none",
-                }}
-              >
-                <Paper
-                  variant="outlined"
-                  sx={{
-                    width: "100%",
-                    p: 2,
-                    height: "100%",
-                    overflow: "auto",
-                  }}
-                >
-                <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                    {t("notesTab.history")}
-                  </Typography>
-                  <Box sx={{ flex: 1 }} />
-                  <Tooltip title={t("notesTab.historyClear")}>
-                    <IconButton
-                      size="small"
-                      onClick={() => {
-                        if (selectedNote) handleClearHistory(selectedNote.name);
-                      }}
-                      aria-label={t("notesTab.historyClear")}
-                      disabled={!selectedNote || noteHistory.length === 0}
-                    >
-                      <DeleteOutlineIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                </Box>
-                <Stack spacing={1}>
-                  <Paper
-                    variant="outlined"
-                    sx={{ p: 1.5, cursor: "pointer" }}
-                    onClick={() => handleSelectHistory(selectedNote?.text ?? "")}
-                  >
-                    <Typography variant="caption" color="text.secondary">
-                      {t("notesTab.currentVersion")}
-                    </Typography>
-                    <Typography variant="body2" noWrap>
-                      {(selectedNote?.text ?? "") || t("notesTab.emptyNote")}
-                    </Typography>
-                  </Paper>
-                  {noteHistory.length === 0 ? (
-                    <Typography color="text.secondary" variant="body2">
-                      {t("notesTab.historyEmpty")}
-                    </Typography>
-                  ) : (
-                    noteHistory
-                      .map((entry, idx) => ({ entry, idx }))
-                      .reverse()
-                      .map(({ entry, idx }) => (
-                        <Paper
-                          key={`${entry.at}-${idx}`}
-                          variant="outlined"
-                          sx={{ p: 1.5, cursor: "pointer" }}
-                          onClick={() => handleSelectHistory(entry.text)}
-                        >
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                            <Typography variant="caption" color="text.secondary">
-                              {new Date(entry.at).toLocaleString()}
-                            </Typography>
-                            <Box sx={{ flex: 1 }} />
-                            <Tooltip title={t("notesTab.historyDelete")}>
-                              <IconButton
-                                size="small"
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  if (selectedNote) {
-                                    handleDeleteHistoryEntry(selectedNote.name, idx);
-                                  }
-                                }}
-                                aria-label={t("notesTab.historyDelete")}
-                              >
-                                <DeleteOutlineIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          </Box>
-                          <Typography variant="body2" noWrap>
-                            {entry.text || t("notesTab.emptyNote")}
-                          </Typography>
-                        </Paper>
-                      ))
-                  )}
-                </Stack>
-                </Paper>
-              </Box>
-            </Collapse>
-          </Box>
-        </Box>
-      )}
-
-      {(referenceOpen || referenceClosing) && (
-        <Box
-          sx={{
-            position: "absolute",
-            inset: -20,
-            zIndex: 6,
-            opacity: referenceOpen ? 1 : 0,
-            transition: "opacity 180ms ease",
-            pointerEvents: referenceOpen ? "auto" : "none",
-          }}
-        >
-          <Box sx={{ position: "relative", width: "100%", height: "100%" }}>
-            <GraphReferenceModal
-              open={referenceOpen || referenceClosing}
-              items={graphItems}
-              onClose={handleReferenceClose}
-              onSelectVertex={handleSelectVertex}
-              onSelectNote={handleSelectNote}
-              onSelectImage={handleSelectImage}
-              onSelectFile={handleSelectFile}
+              onDeleteEntry={(index) => {
+                if (selectedNote) handleDeleteHistoryEntry(selectedNote.name, index);
+              }}
             />
           </Box>
         </Box>
       )}
 
-      <Dialog
-        fullScreen
+      <GraphReferenceOverlay
+        open={referenceOpen}
+        closing={referenceClosing}
+        items={graphItems}
+        onClose={handleReferenceClose}
+        onSelectVertex={handleSelectVertex}
+        onSelectNote={handleSelectNote}
+        onSelectImage={handleSelectImage}
+        onSelectFile={handleSelectFile}
+      />
+
+      <ImagePreviewDialog
         open={Boolean(imagePreview)}
+        title={imagePreview?.title ?? ""}
+        path={imagePreview?.path ?? ""}
         onClose={() => setImagePreview(null)}
-      >
-        <DialogTitle
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 1,
-            bgcolor: "background.paper",
-          }}
-        >
-          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-            {imagePreview?.title}
-          </Typography>
-          <Box sx={{ flex: 1 }} />
-          <IconButton onClick={() => setImagePreview(null)} aria-label={t("notesTab.close")}>
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent
-          sx={{
-            p: 0,
-            bgcolor: "background.default",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          {imagePreview && (
-            <Box
-              component="img"
-              src={imagePreview.path}
-              alt={imagePreview.title}
-              sx={{
-                maxWidth: "100%",
-                maxHeight: "100%",
-                objectFit: "contain",
-              }}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      />
 
-      <Dialog
-        fullScreen
+      <NotePreviewDialog
         open={Boolean(notePreview)}
+        title={notePreview?.title ?? ""}
+        text={notePreview?.text ?? ""}
         onClose={() => setNotePreview(null)}
-      >
-        <DialogTitle
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 1,
-            bgcolor: "background.paper",
-          }}
-        >
-          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-            {notePreview?.title}
-          </Typography>
-          <Box sx={{ flex: 1 }} />
-          <IconButton onClick={() => setNotePreview(null)} aria-label={t("notesTab.close")}>
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent
-          sx={{
-            p: 2,
-            bgcolor: "background.default",
-            color: "text.primary",
-            "& h1,h2,h3,h4,h5,h6": { margin: "0.5em 0 0.25em" },
-            "& p": { margin: "0.25em 0" },
-            "& .broken-link-indicator": {
-              color: "error.main",
-              fontWeight: 600,
-              fontSize: "0.85em",
-            },
-          }}
-        >
-          <Box
-            dangerouslySetInnerHTML={{
-              __html: notePreview ? renderMarkdown(notePreview.text || "") : "",
-            }}
-          />
-        </DialogContent>
-      </Dialog>
+      />
 
       <DeleteConfirmDialog
         open={Boolean(confirmDelete)}
