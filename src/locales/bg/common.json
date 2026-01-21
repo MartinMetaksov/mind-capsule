@@ -163,7 +163,14 @@
   },
   "header": {
     "search": "Търсене",
+    "splitScreen": "Сравни с",
     "settings": "Настройки"
+  },
+  "splitScreen": {
+    "compareImage": "Сравни с изображение",
+    "compareNote": "Сравни с бележка",
+    "pickToCompare": "Избери елемент за сравнение.",
+    "selectVertexToCompare": "Избери връх за сравнение."
   },
   "footer": {
     "github": "GitHub",

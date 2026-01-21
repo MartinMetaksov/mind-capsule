@@ -36,6 +36,15 @@ type GraphReferenceModalProps = {
   onSelectNote?: (note: NoteEntry, vertex: Vertex) => void;
   onSelectImage?: (image: ImageEntry, vertex: Vertex) => void;
   onSelectFile?: (file: { name: string; path: string }, vertex: Vertex) => void;
+  title?: string;
+  subtitle?: string;
+  showHeader?: boolean;
+  showCloseButton?: boolean;
+  enableEscapeClose?: boolean;
+  actionKeys?: string[];
+  actionLabelOverrides?: Record<string, string>;
+  railSubtitleOverride?: string;
+  railEmptySelectOverride?: string;
 };
 
 type RailTab = "notes" | "images" | "files";
@@ -53,6 +62,15 @@ export const GraphReferenceModal: React.FC<GraphReferenceModalProps> = ({
   onSelectNote,
   onSelectImage,
   onSelectFile,
+  title,
+  subtitle,
+  showHeader = true,
+  showCloseButton = true,
+  enableEscapeClose = true,
+  actionKeys,
+  actionLabelOverrides,
+  railSubtitleOverride,
+  railEmptySelectOverride,
 }) => {
   const { t } = useTranslation("common");
   const theme = useTheme();
@@ -102,7 +120,7 @@ export const GraphReferenceModal: React.FC<GraphReferenceModalProps> = ({
   }, [selectedId]);
 
   React.useEffect(() => {
-    if (!open) return;
+    if (!open || !enableEscapeClose) return;
     const handler = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
@@ -115,7 +133,7 @@ export const GraphReferenceModal: React.FC<GraphReferenceModalProps> = ({
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [handleClose, open, railOpen]);
+  }, [enableEscapeClose, handleClose, open, railOpen]);
 
   const selectedNode = selectedId
     ? nodesByIdRef.current.get(selectedId) ?? null
@@ -218,10 +236,12 @@ export const GraphReferenceModal: React.FC<GraphReferenceModalProps> = ({
   const actions = React.useMemo<GraphAction[]>(() => {
     const vertexNode = selectedNode ?? null;
     const isVertex = selectedNode?.kind === "vertex";
-    return [
+    const allActions: GraphAction[] = [
       {
         key: "link-vertex",
-        label: t("graphReferenceModal.actions.vertex"),
+        label:
+          actionLabelOverrides?.["link-vertex"] ??
+          t("graphReferenceModal.actions.vertex"),
         icon: <AccountTreeOutlinedIcon fontSize="small" />,
         angle: 225,
         onClick: () => {
@@ -233,7 +253,9 @@ export const GraphReferenceModal: React.FC<GraphReferenceModalProps> = ({
       },
       {
         key: "link-note",
-        label: t("graphReferenceModal.actions.note"),
+        label:
+          actionLabelOverrides?.["link-note"] ??
+          t("graphReferenceModal.actions.note"),
         icon: <CommentOutlinedIcon fontSize="small" />,
         angle: 255,
         onClick: () => {
@@ -245,7 +267,9 @@ export const GraphReferenceModal: React.FC<GraphReferenceModalProps> = ({
       },
       {
         key: "link-image",
-        label: t("graphReferenceModal.actions.image"),
+        label:
+          actionLabelOverrides?.["link-image"] ??
+          t("graphReferenceModal.actions.image"),
         icon: <ImageOutlinedIcon fontSize="small" />,
         angle: 285,
         onClick: () => {
@@ -257,7 +281,9 @@ export const GraphReferenceModal: React.FC<GraphReferenceModalProps> = ({
       },
       {
         key: "link-file",
-        label: t("graphReferenceModal.actions.file"),
+        label:
+          actionLabelOverrides?.["link-file"] ??
+          t("graphReferenceModal.actions.file"),
         icon: <InsertDriveFileOutlinedIcon fontSize="small" />,
         angle: 315,
         onClick: () => {
@@ -268,7 +294,16 @@ export const GraphReferenceModal: React.FC<GraphReferenceModalProps> = ({
         disabled: !isVertex,
       },
     ];
-  }, [handleClose, onSelectVertex, selectedNode, t]);
+    if (!actionKeys || actionKeys.length === 0) return allActions;
+    return allActions.filter((action) => actionKeys.includes(action.key));
+  }, [
+    actionKeys,
+    actionLabelOverrides,
+    handleClose,
+    onSelectVertex,
+    selectedNode,
+    t,
+  ]);
 
   React.useEffect(() => {
     if (!open || !isVertexSelected) {
@@ -330,22 +365,31 @@ export const GraphReferenceModal: React.FC<GraphReferenceModalProps> = ({
         },
       }}
     >
-      <Stack direction="row" alignItems="center" spacing={1} sx={{ px: 2, py: 1.5 }}>
-        <IconButton
-          aria-label={t("graphReferenceModal.close")}
-          onClick={handleClose}
+      {showHeader && (
+        <Stack
+          direction="row"
+          alignItems="center"
+          spacing={1}
+          sx={{ px: 2, py: 1.5 }}
         >
-          <ArrowBackIcon />
-        </IconButton>
-        <Box>
-          <Typography variant="h6" sx={{ fontWeight: 900 }}>
-            {t("graphReferenceModal.title")}
-          </Typography>
-          <Typography color="text.secondary">
-            {t("graphReferenceModal.subtitle")}
-          </Typography>
-        </Box>
-      </Stack>
+          {showCloseButton && (
+            <IconButton
+              aria-label={t("graphReferenceModal.close")}
+              onClick={handleClose}
+            >
+              <ArrowBackIcon />
+            </IconButton>
+          )}
+          <Box>
+            <Typography variant="h6" sx={{ fontWeight: 900 }}>
+              {title ?? t("graphReferenceModal.title")}
+            </Typography>
+            <Typography color="text.secondary">
+              {subtitle ?? t("graphReferenceModal.subtitle")}
+            </Typography>
+          </Box>
+        </Stack>
+      )}
 
       <Box sx={{ flex: 1, minHeight: 0, position: "relative" }}>
         <Box
@@ -476,8 +520,8 @@ export const GraphReferenceModal: React.FC<GraphReferenceModalProps> = ({
           </Stack>
           <Typography variant="body2" color="text.secondary">
             {isVertexSelected
-              ? t("graphReferenceModal.rail.emptyHint")
-              : t("graphReferenceModal.rail.emptySelect")}
+              ? railSubtitleOverride ?? t("graphReferenceModal.rail.emptyHint")
+              : railEmptySelectOverride ?? t("graphReferenceModal.rail.emptySelect")}
           </Typography>
           {isVertexSelected && (
             <Typography
@@ -497,7 +541,7 @@ export const GraphReferenceModal: React.FC<GraphReferenceModalProps> = ({
         <Box sx={{ flex: 1, minHeight: 0, overflow: "auto", p: 2 }}>
           {!isVertexSelected && (
             <Typography color="text.secondary">
-              {t("graphReferenceModal.rail.emptySelect")}
+              {railEmptySelectOverride ?? t("graphReferenceModal.rail.emptySelect")}
             </Typography>
           )}
           {isVertexSelected && railLoading && (

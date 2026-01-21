@@ -16,6 +16,10 @@ type CreateFabProps = {
 export const CreateFab = React.forwardRef<CreateFabHandle, CreateFabProps>(
   ({ onClick, title = "Create", sx = {} }, ref) => {
     const buttonRef = React.useRef<HTMLButtonElement | null>(null);
+    const position =
+      typeof sx === "object" && sx !== null && "position" in sx
+        ? (sx as { position?: string }).position
+        : undefined;
 
     React.useImperativeHandle(ref, () => ({
       click: () => buttonRef.current?.click(),
@@ -29,6 +33,8 @@ export const CreateFab = React.forwardRef<CreateFabHandle, CreateFabProps>(
           color="primary"
           aria-label={title}
           onClick={onClick}
+          data-create-fab="true"
+          data-fab-position={position}
           sx={{
             position: "absolute",
             right: 20,

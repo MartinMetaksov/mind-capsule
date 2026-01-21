@@ -163,7 +163,14 @@
   },
   "header": {
     "search": "Search",
+    "splitScreen": "Compare with",
     "settings": "Settings"
+  },
+  "splitScreen": {
+    "compareImage": "Compare with image",
+    "compareNote": "Compare with note",
+    "pickToCompare": "Pick an item to compare.",
+    "selectVertexToCompare": "Select a vertex to compare."
   },
   "footer": {
     "github": "GitHub",

@@ -1,7 +1,15 @@
 import * as React from "react";
-import { AppBar, Toolbar, Typography, IconButton, Tooltip, Box } from "@mui/material";
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  IconButton,
+  Tooltip,
+  Box,
+} from "@mui/material";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import { SearchOutlined } from "@mui/icons-material";
+import VerticalSplitIcon from "@mui/icons-material/VerticalSplit";
 import { useNavigate } from "react-router-dom";
 
 import { APP_NAME } from "@/constants/appConstants";
@@ -13,7 +21,15 @@ import { SettingsDialog } from "./settings-dialog/SettingsDialog";
 import { useTranslation } from "react-i18next";
 import packageJson from "../../../../package.json";
 
-export const Header: React.FC = () => {
+type HeaderProps = {
+  splitEnabled?: boolean;
+  onToggleSplit?: () => void;
+};
+
+export const Header: React.FC<HeaderProps> = ({
+  splitEnabled = false,
+  onToggleSplit,
+}) => {
   const { t } = useTranslation("common");
   const { preference, setPreference } = useThemeMode();
   const [searchOpen, setSearchOpen] = React.useState(false);
@@ -88,6 +104,31 @@ export const Header: React.FC = () => {
           </Typography>
         </Box>
 
+        <Tooltip title={t("header.splitScreen")}>
+          <span>
+            <IconButton
+              aria-label={t("header.splitScreen")}
+              onClick={onToggleSplit}
+              disabled={!onToggleSplit}
+              sx={(theme) => ({
+                color: splitEnabled
+                  ? theme.palette.primary.main
+                  : theme.palette.mode === "light"
+                    ? theme.palette.text.secondary
+                    : theme.palette.text.primary,
+                borderRadius: 2,
+                "&:hover": {
+                  backgroundColor: theme.palette.action.hover,
+                  color: splitEnabled
+                    ? theme.palette.primary.main
+                    : theme.palette.text.primary,
+                },
+              })}
+            >
+              <VerticalSplitIcon />
+            </IconButton>
+          </span>
+        </Tooltip>
         <Tooltip title={t("header.search")}>
           <IconButton
             aria-label={t("header.search")}
