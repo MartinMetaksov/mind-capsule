@@ -167,9 +167,9 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
         "stroke",
         theme.palette.mode === "dark"
           ? "rgba(255, 255, 255, 0.28)"
-          : theme.palette.divider
+          : "rgba(0, 0, 0, 0.35)"
       )
-      .attr("stroke-opacity", theme.palette.mode === "dark" ? 0.9 : 0.6)
+      .attr("stroke-opacity", theme.palette.mode === "dark" ? 0.9 : 0.7)
       .selectAll<SVGLineElement, GraphLink>("line")
       .data(visibleLinks)
       .join("line")
