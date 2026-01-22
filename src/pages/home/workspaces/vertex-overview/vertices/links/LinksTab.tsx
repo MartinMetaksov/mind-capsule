@@ -110,17 +110,8 @@ export const LinksTab: React.FC<LinksTabProps> = ({ vertex, refreshToken }) => {
   };
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 2,
-        maxWidth: 760,
-        mx: "auto",
-        width: "100%",
-      }}
-    >
-      <Box>
+    <Box sx={{ width: "100%" }}>
+      <Box sx={{ width: "100%", maxWidth: 760, mb: 3 }}>
         <Typography variant="h6" sx={{ fontWeight: 900, mb: 1 }}>
           {t("linksTab.title")}
         </Typography>
@@ -128,6 +119,17 @@ export const LinksTab: React.FC<LinksTabProps> = ({ vertex, refreshToken }) => {
           {t("linksTab.description")}
         </Typography>
       </Box>
+
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
+          maxWidth: 760,
+          mx: "auto",
+          width: "100%",
+        }}
+      >
 
       {error && (
         <Alert severity="error" onClose={() => setError(null)}>
@@ -240,6 +242,7 @@ export const LinksTab: React.FC<LinksTabProps> = ({ vertex, refreshToken }) => {
           </Stack>
         )}
       </Stack>
+      </Box>
     </Box>
   );
 };

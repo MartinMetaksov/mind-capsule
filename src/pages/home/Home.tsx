@@ -4,9 +4,14 @@ import { Outlet } from "react-router-dom";
 import { Header } from "./header/Header";
 import { Footer } from "./footer/Footer";
 import { SplitGraphPanel } from "./SplitGraphPanel";
+import { useWorkspaces } from "./workspaces/hooks/use-workspaces/useWorkspaces";
+import { SplitScreenProvider } from "./SplitScreenProvider";
 
 export const Home: React.FC = () => {
   const [splitEnabled, setSplitEnabled] = React.useState(false);
+  const { workspaces, loading: workspacesLoading } = useWorkspaces();
+  const hasWorkspaces = workspaces && workspaces.length > 0;
+  const disableActions = !workspacesLoading && !hasWorkspaces;
 
   return (
     <Box
@@ -26,23 +31,27 @@ export const Home: React.FC = () => {
       <Header
         splitEnabled={splitEnabled}
         onToggleSplit={() => setSplitEnabled((prev) => !prev)}
+        disableCompare={disableActions}
+        disableSearch={disableActions}
       />
 
       <Box
         component="main"
         sx={{ flex: 1, minHeight: 0, display: "flex", overflow: "hidden" }}
       >
-        <Box
-          sx={{
-            flex: 1,
-            minHeight: 0,
-            display: "flex",
-            overflow: "hidden",
-            minWidth: 0,
-          }}
-        >
-          <Outlet />
-        </Box>
+        <SplitScreenProvider splitEnabled={splitEnabled}>
+          <Box
+            sx={{
+              flex: 1,
+              minHeight: 0,
+              display: "flex",
+              overflow: "hidden",
+              minWidth: 0,
+            }}
+          >
+            <Outlet />
+          </Box>
+        </SplitScreenProvider>
         <Box
           sx={(theme) => ({
             flexBasis: splitEnabled ? "50%" : 0,

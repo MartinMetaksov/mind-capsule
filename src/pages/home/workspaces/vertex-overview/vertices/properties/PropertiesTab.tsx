@@ -77,7 +77,7 @@ const TagsEditor: React.FC<TagsEditorProps> = ({
   };
 
   const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = async (
-    e
+    e,
   ) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -87,7 +87,11 @@ const TagsEditor: React.FC<TagsEditorProps> = ({
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-      <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} alignItems="center">
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        spacing={1.5}
+        alignItems="center"
+      >
         <TextField
           label={t("tagsTab.newTag")}
           value={input}
@@ -153,14 +157,14 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
   const [title, setTitle] = React.useState(vertex.title);
   const titleInputRef = React.useRef<HTMLInputElement | null>(null);
   const [defaultTab, setDefaultTab] = React.useState<VertexTabId>(
-    vertex.default_tab ?? "items"
+    vertex.default_tab ?? "items",
   );
   const [itemsBehavior, setItemsBehavior] = React.useState<ItemsBehavior>({
     child_kind: vertex.items_behavior?.child_kind ?? "generic",
     display: vertex.items_behavior?.display ?? "grid",
   });
   const [thumbnail, setThumbnail] = React.useState<string | undefined>(
-    vertex.thumbnail_path
+    vertex.thumbnail_path,
   );
   const [isLeaf, setIsLeaf] = React.useState<boolean>(Boolean(vertex.is_leaf));
   const [tags, setTags] = React.useState<string[]>(vertex.tags ?? []);
@@ -195,7 +199,11 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
         await invoke("fs_open_path", { path: assetDirectory });
         return;
       }
-      window.open(encodeURI(`file://${assetDirectory}`), "_blank", "noreferrer");
+      window.open(
+        encodeURI(`file://${assetDirectory}`),
+        "_blank",
+        "noreferrer",
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to open folder.");
     }
@@ -227,7 +235,7 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
       tags: overrides.tags ?? tags,
       updated_at: new Date().toISOString(),
     }),
-    [defaultTab, isLeaf, itemsBehavior, tags, thumbnail, vertex]
+    [defaultTab, isLeaf, itemsBehavior, tags, thumbnail, vertex],
   );
 
   const persistVertex = React.useCallback(
@@ -240,16 +248,16 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
           onSelectTab(
             updated.is_leaf
               ? ("properties" as VertexTabId)
-              : (updated.default_tab ?? "items")
+              : (updated.default_tab ?? "items"),
           );
         }
       } catch (err) {
         setError(
-          err instanceof Error ? err.message : t("propertiesTab.errors.save")
+          err instanceof Error ? err.message : t("propertiesTab.errors.save"),
         );
       }
     },
-    [onSelectTab, onVertexUpdated, t]
+    [onSelectTab, onVertexUpdated, t],
   );
 
   const handleTitleBlur = React.useCallback(async () => {
@@ -299,18 +307,8 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
   };
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 3,
-        maxWidth: 760,
-        mx: "auto",
-        width: "100%",
-        pb: 3,
-      }}
-    >
-      <Box>
+    <Box sx={{ width: "100%" }}>
+      <Box sx={{ width: "100%", maxWidth: 760, mb: 3 }}>
         <Typography variant="h6" sx={{ fontWeight: 900, mb: 1 }}>
           {t("vertex.tabs.properties")}
         </Typography>
@@ -349,124 +347,157 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
         </Alert>
       )}
 
-      <Divider />
-
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-        <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-          {t("propertiesTab.sections.general")}
-        </Typography>
-        <Box sx={{ width: 240, alignSelf: "center" }}>
-          <ThumbnailPicker
-            value={thumbnail}
-            onChange={handleThumbnailChange}
-            height={160}
-          />
-        </Box>
-        <TextField
-          label={t("vertexDialog.fields.title")}
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          onBlur={handleTitleBlur}
-          fullWidth
-          inputRef={titleInputRef}
-          slotProps={{ inputLabel: { shrink: true } }}
+      <Box
+        sx={{
+          bgcolor: "background.paper",
+          width: { xs: "100%", md: "fit-content" },
+          maxWidth: "100%",
+          minWidth: { xs: "100%", md: 640 },
+          mx: "auto",
+          px: { xs: 2, sm: 3 },
+          py: { xs: 2, sm: 3 },
+          borderRadius: "15px",
+        }}
+      >
+        <Box
           sx={{
-            "& .MuiInputBase-root": {
-              bgcolor: "background.paper",
-            },
-          }}
-        />
-      </Box>
-
-      <Divider />
-
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-        <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-          {t("propertiesTab.sections.display")}
-        </Typography>
-        <TextField
-          label={t("propertiesTab.defaultTab")}
-          select
-          value={defaultTab}
-          onChange={(e) => handleDefaultTabChange(e.target.value as VertexTabId)}
-          fullWidth
-          slotProps={{ inputLabel: { shrink: true } }}
-          sx={{
-            "& .MuiInputBase-root": {
-              bgcolor: "background.paper",
-            },
+            display: "flex",
+            flexDirection: "column",
+            gap: 3,
+            maxWidth: 760,
+            width: "100%",
+            pb: 3,
           }}
         >
-          {tabOptions.map((opt) => (
-            <MenuItem key={opt.value} value={opt.value}>
-              {opt.label}
-            </MenuItem>
-          ))}
-        </TextField>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+              {t("propertiesTab.sections.general")}
+            </Typography>
+            <Box sx={{ width: 240, alignSelf: "center" }}>
+              <ThumbnailPicker
+                value={thumbnail}
+                onChange={handleThumbnailChange}
+                height={160}
+              />
+            </Box>
+            <TextField
+              label={t("vertexDialog.fields.title")}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              onBlur={handleTitleBlur}
+              fullWidth
+              inputRef={titleInputRef}
+              slotProps={{ inputLabel: { shrink: true } }}
+              sx={{
+                "& .MuiInputBase-root": {
+                  bgcolor: "background.paper",
+                },
+              }}
+            />
+          </Box>
 
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-          <TextField
-            label={t("propertiesTab.items.display")}
-            select
-            value={itemsBehavior.display}
-            onChange={(e) =>
-              handleItemsDisplayChange(e.target.value as ItemsDisplayHint)
-            }
-            fullWidth
-            slotProps={{ inputLabel: { shrink: true } }}
-            sx={{
-              "& .MuiInputBase-root": {
-                bgcolor: "background.paper",
-              },
-            }}
-          >
-            {itemsDisplayOptions.map((opt) => (
-              <MenuItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </MenuItem>
-            ))}
-          </TextField>
+          <Divider />
 
-          <TextField
-            label={
-              <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}>
-                <span>{t("propertiesTab.leaf.label")}</span>
-                <Tooltip title={t("propertiesTab.leaf.tooltip")}>
-                  <Typography component="span" sx={{ color: "text.secondary" }}>
-                    ?
-                  </Typography>
-                </Tooltip>
-              </Box>
-            }
-            select
-            value={isLeaf ? "yes" : "no"}
-            onChange={(e) => handleLeafChange(e.target.value === "yes")}
-            fullWidth
-            slotProps={{ inputLabel: { shrink: true } }}
-            sx={{
-              "& .MuiInputBase-root": {
-                bgcolor: "background.paper",
-              },
-            }}
-          >
-            <MenuItem value="no">{t("propertiesTab.leaf.no")}</MenuItem>
-            <MenuItem value="yes">{t("propertiesTab.leaf.yes")}</MenuItem>
-          </TextField>
-        </Stack>
-      </Box>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+              {t("propertiesTab.sections.display")}
+            </Typography>
+            <TextField
+              label={t("propertiesTab.defaultTab")}
+              select
+              value={defaultTab}
+              onChange={(e) =>
+                handleDefaultTabChange(e.target.value as VertexTabId)
+              }
+              fullWidth
+              slotProps={{ inputLabel: { shrink: true } }}
+              sx={{
+                "& .MuiInputBase-root": {
+                  bgcolor: "background.paper",
+                },
+              }}
+            >
+              {tabOptions.map((opt) => (
+                <MenuItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </MenuItem>
+              ))}
+            </TextField>
 
-      <Divider />
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+              <TextField
+                label={t("propertiesTab.items.display")}
+                select
+                value={itemsBehavior.display}
+                onChange={(e) =>
+                  handleItemsDisplayChange(e.target.value as ItemsDisplayHint)
+                }
+                fullWidth
+                slotProps={{ inputLabel: { shrink: true } }}
+                sx={{
+                  "& .MuiInputBase-root": {
+                    bgcolor: "background.paper",
+                  },
+                }}
+              >
+                {itemsDisplayOptions.map((opt) => (
+                  <MenuItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </MenuItem>
+                ))}
+              </TextField>
 
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-        <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-          {t("propertiesTab.sections.tags")}
-        </Typography>
-        <TagsEditor
-          tags={tags}
-          onAdd={handleAddTag}
-          onRemove={handleRemoveTag}
-          autoFocus={false}
-        />
+              <TextField
+                label={
+                  <Box
+                    sx={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 0.5,
+                    }}
+                  >
+                    <span>{t("propertiesTab.leaf.label")}</span>
+                    <Tooltip title={t("propertiesTab.leaf.tooltip")}>
+                      <Typography
+                        component="span"
+                        sx={{ color: "text.secondary" }}
+                      >
+                        ?
+                      </Typography>
+                    </Tooltip>
+                  </Box>
+                }
+                select
+                value={isLeaf ? "yes" : "no"}
+                onChange={(e) => handleLeafChange(e.target.value === "yes")}
+                fullWidth
+                slotProps={{ inputLabel: { shrink: true } }}
+                sx={{
+                  "& .MuiInputBase-root": {
+                    bgcolor: "background.paper",
+                  },
+                }}
+              >
+                <MenuItem value="no">{t("propertiesTab.leaf.no")}</MenuItem>
+                <MenuItem value="yes">{t("propertiesTab.leaf.yes")}</MenuItem>
+              </TextField>
+            </Stack>
+          </Box>
+
+          <Divider />
+
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+              {t("propertiesTab.sections.tags")}
+            </Typography>
+            <TagsEditor
+              tags={tags}
+              onAdd={handleAddTag}
+              onRemove={handleRemoveTag}
+              autoFocus={false}
+            />
+          </Box>
+        </Box>
       </Box>
     </Box>
   );

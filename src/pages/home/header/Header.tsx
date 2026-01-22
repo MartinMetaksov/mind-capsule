@@ -24,11 +24,15 @@ import packageJson from "../../../../package.json";
 type HeaderProps = {
   splitEnabled?: boolean;
   onToggleSplit?: () => void;
+  disableCompare?: boolean;
+  disableSearch?: boolean;
 };
 
 export const Header: React.FC<HeaderProps> = ({
   splitEnabled = false,
   onToggleSplit,
+  disableCompare = false,
+  disableSearch = false,
 }) => {
   const { t } = useTranslation("common");
   const { preference, setPreference } = useThemeMode();
@@ -104,12 +108,16 @@ export const Header: React.FC<HeaderProps> = ({
           </Typography>
         </Box>
 
-        <Tooltip title={t("header.splitScreen")}>
+        <Tooltip
+          title={t("header.splitScreen")}
+          disableHoverListener={disableCompare || !onToggleSplit}
+          disableFocusListener={disableCompare || !onToggleSplit}
+        >
           <span>
             <IconButton
               aria-label={t("header.splitScreen")}
               onClick={onToggleSplit}
-              disabled={!onToggleSplit}
+              disabled={disableCompare || !onToggleSplit}
               sx={(theme) => ({
                 color: splitEnabled
                   ? theme.palette.primary.main
@@ -129,10 +137,15 @@ export const Header: React.FC<HeaderProps> = ({
             </IconButton>
           </span>
         </Tooltip>
-        <Tooltip title={t("header.search")}>
+        <Tooltip
+          title={t("header.search")}
+          disableHoverListener={disableSearch}
+          disableFocusListener={disableSearch}
+        >
           <IconButton
             aria-label={t("header.search")}
             onClick={() => setSearchOpen(true)}
+            disabled={disableSearch}
             sx={(theme) => ({
               color:
                 theme.palette.mode === "light"

@@ -172,6 +172,10 @@
     "pickToCompare": "Избери елемент за сравнение.",
     "selectVertexToCompare": "Избери връх за сравнение."
   },
+  "tabsRail": {
+    "collapse": "Сгъни разделите",
+    "expand": "Разгъни разделите"
+  },
   "footer": {
     "github": "GitHub",
     "license": "Лиценз"

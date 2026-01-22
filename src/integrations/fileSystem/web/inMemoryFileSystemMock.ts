@@ -307,6 +307,9 @@ export const inMemoryFileSystemMock: FileSystem = {
     delete workspaces[workspace_id];
     localStorage.removeItem(workspaceStorageKey(workspace_id));
   },
+  async pruneMissingWorkspaces(): Promise<{ workspaces: number; vertices: number }> {
+    return { workspaces: 0, vertices: 0 };
+  },
 
   /* ===== Vertices ===== */
 

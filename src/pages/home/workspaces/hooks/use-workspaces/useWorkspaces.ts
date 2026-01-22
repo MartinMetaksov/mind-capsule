@@ -9,12 +9,15 @@ export const useWorkspaces = () => {
   const [error, setError] = React.useState<string | null>(null);
   const { t } = useTranslation("common");
 
-  const refreshWorkspaces = React.useCallback(async () => {
-    setLoading(true);
+  const refreshWorkspaces = React.useCallback(async (silent = false) => {
+    if (!silent) {
+      setLoading(true);
+    }
     setError(null);
 
     try {
       const fs = await getFileSystem();
+      await fs.pruneMissingWorkspaces();
       const list = await fs.getWorkspaces();
       setWorkspaces(list);
     } catch (err) {
@@ -22,12 +25,21 @@ export const useWorkspaces = () => {
       setError(err instanceof Error ? err.message : t("errors.loadWorkspaces"));
       setWorkspaces([]);
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   }, [t]);
 
   React.useEffect(() => {
     refreshWorkspaces();
+  }, [refreshWorkspaces]);
+
+  React.useEffect(() => {
+    const interval = window.setInterval(() => {
+      refreshWorkspaces(true);
+    }, 5000);
+    return () => window.clearInterval(interval);
   }, [refreshWorkspaces]);
 
   return { workspaces, loading, error, refreshWorkspaces, setWorkspaces };

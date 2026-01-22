@@ -172,6 +172,10 @@
     "pickToCompare": "Pick an item to compare.",
     "selectVertexToCompare": "Select a vertex to compare."
   },
+  "tabsRail": {
+    "collapse": "Collapse tabs",
+    "expand": "Expand tabs"
+  },
   "footer": {
     "github": "GitHub",
     "license": "License"

@@ -205,14 +205,8 @@ This ensures the main branch stays healthy and deployable.
 
 ### 🧭 Roadmap (early, subject to change)
 
-- Show vertices in multiple ways (currently only Grid is supported), such as List, Timeline
 - Expand options menu
   - permission checks when deleting elements could be toggleable
-- A mechanism for handling orphaned directories - e.g. prompt user if folder should be removed or a new vertex should be created
-- Ordering data - it could make a lot of sense to be able to reorganize e.g. vertices, images, notes
-- Other file formats (not openable by Mind Capsule, but available to quickly access if needed)
-- Reference viewer - could be a d3.js visualization of vertex relationships
-- A way to reparent vertices, move content between vertices, etc. Could be dependent on the reference viewer
 - More languages
 
 ### 📄 License

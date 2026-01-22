@@ -220,6 +220,40 @@ async function ensureLoaded() {
   await loadPromise;
 }
 
+async function pruneMissingWorkspaces(): Promise<{ workspaces: number; vertices: number }> {
+  await ensureLoaded();
+  const activeStore = await initStore();
+  const missing: Workspace[] = [];
+
+  for (const workspace of Object.values(workspaces)) {
+    try {
+      await readDir(workspace.path);
+    } catch {
+      missing.push(workspace);
+    }
+  }
+
+  if (missing.length === 0) {
+    return { workspaces: 0, vertices: 0 };
+  }
+
+  let removedVertices = 0;
+  for (const workspace of missing) {
+    delete workspaces[workspace.id];
+    await activeStore.delete(workspaceKey(workspace.id));
+
+    for (const vertex of Object.values(vertices)) {
+      if (vertex.workspace_id !== workspace.id) continue;
+      delete vertices[vertex.id];
+      removedVertices += 1;
+      await activeStore.delete(vertexKey(vertex.id));
+    }
+  }
+
+  await activeStore.save();
+  return { workspaces: missing.length, vertices: removedVertices };
+}
+
 export const fileSystem: FileSystem = {
   async createWorkspace(workspace: Workspace): Promise<void> {
     await ensureLoaded();
@@ -281,6 +315,9 @@ export const fileSystem: FileSystem = {
     delete workspaces[workspace_id];
     await activeStore.delete(workspaceKey(workspace_id));
     await activeStore.save();
+  },
+  async pruneMissingWorkspaces(): Promise<{ workspaces: number; vertices: number }> {
+    return pruneMissingWorkspaces();
   },
   async createVertex(vertex: Vertex): Promise<void> {
     await ensureLoaded();

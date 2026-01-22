@@ -1,8 +1,10 @@
 import * as React from "react";
-import { Box, Paper, Typography } from "@mui/material";
+import { Box, IconButton, Paper, Typography, useMediaQuery } from "@mui/material";
 import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
 import WorkspacesOutlinedIcon from "@mui/icons-material/WorkspacesOutlined";
 import FolderOffOutlinedIcon from "@mui/icons-material/FolderOffOutlined";
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 
 import { Loading } from "@/common/loading/Loading";
 import { useWorkspaces } from "./hooks/use-workspaces/useWorkspaces";
@@ -23,6 +25,7 @@ import { VertexOrchestrator } from "./vertex-overview/vertices/VertexOrchestrato
 import { detectOperatingSystem } from "@/utils/os";
 import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
 import { useTranslation } from "react-i18next";
+import { useSplitScreen } from "../SplitScreenContext";
 
 type RootTab = "projects" | "workspaces" | "detached";
 
@@ -37,6 +40,10 @@ type NotFoundState = {
 
 export const WorkspaceOrchestrator: React.FC = () => {
   const { t } = useTranslation("common");
+  const { splitEnabled } = useSplitScreen();
+  const isNarrow = useMediaQuery("(max-width: 1100px)");
+  const autoCollapse = splitEnabled || isNarrow;
+  const [railCollapsed, setRailCollapsed] = React.useState(autoCollapse);
   const {
     workspaces,
     loading: workspacesLoading,
@@ -87,6 +94,10 @@ export const WorkspaceOrchestrator: React.FC = () => {
     return base;
   }, [detachedCount, t]);
   const homeShortcut = React.useMemo(() => getShortcut("goHome", os), [os]);
+
+  React.useEffect(() => {
+    setRailCollapsed(autoCollapse);
+  }, [autoCollapse]);
 
   const active = trail.length > 0 ? trail[trail.length - 1] : null;
 
@@ -435,7 +446,7 @@ export const WorkspaceOrchestrator: React.FC = () => {
         <Paper
           elevation={0}
           sx={(theme) => ({
-            width: 110,
+            width: railCollapsed ? 56 : 110,
             flexShrink: 0,
             alignSelf: "stretch",
             height: "100%",
@@ -444,11 +455,47 @@ export const WorkspaceOrchestrator: React.FC = () => {
             display: "flex",
             flexDirection: "column",
             py: 0,
-            overflow: "hidden",
+            overflow: "visible",
             bgcolor: "background.paper",
+            transition: "width 180ms ease",
+            position: "relative",
           })}
         >
-          <VerticalTabs value={tab} onChange={setTab} items={rootTabs} />
+          <VerticalTabs
+            value={tab}
+            onChange={setTab}
+            items={rootTabs}
+            collapsed={railCollapsed}
+          />
+          <Box
+            sx={{
+              position: "absolute",
+              left: 0,
+              right: 0,
+              bottom: 8,
+              display: "flex",
+              justifyContent: "center",
+              pointerEvents: "none",
+              zIndex: 2,
+            }}
+          >
+            <IconButton
+              size="small"
+              onClick={() => setRailCollapsed((prev) => !prev)}
+              aria-label={
+                railCollapsed
+                  ? t("tabsRail.expand")
+                  : t("tabsRail.collapse")
+              }
+              sx={{
+                pointerEvents: "auto",
+                bgcolor: "background.paper",
+                boxShadow: 1,
+              }}
+            >
+              {railCollapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
+            </IconButton>
+          </Box>
         </Paper>
 
         {/* CANVAS AREA */}

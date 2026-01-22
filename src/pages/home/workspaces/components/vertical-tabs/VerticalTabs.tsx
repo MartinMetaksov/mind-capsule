@@ -11,12 +11,14 @@ type VerticalTabsProps<T extends string> = {
   value: T;
   onChange: (value: T) => void;
   items: VerticalTabItem<T>[];
+  collapsed?: boolean;
 };
 
 export const VerticalTabs = <T extends string>({
   value,
   onChange,
   items,
+  collapsed = false,
 }: VerticalTabsProps<T>) => {
   return (
     <Tabs
@@ -24,6 +26,8 @@ export const VerticalTabs = <T extends string>({
       value={value}
       onChange={(_, nextValue) => onChange(nextValue)}
       variant="scrollable"
+      scrollButtons={collapsed ? false : "auto"}
+      allowScrollButtonsMobile
       TabIndicatorProps={{
         sx: {
           left: 0,
@@ -35,8 +39,17 @@ export const VerticalTabs = <T extends string>({
         flex: 1,
         minHeight: 0,
         height: "100%",
-        overflowY: "auto",
-        overflowX: "hidden",
+        overflow: "hidden",
+        scrollbarWidth: "none",
+        "&::-webkit-scrollbar": {
+          display: "none",
+        },
+        "& .MuiTabs-scroller": {
+          height: "100%",
+          overflowY: "auto",
+          overflowX: "hidden",
+          paddingBottom: 8,
+        },
         "& .MuiTab-root": {
           minHeight: 84,
           px: 1,
@@ -45,6 +58,28 @@ export const VerticalTabs = <T extends string>({
           gap: 0.5,
         },
         "& .MuiTab-wrapper": { gap: 0.5 },
+        ...(collapsed
+          ? {}
+          : {
+              "& .MuiTabs-scrollButtons:last-of-type": {
+                marginBottom: 5,
+              },
+            }),
+        ...(collapsed
+          ? {
+              "& .MuiTab-root": {
+                minHeight: 68,
+                px: 0,
+                py: 1,
+                minWidth: 56,
+                justifyContent: "center",
+                alignItems: "center",
+              },
+              "& .MuiTab-iconWrapper": {
+                margin: 0,
+              },
+            }
+          : {}),
       }}
     >
       {items.map((item) => (
@@ -53,7 +88,7 @@ export const VerticalTabs = <T extends string>({
           value={item.value}
           icon={item.icon}
           iconPosition="top"
-          label={item.label}
+          label={collapsed ? "" : item.label}
         />
       ))}
     </Tabs>

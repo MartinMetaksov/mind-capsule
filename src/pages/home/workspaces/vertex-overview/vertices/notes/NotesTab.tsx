@@ -721,7 +721,7 @@ export const NotesTab: React.FC<NotesTabProps> = ({
               display: "flex",
               flex: 1,
               minHeight: 0,
-              gap: 2,
+              gap: historyOpen ? 2 : 0,
             }}
           >
             <Box

@@ -1,0 +1,1 @@
+export { SplitScreenProvider } from "./SplitScreenProvider";

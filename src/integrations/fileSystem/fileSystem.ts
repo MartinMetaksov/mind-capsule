@@ -31,6 +31,7 @@ export interface FileSystem {
   getWorkspace(workspace_id: Id): Promise<Workspace | null>;
   updateWorkspace(new_workspace: Workspace): Promise<void>;
   removeWorkspace(workspace_id: Id): Promise<void>;
+  pruneMissingWorkspaces(): Promise<{ workspaces: number; vertices: number }>;
 
   // vertices
   createVertex(vertex: Vertex): Promise<void>;

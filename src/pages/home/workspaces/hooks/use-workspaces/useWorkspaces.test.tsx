@@ -16,6 +16,7 @@ const workspace: Workspace = {
 
 vi.mock("@/integrations/fileSystem/integration", () => ({
   getFileSystem: async () => ({
+    pruneMissingWorkspaces: async () => undefined,
     getWorkspaces: async () => [workspace],
   }),
 }));

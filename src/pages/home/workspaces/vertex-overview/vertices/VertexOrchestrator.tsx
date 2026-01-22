@@ -1,11 +1,13 @@
 import * as React from "react";
-import { Box } from "@mui/material";
+import { Box, IconButton, useMediaQuery } from "@mui/material";
 import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
 import LinkOutlinedIcon from "@mui/icons-material/LinkOutlined";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import CommentOutlinedIcon from "@mui/icons-material/CommentOutlined";
 import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutlined";
 import { TuneOutlined } from "@mui/icons-material";
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import type { Vertex, VertexTabId } from "@/core/vertex";
 import type { Workspace } from "@/core/workspace";
 import { BreadcrumbsTrail } from "../../components/breadcrumbs-trail/BreadcrumbsTrail";
@@ -20,6 +22,7 @@ import { detectOperatingSystem } from "@/utils/os";
 import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useSplitScreen } from "../../../SplitScreenContext";
 
 type VertexTab =
   | "items"
@@ -28,8 +31,6 @@ type VertexTab =
   | "notes"
   | "images"
   | "urls";
-// | "files"
-// | "references"
 
 type TrailItem = {
   vertex: Vertex;
@@ -66,6 +67,10 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
   onVertexUpdated,
 }) => {
   const { t } = useTranslation("common");
+  const { splitEnabled } = useSplitScreen();
+  const isNarrow = useMediaQuery("(max-width: 1100px)");
+  const autoCollapse = splitEnabled || isNarrow;
+  const [railCollapsed, setRailCollapsed] = React.useState(autoCollapse);
   const location = useLocation();
   const navigate = useNavigate();
   const [currentVertex, setCurrentVertex] = React.useState<Vertex>(vertex);
@@ -76,6 +81,10 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
   React.useEffect(() => {
     setCurrentVertex(vertex);
   }, [vertex]);
+
+  React.useEffect(() => {
+    setRailCollapsed(autoCollapse);
+  }, [autoCollapse]);
 
   React.useEffect(() => {
     let unlisten: (() => void) | undefined;
@@ -126,8 +135,6 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
       "notes",
       "images",
       "urls",
-      // "files",
-      // "references",
     ];
     return vertex.is_leaf ? base.filter((t) => t !== "items") : base;
   }, [vertex.is_leaf]);
@@ -179,16 +186,6 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
         label: t("vertex.tabs.files"),
         icon: <InsertDriveFileOutlinedIcon />,
       },
-      // {
-      //   value: "files" as const,
-      //   label: "Files",
-      //   icon: <InsertDriveFileOutlinedIcon />,
-      // },
-      // {
-      //   value: "references" as const,
-      //   label: "References",
-      //   icon: <HubOutlinedIcon />,
-      // },
     ],
     [itemsLabel, currentVertex.is_leaf, t]
   );
@@ -350,7 +347,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
         {/* LEFT TAB RAIL */}
         <Box
           sx={(theme) => ({
-            width: 110,
+            width: railCollapsed ? 56 : 110,
             flexShrink: 0,
             alignSelf: "stretch",
             height: "100%",
@@ -359,10 +356,46 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
             display: "flex",
             flexDirection: "column",
             py: 0,
-            overflow: "hidden",
+            overflow: "visible",
+            transition: "width 180ms ease",
+            position: "relative",
           })}
         >
-          <VerticalTabs value={safeTab} onChange={setTab} items={vertexTabs} />
+          <VerticalTabs
+            value={safeTab}
+            onChange={setTab}
+            items={vertexTabs}
+            collapsed={railCollapsed}
+          />
+          <Box
+            sx={{
+              position: "absolute",
+              left: 0,
+              right: 0,
+              bottom: 8,
+              display: "flex",
+              justifyContent: "center",
+              pointerEvents: "none",
+              zIndex: 2,
+            }}
+          >
+            <IconButton
+              size="small"
+              onClick={() => setRailCollapsed((prev) => !prev)}
+              aria-label={
+                railCollapsed
+                  ? t("tabsRail.expand")
+                  : t("tabsRail.collapse")
+              }
+              sx={{
+                pointerEvents: "auto",
+                bgcolor: "background.paper",
+                boxShadow: 1,
+              }}
+            >
+              {railCollapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
+            </IconButton>
+          </Box>
         </Box>
 
         {/* MAIN CANVAS */}
