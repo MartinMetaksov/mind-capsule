@@ -176,6 +176,13 @@ export const SearchDialog: React.FC<Props> = ({ open, onClose }) => {
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={handleKeyDown}
             fullWidth
+            autoComplete="off"
+            inputProps={{
+              autoComplete: "off",
+              autoCapitalize: "none",
+              autoCorrect: "off",
+              spellCheck: "false",
+            }}
           />
         </Box>
         {search ? (
