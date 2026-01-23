@@ -18,7 +18,7 @@
 
 ## ✨ What is Mind Capsule?
 
-**Mind Capsule** is an open-source, work-in-progress desktop application (built with Tauri) designed to help creators and teams:
+**Mind Capsule** is an open-source desktop application (built with Tauri) designed to help creators and teams:
 
 - Capture ideas quickly
 - Organize concepts, projects, and research
@@ -30,6 +30,8 @@ It is especially handy for game development, but it is intentionally broad enoug
 The goal is a **distraction-free, writing-first experience**, built with modern web tools and a calm, readable UI.
 
 While the UI is web-based, Mind Capsule runs as a native desktop app with full local filesystem access.
+
+AI assistance was used extensively throughout the creation of this project, from UI iteration to feature implementation.
 
 ---
 
