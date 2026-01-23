@@ -42,7 +42,8 @@ export const Home: React.FC = () => {
         <SplitScreenProvider splitEnabled={splitEnabled}>
           <Box
             sx={{
-              flex: 1,
+              flex: splitEnabled ? "0 0 50%" : "1 1 100%",
+              maxWidth: splitEnabled ? "50%" : "100%",
               minHeight: 0,
               display: "flex",
               overflow: "hidden",
@@ -63,8 +64,7 @@ export const Home: React.FC = () => {
             borderLeft: splitEnabled ? `1px solid ${theme.palette.divider}` : "none",
             opacity: splitEnabled ? 1 : 0,
             transform: splitEnabled ? "translateX(0)" : "translateX(100%)",
-            transition:
-              "flex-basis 220ms ease, max-width 220ms ease, opacity 200ms ease, transform 220ms ease",
+            transition: "opacity 200ms ease, transform 220ms ease",
             pointerEvents: splitEnabled ? "auto" : "none",
           })}
         >
