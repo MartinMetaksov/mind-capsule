@@ -92,4 +92,28 @@ describe("SearchDialog", () => {
     expect(await screen.findByText("Child Vertex")).toBeInTheDocument();
     expect(screen.queryByText("Sibling Vertex")).not.toBeInTheDocument();
   });
+
+  it("matches fuzzy queries against titles", async () => {
+    mockVertices = [
+      { ...baseVertex, id: "v-1", title: "Mind Capsule" },
+      { ...baseVertex, id: "v-2", title: "Another Vertex" },
+    ];
+    renderDialog();
+    const input = screen.getByPlaceholderText(/Search/i);
+    fireEvent.change(input, { target: { value: "md cps" } });
+    expect(await screen.findByText("Mind Capsule")).toBeInTheDocument();
+    expect(screen.queryByText("Another Vertex")).not.toBeInTheDocument();
+  });
+
+  it("matches fuzzy queries against tags", async () => {
+    mockVertices = [
+      { ...baseVertex, id: "v-1", title: "Note One", tags: ["inspiration"] },
+      { ...baseVertex, id: "v-2", title: "Note Two", tags: ["misc"] },
+    ];
+    renderDialog();
+    const input = screen.getByPlaceholderText(/Search/i);
+    fireEvent.change(input, { target: { value: "insp" } });
+    expect(await screen.findByText("Note One")).toBeInTheDocument();
+    expect(screen.queryByText("Note Two")).not.toBeInTheDocument();
+  });
 });

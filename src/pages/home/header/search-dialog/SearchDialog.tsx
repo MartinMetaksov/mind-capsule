@@ -16,6 +16,7 @@ import { getFileSystem } from "@/integrations/fileSystem/integration";
 import { detectOperatingSystem } from "@/utils/os";
 import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
 import { useTranslation } from "react-i18next";
+import Fuse from "fuse.js";
 
 type Props = {
   open: boolean;
@@ -111,11 +112,17 @@ export const SearchDialog: React.FC<Props> = ({ open, onClose }) => {
     if (!q) return [];
     const segments = location.pathname.split("/").filter(Boolean);
     const activeId = segments[segments.length - 1];
-    return scopedVertices.filter((v) => {
-      if (activeId && v.id === activeId) return false;
-      if (v.title.toLowerCase().includes(q)) return true;
-      return v.tags?.some((tag) => tag.toLowerCase().includes(q)) ?? false;
+    const fuse = new Fuse(scopedVertices, {
+      keys: ["title", "tags"],
+      includeScore: true,
+      threshold: 0.4,
+      ignoreLocation: true,
+      minMatchCharLength: 2,
     });
+    return fuse
+      .search(q)
+      .map((result) => result.item)
+      .filter((v) => !(activeId && v.id === activeId));
   }, [location.pathname, scopedVertices, search]);
 
   React.useEffect(() => {
