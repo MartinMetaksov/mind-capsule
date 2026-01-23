@@ -46,3 +46,6 @@ Thumbs.db
 
 # --- misc ---
 *.tgz
+
+# --- docs wiki mirror ---
+docs/wiki/
