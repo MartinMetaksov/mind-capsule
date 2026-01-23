@@ -61,6 +61,7 @@ export const useItemsOverview = ({
   const [labelSaving, setLabelSaving] = React.useState(false);
   const labelInputRef = React.useRef<HTMLInputElement | null>(null);
   const propsRef = React.useRef(props);
+  const didFocusLabelRef = React.useRef(false);
 
   React.useEffect(() => {
     propsRef.current = props;
@@ -81,11 +82,17 @@ export const useItemsOverview = ({
   }, [editingLabel, props]);
 
   React.useEffect(() => {
-    if (!props) return;
-    if (!editingLabel || !labelInputRef.current) return;
-    labelInputRef.current.focus();
-    labelInputRef.current.select();
-  }, [editingLabel, props]);
+    if (!editingLabel || !labelInputRef.current) {
+      didFocusLabelRef.current = false;
+      return;
+    }
+    if (didFocusLabelRef.current) return;
+    const input = labelInputRef.current;
+    input.focus();
+    const length = input.value.length;
+    input.setSelectionRange(length, length);
+    didFocusLabelRef.current = true;
+  }, [editingLabel]);
 
   const commitLabel = React.useCallback(
     async (nextValue?: string) => {
