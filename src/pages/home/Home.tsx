@@ -6,12 +6,15 @@ import { Footer } from "./footer/Footer";
 import { SplitGraphPanel } from "./SplitGraphPanel";
 import { useWorkspaces } from "./workspaces/hooks/use-workspaces/useWorkspaces";
 import { SplitScreenProvider } from "./SplitScreenProvider";
+import { useAppSetting } from "@/utils/settings/useAppSetting";
 
 export const Home: React.FC = () => {
   const [splitEnabled, setSplitEnabled] = React.useState(false);
   const { workspaces, loading: workspacesLoading } = useWorkspaces();
   const hasWorkspaces = workspaces && workspaces.length > 0;
   const disableActions = !workspacesLoading && !hasWorkspaces;
+  const [showFooter] = useAppSetting("ui.showFooter", true);
+  const [showSettingsBar] = useAppSetting("ui.showSettingsBar", true);
 
   return (
     <Box
@@ -33,6 +36,7 @@ export const Home: React.FC = () => {
         onToggleSplit={() => setSplitEnabled((prev) => !prev)}
         disableCompare={disableActions}
         disableSearch={disableActions}
+        showSettingsBar={showSettingsBar}
       />
 
       <Box
@@ -72,7 +76,7 @@ export const Home: React.FC = () => {
         </Box>
       </Box>
 
-      <Footer />
+      {showFooter ? <Footer /> : null}
     </Box>
   );
 };

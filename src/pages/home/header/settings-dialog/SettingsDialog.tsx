@@ -15,6 +15,9 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Link,
+  Switch,
+  FormControlLabel,
 } from "@mui/material";
 import { ThemePreference } from "@/utils/themes/themePreference";
 import { detectOperatingSystem } from "@/utils/os";
@@ -22,8 +25,10 @@ import { getShortcut } from "@/utils/shortcuts";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import KeyboardAltOutlinedIcon from "@mui/icons-material/KeyboardAltOutlined";
 import LanguageOutlinedIcon from "@mui/icons-material/LanguageOutlined";
+import TuneOutlinedIcon from "@mui/icons-material/TuneOutlined";
 import i18n from "i18next";
 import { useTranslation } from "react-i18next";
+import { useAppSetting } from "@/utils/settings/useAppSetting";
 
 type Props = {
   open: boolean;
@@ -39,9 +44,19 @@ export const SettingsDialog: React.FC<Props> = ({
   onChangePreference,
 }) => {
   const { t } = useTranslation("common");
-  const [tab, setTab] = React.useState<"theme" | "shortcuts" | "language">("theme");
+  const [tab, setTab] = React.useState<
+    "general" | "theme" | "shortcuts" | "language"
+  >("general");
   const [language, setLanguage] = React.useState(() => i18n.resolvedLanguage?.split("-")[0] || "en");
   const os = React.useMemo(() => detectOperatingSystem(), []);
+  const [settingsFolderPath, setSettingsFolderPath] = React.useState<
+    string | null
+  >(null);
+  const [showFooter, setShowFooter] = useAppSetting("ui.showFooter", true);
+  const [showSettingsBar, setShowSettingsBar] = useAppSetting(
+    "ui.showSettingsBar",
+    true
+  );
 
   const shortcutList = React.useMemo(
     () => [
@@ -72,6 +87,63 @@ export const SettingsDialog: React.FC<Props> = ({
       i18n.off("languageChanged", handler);
     };
   }, []);
+
+  React.useEffect(() => {
+    let isActive = true;
+    void (async () => {
+      try {
+        console.debug("[settings] resolving settings folder path");
+        const { isTauri } = await import("@tauri-apps/api/core");
+        if (!isTauri()) {
+          console.debug("[settings] not running in Tauri; folder path disabled");
+          if (isActive) setSettingsFolderPath(null);
+          return;
+        }
+        const { appDataDir, normalize } = await import("@tauri-apps/api/path");
+        const base = await appDataDir();
+        const normalized = await normalize(base);
+        const cleaned = normalized.replace(/[\\/]+$/, "") || normalized;
+        console.debug("[settings] settings folder path", cleaned);
+        if (isActive) setSettingsFolderPath(cleaned);
+      } catch (err) {
+        console.debug("[settings] failed to resolve settings folder path", err);
+        if (isActive) setSettingsFolderPath(null);
+      }
+    })();
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  const handleOpenSettingsFolder = React.useCallback(async () => {
+    try {
+      console.debug("[settings] open containing folder clicked");
+      const { invoke, isTauri } = await import("@tauri-apps/api/core");
+      if (isTauri()) {
+        const { Store } = await import("@tauri-apps/plugin-store");
+        const { appDataDir, normalize } = await import("@tauri-apps/api/path");
+        const store = await Store.load("settings.json");
+        await store.set("ui.showFooter", showFooter);
+        await store.set("ui.showSettingsBar", showSettingsBar);
+        await store.save();
+        const base = settingsFolderPath ?? (await appDataDir());
+        const normalized = await normalize(base);
+        const cleaned = normalized.replace(/[\\/]+$/, "") || normalized;
+        console.debug("[settings] opening folder via fs_open_path", cleaned);
+        await invoke("fs_open_path", { path: cleaned });
+        return;
+      }
+      if (!settingsFolderPath) return;
+      console.debug("[settings] opening folder via file://", settingsFolderPath);
+      window.open(
+        encodeURI(`file://${settingsFolderPath}`),
+        "_blank",
+        "noreferrer"
+      );
+    } catch (err) {
+      console.debug("[settings] failed to open containing folder", err);
+    }
+  }, [settingsFolderPath, showFooter, showSettingsBar]);
 
   return (
     <Dialog
@@ -141,6 +213,12 @@ export const SettingsDialog: React.FC<Props> = ({
                 },
               }}
             >
+              <Tab
+                value="general"
+                icon={<TuneOutlinedIcon fontSize="small" />}
+                iconPosition="start"
+                label={t("settings.general")}
+              />
               <Tab
                 value="theme"
                 icon={<SettingsOutlinedIcon fontSize="small" />}
@@ -280,6 +358,68 @@ export const SettingsDialog: React.FC<Props> = ({
                     <MenuItem value="bg">{t("languages.bg")}</MenuItem>
                   </Select>
                 </FormControl>
+              </>
+            )}
+
+            {tab === "general" && (
+              <>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                  {t("settings.general")}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {t("settings.generalDescription")}
+                </Typography>
+                <Divider />
+                <Stack spacing={2}>
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      {t("settings.settingsFile")}
+                    </Typography>
+                    <Link
+                      component="button"
+                      type="button"
+                      onClick={() => void handleOpenSettingsFolder()}
+                      underline="hover"
+                      aria-disabled={!settingsFolderPath}
+                      tabIndex={settingsFolderPath ? 0 : -1}
+                      sx={(theme) => ({
+                        color: settingsFolderPath
+                          ? theme.palette.primary.main
+                          : theme.palette.text.disabled,
+                        cursor: settingsFolderPath ? "pointer" : "default",
+                        pointerEvents: settingsFolderPath ? "auto" : "none",
+                        fontWeight: 600,
+                      })}
+                    >
+                      {t("settings.openSettingsFolder")}
+                    </Link>
+                  </Box>
+                  <Divider />
+                  <Stack spacing={1}>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={showFooter}
+                          onChange={(event) =>
+                            setShowFooter(event.target.checked)
+                          }
+                        />
+                      }
+                      label={t("settings.showFooter")}
+                    />
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={showSettingsBar}
+                          onChange={(event) =>
+                            setShowSettingsBar(event.target.checked)
+                          }
+                        />
+                      }
+                      label={t("settings.showSettingsBar")}
+                    />
+                  </Stack>
+                </Stack>
               </>
             )}
           </Box>

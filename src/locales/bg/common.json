@@ -2,6 +2,12 @@
   "appName": "Mind Capsule",
   "settings": {
     "title": "Настройки",
+    "general": "Общи",
+    "generalDescription": "Контролирайте основните предпочитания и достъпа до файлове.",
+    "settingsFile": "Файл с настройки",
+    "openSettingsFolder": "Отвори съдържащата папка",
+    "showFooter": "Покажи футъра",
+    "showSettingsBar": "Покажи лентата с настройки",
     "theme": "Тема",
     "themeDescription": "Изберете как да изглежда приложението.",
     "shortcuts": "Клавишни комбинации",

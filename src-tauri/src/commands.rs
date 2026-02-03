@@ -75,26 +75,43 @@ pub fn fs_open_path(path: String) -> Result<(), String> {
     if !target.exists() {
         return Err("Path does not exist.".into());
     }
+    let is_dir = fs::metadata(&target)
+        .map_err(|e| e.to_string())?
+        .is_dir();
     #[cfg(target_os = "macos")]
     {
-        Command::new("open")
-            .arg(&path)
+        let mut cmd = Command::new("open");
+        if is_dir && path.ends_with(".app") {
+            cmd.args(["-R", &path]);
+        } else {
+            cmd.arg(&path);
+        }
+        let status = cmd
             .status()
             .map_err(|e| e.to_string())?;
+        if !status.success() {
+            return Err(format!("Failed to open path (status: {status})."));
+        }
     }
     #[cfg(target_os = "windows")]
     {
-        Command::new("cmd")
+        let status = Command::new("cmd")
             .args(["/C", "start", "", &path])
             .status()
             .map_err(|e| e.to_string())?;
+        if !status.success() {
+            return Err(format!("Failed to open path (status: {status})."));
+        }
     }
     #[cfg(all(unix, not(target_os = "macos")))]
     {
-        Command::new("xdg-open")
+        let status = Command::new("xdg-open")
             .arg(&path)
             .status()
             .map_err(|e| e.to_string())?;
+        if !status.success() {
+            return Err(format!("Failed to open path (status: {status})."));
+        }
     }
     Ok(())
 }

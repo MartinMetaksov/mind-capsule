@@ -2,6 +2,12 @@
   "appName": "Mind Capsule",
   "settings": {
     "title": "Settings",
+    "general": "General",
+    "generalDescription": "Control basic UI preferences and file access.",
+    "settingsFile": "Settings file",
+    "openSettingsFolder": "Open containing folder",
+    "showFooter": "Show footer",
+    "showSettingsBar": "Show settings bar",
     "theme": "Theme",
     "themeDescription": "Choose how the app looks.",
     "shortcuts": "Keyboard shortcuts",

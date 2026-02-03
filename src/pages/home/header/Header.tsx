@@ -27,6 +27,7 @@ type HeaderProps = {
   onToggleSplit?: () => void;
   disableCompare?: boolean;
   disableSearch?: boolean;
+  showSettingsBar?: boolean;
 };
 
 export const Header: React.FC<HeaderProps> = ({
@@ -34,6 +35,7 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleSplit,
   disableCompare = false,
   disableSearch = false,
+  showSettingsBar = true,
 }) => {
   const { t } = useTranslation("common");
   const { preference, setPreference } = useThemeMode();
@@ -65,161 +67,165 @@ export const Header: React.FC<HeaderProps> = ({
   }, [os]);
 
   return (
-    <AppBar position="sticky" elevation={0}>
-      <Toolbar
-        sx={{
-          minHeight: 64,
-          gap: 2,
-        }}
-      >
-        <Box
-          role="button"
-          aria-label={`${APP_NAME} home`}
-          onClick={() => navigate("/")}
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 1.5,
-            flex: 1,
-            cursor: "pointer",
-            userSelect: "none",
-          }}
-        >
-          <Box
-            component="img"
-            src="/images/logo.png"
-            alt="Mind Capsule logo"
+    <>
+      {showSettingsBar ? (
+        <AppBar position="sticky" elevation={0}>
+          <Toolbar
             sx={{
-              width: 32,
-              height: 32,
-              userSelect: "none",
+              minHeight: 64,
+              gap: 2,
             }}
-          />
-
-          <Typography
-            variant="h6"
-            color="text.primary"
-            component="h1"
-            sx={{ fontWeight: 800 }}
           >
-            {APP_NAME}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            v{packageJson.version}
-          </Typography>
-          {import.meta.env.DEV ? (
-            <Chip
-              label="DEV"
-              size="small"
-              sx={(theme) => ({
-                height: 20,
-                fontWeight: 700,
-                letterSpacing: "0.08em",
-                bgcolor:
-                  theme.palette.mode === "light"
-                    ? "rgba(255, 168, 38, 0.18)"
-                    : "rgba(255, 168, 38, 0.22)",
-                color: theme.palette.warning.main,
-                borderRadius: 1,
-                "& .MuiChip-label": {
-                  px: 0.7,
-                },
-              })}
-            />
-          ) : null}
-        </Box>
-
-        <Tooltip
-          title={t("header.splitScreen")}
-          disableHoverListener={disableCompare || !onToggleSplit}
-          disableFocusListener={disableCompare || !onToggleSplit}
-        >
-          <span>
-            <IconButton
-              aria-label={t("header.splitScreen")}
-              onClick={onToggleSplit}
-              disabled={disableCompare || !onToggleSplit}
-              sx={(theme) => ({
-                color: splitEnabled
-                  ? theme.palette.primary.main
-                  : theme.palette.mode === "light"
-                    ? theme.palette.text.secondary
-                    : theme.palette.text.primary,
-                borderRadius: 2,
-                "&:hover": {
-                  backgroundColor: theme.palette.action.hover,
-                  color: splitEnabled
-                    ? theme.palette.primary.main
-                    : theme.palette.text.primary,
-                },
-              })}
+            <Box
+              role="button"
+              aria-label={`${APP_NAME} home`}
+              onClick={() => navigate("/")}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1.5,
+                flex: 1,
+                cursor: "pointer",
+                userSelect: "none",
+              }}
             >
-              <VerticalSplitIcon />
-            </IconButton>
-          </span>
-        </Tooltip>
-        <Tooltip
-          title={t("header.search")}
-          disableHoverListener={disableSearch}
-          disableFocusListener={disableSearch}
-        >
-          <IconButton
-            aria-label={t("header.search")}
-            onClick={() => setSearchOpen(true)}
-            disabled={disableSearch}
-            sx={(theme) => ({
-              color:
-                theme.palette.mode === "light"
-                  ? theme.palette.text.secondary
-                  : theme.palette.text.primary,
+              <Box
+                component="img"
+                src="/images/logo.png"
+                alt="Mind Capsule logo"
+                sx={{
+                  width: 32,
+                  height: 32,
+                  userSelect: "none",
+                }}
+              />
 
-              borderRadius: 2,
+              <Typography
+                variant="h6"
+                color="text.primary"
+                component="h1"
+                sx={{ fontWeight: 800 }}
+              >
+                {APP_NAME}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                v{packageJson.version}
+              </Typography>
+              {import.meta.env.DEV ? (
+                <Chip
+                  label="DEV"
+                  size="small"
+                  sx={(theme) => ({
+                    height: 20,
+                    fontWeight: 700,
+                    letterSpacing: "0.08em",
+                    bgcolor:
+                      theme.palette.mode === "light"
+                        ? "rgba(255, 168, 38, 0.18)"
+                        : "rgba(255, 168, 38, 0.22)",
+                    color: theme.palette.warning.main,
+                    borderRadius: 1,
+                    "& .MuiChip-label": {
+                      px: 0.7,
+                    },
+                  })}
+                />
+              ) : null}
+            </Box>
 
-              "&:hover": {
-                backgroundColor: theme.palette.action.hover,
-                color:
-                  theme.palette.mode === "light"
-                    ? theme.palette.text.primary
-                    : theme.palette.text.primary,
-              },
-            })}
-          >
-            <SearchOutlined />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title={t("header.settings")}>
-          <IconButton
-            onClick={() => setSettingsOpen(true)}
-            aria-label={t("header.settings")}
-            sx={(theme) => ({
-              color:
-                theme.palette.mode === "light"
-                  ? theme.palette.text.secondary
-                  : theme.palette.text.primary,
+            <Tooltip
+              title={t("header.splitScreen")}
+              disableHoverListener={disableCompare || !onToggleSplit}
+              disableFocusListener={disableCompare || !onToggleSplit}
+            >
+              <span>
+                <IconButton
+                  aria-label={t("header.splitScreen")}
+                  onClick={onToggleSplit}
+                  disabled={disableCompare || !onToggleSplit}
+                  sx={(theme) => ({
+                    color: splitEnabled
+                      ? theme.palette.primary.main
+                      : theme.palette.mode === "light"
+                        ? theme.palette.text.secondary
+                        : theme.palette.text.primary,
+                    borderRadius: 2,
+                    "&:hover": {
+                      backgroundColor: theme.palette.action.hover,
+                      color: splitEnabled
+                        ? theme.palette.primary.main
+                        : theme.palette.text.primary,
+                    },
+                  })}
+                >
+                  <VerticalSplitIcon />
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Tooltip
+              title={t("header.search")}
+              disableHoverListener={disableSearch}
+              disableFocusListener={disableSearch}
+            >
+              <IconButton
+                aria-label={t("header.search")}
+                onClick={() => setSearchOpen(true)}
+                disabled={disableSearch}
+                sx={(theme) => ({
+                  color:
+                    theme.palette.mode === "light"
+                      ? theme.palette.text.secondary
+                      : theme.palette.text.primary,
 
-              borderRadius: 2,
+                  borderRadius: 2,
 
-              "&:hover": {
-                backgroundColor: theme.palette.action.hover,
-                color:
-                  theme.palette.mode === "light"
-                    ? theme.palette.text.primary
-                    : theme.palette.text.primary,
-              },
-            })}
-          >
-            <SettingsOutlinedIcon />
-          </IconButton>
-        </Tooltip>
+                  "&:hover": {
+                    backgroundColor: theme.palette.action.hover,
+                    color:
+                      theme.palette.mode === "light"
+                        ? theme.palette.text.primary
+                        : theme.palette.text.primary,
+                  },
+                })}
+              >
+                <SearchOutlined />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title={t("header.settings")}>
+              <IconButton
+                onClick={() => setSettingsOpen(true)}
+                aria-label={t("header.settings")}
+                sx={(theme) => ({
+                  color:
+                    theme.palette.mode === "light"
+                      ? theme.palette.text.secondary
+                      : theme.palette.text.primary,
 
-        <SearchDialog open={searchOpen} onClose={() => setSearchOpen(false)} />
-        <SettingsDialog
-          open={settingsOpen}
-          onClose={() => setSettingsOpen(false)}
-          preference={preference}
-          onChangePreference={setPreference}
-        />
-      </Toolbar>
-    </AppBar>
+                  borderRadius: 2,
+
+                  "&:hover": {
+                    backgroundColor: theme.palette.action.hover,
+                    color:
+                      theme.palette.mode === "light"
+                        ? theme.palette.text.primary
+                        : theme.palette.text.primary,
+                  },
+                })}
+              >
+                <SettingsOutlinedIcon />
+              </IconButton>
+            </Tooltip>
+          </Toolbar>
+        </AppBar>
+      ) : null}
+
+      <SearchDialog open={searchOpen} onClose={() => setSearchOpen(false)} />
+      <SettingsDialog
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        preference={preference}
+        onChangePreference={setPreference}
+      />
+    </>
   );
 };
