@@ -75,8 +75,8 @@ export const VerticalTabs = <T extends string>({
         onChange={(_, nextValue) => onChange(nextValue)}
         variant="scrollable"
         scrollButtons={false}
-      data-collapsed={collapsed ? "true" : "false"}
-      TabIndicatorProps={{
+        data-collapsed={collapsed ? "true" : "false"}
+        TabIndicatorProps={{
           sx: {
             left: 0,
             right: "auto",
@@ -92,6 +92,9 @@ export const VerticalTabs = <T extends string>({
           "&::-webkit-scrollbar": {
             display: "none",
           },
+          "& .MuiTabs-indicator": {
+            transition: collapsed ? "none" : undefined,
+          },
           "& .MuiTabs-scroller": {
             height: "100%",
             overflowY: "auto",
@@ -105,7 +108,7 @@ export const VerticalTabs = <T extends string>({
             py: 1.2,
             textTransform: "none",
             gap: 0.5,
-            transition: "min-height 160ms ease, padding 160ms ease",
+            transition: "color 80ms ease, background-color 80ms ease",
           },
           "& .MuiTab-wrapper": { gap: 0.5 },
           "& .tabs-label": {
@@ -149,15 +152,15 @@ export const VerticalTabs = <T extends string>({
             : {}),
         }}
       >
-      {items.map((item) => (
-        <Tab
-          key={item.value}
-          value={item.value}
-          icon={item.icon}
-          iconPosition={collapsed ? "start" : "top"}
-          label={<span className="tabs-label">{item.label}</span>}
-        />
-      ))}
+        {items.map((item) => (
+          <Tab
+            key={item.value}
+            value={item.value}
+            icon={item.icon}
+            iconPosition={collapsed ? "start" : "top"}
+            label={<span className="tabs-label">{item.label}</span>}
+          />
+        ))}
       </Tabs>
       {scrollState.hasOverflow && (
         <>
