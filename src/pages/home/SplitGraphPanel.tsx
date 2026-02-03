@@ -33,6 +33,10 @@ export const SplitGraphPanel: React.FC = () => {
     vertexId: string;
     imageName: string;
   } | null>(null);
+  const [pendingNote, setPendingNote] = React.useState<{
+    vertexId: string;
+    noteName: string;
+  } | null>(null);
   const panelRef = React.useRef<HTMLDivElement | null>(null);
   const resizeFrameRef = React.useRef<number | null>(null);
   const lastSizeRef = React.useRef({ width: 0, height: 0 });
@@ -84,6 +88,42 @@ export const SplitGraphPanel: React.FC = () => {
     []
   );
 
+  const attemptOpenNote = React.useCallback(
+    async (vertexId: string, noteName: string) => {
+      try {
+        const fs = await getFileSystem();
+        const targetVertex = await fs.getVertex(vertexId);
+        if (!targetVertex) {
+          setPendingNote(null);
+          return;
+        }
+        const note = await fs.getNote(targetVertex, noteName);
+        if (!note) {
+          setPendingNote(null);
+          return;
+        }
+        setPendingNote(null);
+        try {
+          window.sessionStorage.removeItem("splitScreen.compareNote");
+        } catch {
+          // ignore storage failures
+        }
+        setImagePreview(null);
+        setNotePreview({
+          title: note.name.replace(/\.md$/i, ""),
+          text: note.text ?? "",
+        });
+      } catch {
+        setPendingNote((prev) =>
+          prev?.vertexId === vertexId && prev.noteName === noteName
+            ? prev
+            : { vertexId, noteName }
+        );
+      }
+    },
+    []
+  );
+
   React.useEffect(() => {
     const handler = (event: Event) => {
       const detail = (
@@ -100,9 +140,29 @@ export const SplitGraphPanel: React.FC = () => {
   }, [attemptOpenImage]);
 
   React.useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (
+        event as CustomEvent<{ vertexId?: string; noteName?: string }>
+      ).detail;
+      const vertexId = detail?.vertexId;
+      const noteName = detail?.noteName;
+      if (!vertexId || !noteName) return;
+      void attemptOpenNote(vertexId, noteName);
+    };
+    window.addEventListener("split-screen-compare-note", handler);
+    return () =>
+      window.removeEventListener("split-screen-compare-note", handler);
+  }, [attemptOpenNote]);
+
+  React.useEffect(() => {
     if (!pendingImage) return;
     void attemptOpenImage(pendingImage.vertexId, pendingImage.imageName);
   }, [attemptOpenImage, pendingImage]);
+
+  React.useEffect(() => {
+    if (!pendingNote) return;
+    void attemptOpenNote(pendingNote.vertexId, pendingNote.noteName);
+  }, [attemptOpenNote, pendingNote]);
 
   React.useEffect(() => {
     try {
@@ -119,6 +179,22 @@ export const SplitGraphPanel: React.FC = () => {
       // ignore storage failures
     }
   }, [attemptOpenImage]);
+
+  React.useEffect(() => {
+    try {
+      const raw = window.sessionStorage.getItem("splitScreen.compareNote");
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as {
+        vertexId?: string;
+        noteName?: string;
+      };
+      if (parsed.vertexId && parsed.noteName) {
+        void attemptOpenNote(parsed.vertexId, parsed.noteName);
+      }
+    } catch {
+      // ignore storage failures
+    }
+  }, [attemptOpenNote]);
 
   React.useEffect(() => {
     const panel = panelRef.current;

@@ -5,10 +5,23 @@ import i18n from "@/i18n";
 import { NotesTab } from "./NotesTab";
 import type { Vertex } from "@/core/vertex";
 
+// Mock ResizeObserver for layout calculations
+beforeAll(() => {
+  class MockResizeObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+  (
+    globalThis as unknown as { ResizeObserver: typeof MockResizeObserver }
+  ).ResizeObserver = MockResizeObserver;
+});
+
 const mockListNotes = vi.fn();
 const mockCreateNote = vi.fn();
 const mockUpdateNote = vi.fn();
 const mockDeleteNote = vi.fn();
+const mockUpdateVertex = vi.fn();
 const mockGetVertex = vi.fn();
 const mockGetNote = vi.fn();
 const mockGetImage = vi.fn();
@@ -36,6 +49,7 @@ vi.mock("@/integrations/fileSystem/integration", () => ({
     createNote: mockCreateNote,
     updateNote: mockUpdateNote,
     deleteNote: mockDeleteNote,
+    updateVertex: mockUpdateVertex,
     getVertex: mockGetVertex,
     getNote: mockGetNote,
     getImage: mockGetImage,
@@ -210,6 +224,33 @@ describe("NotesTab", () => {
     const confirmButton = await screen.findByRole("button", { name: /Delete/i });
     fireEvent.click(confirmButton);
     await waitFor(() => expect(mockDeleteNote).toHaveBeenCalledWith(vertex, "note-1.md"));
+  });
+
+  it("opens the containing folder for a note", async () => {
+    renderTab();
+    fireEvent.click(await screen.findByRole("button", { name: /Open folder/i }));
+    await waitFor(() =>
+      expect(mockInvoke).toHaveBeenCalledWith("fs_open_path", {
+        path: `${vertex.asset_directory}/note-1.md`,
+      })
+    );
+  });
+
+  it("dispatches compare events for a note", async () => {
+    const dispatchSpy = vi.spyOn(window, "dispatchEvent");
+    renderTab();
+    fireEvent.click(
+      await screen.findByRole("button", { name: /Select for comparison/i })
+    );
+    expect(dispatchSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "split-screen-open" })
+    );
+    expect(dispatchSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "split-screen-compare-note",
+        detail: { vertexId: vertex.id, noteName: "note-1.md" },
+      })
+    );
   });
 
   it("removes a single history entry", async () => {

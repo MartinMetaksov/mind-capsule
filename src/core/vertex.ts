@@ -38,6 +38,7 @@ export type Vertex = Identifiable &
     workspace_id: Id | null;
     items_layout?: VertexLayout;
     images_layout?: VertexLayout;
+    notes_layout?: VertexLayout;
     files_layout?: VertexLayout;
     items_behavior?: ItemsBehavior;
     default_tab?: VertexTabId;

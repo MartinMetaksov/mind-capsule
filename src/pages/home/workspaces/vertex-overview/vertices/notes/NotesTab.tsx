@@ -10,10 +10,15 @@ import {
   Typography,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import CompareArrowsOutlinedIcon from "@mui/icons-material/CompareArrowsOutlined";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditIcon from "@mui/icons-material/Edit";
+import FolderOpenOutlinedIcon from "@mui/icons-material/FolderOpenOutlined";
 import HistoryIcon from "@mui/icons-material/History";
 import LinkOutlinedIcon from "@mui/icons-material/LinkOutlined";
+import DragIndicatorRoundedIcon from "@mui/icons-material/DragIndicatorRounded";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import ZoomInIcon from "@mui/icons-material/ZoomIn";
 import { useTranslation } from "react-i18next";
 
 import type { Vertex } from "@/core/vertex";
@@ -29,7 +34,6 @@ import { CreateFab } from "../../../components/create-fab/CreateFab";
 import type { GraphNode } from "../../views/graph/types";
 import type { VertexItem } from "../../views/grid/VertexGrid";
 import { GraphReferenceOverlay } from "../../common/GraphReferenceOverlay";
-import { NotesList } from "./components/NotesList";
 import { NoteHistoryPanel } from "./components/NoteHistoryPanel";
 import { ImagePreviewDialog } from "./components/ImagePreviewDialog";
 import { NotePreviewDialog } from "./components/NotePreviewDialog";
@@ -39,6 +43,7 @@ import {
   saveHistory,
   type NoteHistoryItem,
 } from "./utils/history";
+import { ReorderableGrid } from "../../common/ReorderableGrid";
 
 type NotesTabProps = {
   vertex: Vertex;
@@ -56,6 +61,42 @@ type NotePreview = {
 type ImagePreview = {
   title: string;
   path: string;
+};
+
+const REORDER_END_ID = "__end__";
+
+const buildOrderMap = (items: NoteEntry[]) =>
+  Object.fromEntries(items.map((item, index) => [item.name, index]));
+
+const sortNotes = (items: NoteEntry[], orderMap: Record<string, number>) => {
+  return [...items].sort((a, b) => {
+    const aOrder = orderMap[a.name];
+    const bOrder = orderMap[b.name];
+    if (aOrder === undefined && bOrder === undefined) {
+      return a.name.localeCompare(b.name);
+    }
+    if (aOrder === undefined) return 1;
+    if (bOrder === undefined) return -1;
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    return a.name.localeCompare(b.name);
+  });
+};
+
+const moveItem = (items: NoteEntry[], sourceId: string, targetId: string) => {
+  const fromIndex = items.findIndex((item) => item.name === sourceId);
+  if (fromIndex < 0) return items;
+  if (targetId === REORDER_END_ID) {
+    const next = [...items];
+    const [moved] = next.splice(fromIndex, 1);
+    next.push(moved);
+    return next;
+  }
+  const toIndex = items.findIndex((item) => item.name === targetId);
+  if (toIndex < 0 || fromIndex === toIndex) return items;
+  const next = [...items];
+  const [moved] = next.splice(fromIndex, 1);
+  next.splice(toIndex, 0, moved);
+  return next;
 };
 
 export const NotesTab: React.FC<NotesTabProps> = ({
@@ -79,11 +120,15 @@ export const NotesTab: React.FC<NotesTabProps> = ({
   const [saving, setSaving] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const [confirmDelete, setConfirmDelete] = React.useState<NoteEntry | null>(null);
+  const [notesOrderMap, setNotesOrderMap] = React.useState<Record<string, number>>(
+    {}
+  );
   const [isClosing, setIsClosing] = React.useState(false);
   const closeTimerRef = React.useRef<number | null>(null);
   const referenceCloseTimerRef = React.useRef<number | null>(null);
   const hasLoadedRef = React.useRef(false);
   const editorRef = React.useRef<HTMLTextAreaElement | null>(null);
+  const assetDirectory = vertex.asset_directory;
   const os = React.useMemo(() => detectOperatingSystem(), []);
   const graphItems = React.useMemo<VertexItem[]>(() => [], []);
 
@@ -104,6 +149,37 @@ export const NotesTab: React.FC<NotesTabProps> = ({
     return selectedNote.name;
   }, [selectedNote, selectedNoteIndex, t]);
 
+  const orderKey = React.useMemo(
+    () => `notesTab.order:${vertex.id}`,
+    [vertex.id]
+  );
+
+  React.useEffect(() => {
+    if (vertex.notes_layout?.mode === "linear") {
+      setNotesOrderMap(vertex.notes_layout.order ?? {});
+      return;
+    }
+    if (typeof window === "undefined") {
+      setNotesOrderMap({});
+      return;
+    }
+    const stored = window.sessionStorage.getItem(orderKey);
+    if (!stored) {
+      setNotesOrderMap({});
+      return;
+    }
+    try {
+      const parsed = JSON.parse(stored) as Record<string, number>;
+      setNotesOrderMap(parsed ?? {});
+    } catch {
+      setNotesOrderMap({});
+    }
+  }, [orderKey, vertex.notes_layout]);
+
+  const orderedNotes = React.useMemo(
+    () => sortNotes(notes, notesOrderMap),
+    [notes, notesOrderMap]
+  );
 
   const noteHistory = selectedNote
     ? historyMap[selectedNote.name] ?? []
@@ -263,6 +339,70 @@ export const NotesTab: React.FC<NotesTabProps> = ({
     setConfirmDelete(null);
     await handleDeleteNote(target);
   };
+
+  const handleReorder = React.useCallback(
+    async (sourceId: string, targetId: string) => {
+      const next = moveItem(orderedNotes, sourceId, targetId);
+      setNotes(next);
+      const nextOrder = buildOrderMap(next);
+      setNotesOrderMap(nextOrder);
+      if (typeof window !== "undefined") {
+        window.sessionStorage.setItem(orderKey, JSON.stringify(nextOrder));
+      }
+      try {
+        const fs = await getFileSystem();
+        const updated: Vertex = {
+          ...vertex,
+          notes_layout: { mode: "linear", order: nextOrder },
+          updated_at: new Date().toISOString(),
+        };
+        await fs.updateVertex(updated);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : t("notesTab.errors.save"));
+      }
+    },
+    [orderKey, orderedNotes, t, vertex]
+  );
+
+  const handleRevealNote = React.useCallback(
+    async (noteName: string) => {
+      if (!assetDirectory || !noteName) return;
+      const base = assetDirectory.replace(/[\\/]+$/, "");
+      const targetPath = `${base}/${noteName}`;
+      try {
+        const { isTauri, invoke } = await import("@tauri-apps/api/core");
+        if (isTauri()) {
+          await invoke("fs_open_path", { path: targetPath });
+          return;
+        }
+      } catch {
+        // fall back to browser navigation
+      }
+      window.open(encodeURI(`file://${targetPath}`), "_blank", "noreferrer");
+    },
+    [assetDirectory]
+  );
+
+  const handleCompareNote = React.useCallback(
+    (noteName: string) => {
+      if (!vertex.id || !noteName) return;
+      try {
+        window.sessionStorage.setItem(
+          "splitScreen.compareNote",
+          JSON.stringify({ vertexId: vertex.id, noteName })
+        );
+      } catch {
+        // ignore storage failures
+      }
+      window.dispatchEvent(new Event("split-screen-open"));
+      window.dispatchEvent(
+        new CustomEvent("split-screen-compare-note", {
+          detail: { vertexId: vertex.id, noteName },
+        })
+      );
+    },
+    [vertex.id]
+  );
 
   const handlePersistDraft = React.useCallback(async () => {
     if (!selectedNote) return;
@@ -562,9 +702,10 @@ export const NotesTab: React.FC<NotesTabProps> = ({
         flexDirection: "column",
         gap: 2,
         height: "100%",
-        flex: 1,
-        minHeight: 0,
         position: "relative",
+        flex: 1,
+        minHeight: "100%",
+        alignSelf: "stretch",
       }}
     >
       <Box>
@@ -582,38 +723,176 @@ export const NotesTab: React.FC<NotesTabProps> = ({
         </Alert>
       )}
 
-      {loading ? (
-        <Box
-          sx={{
-            flex: 1,
-            minHeight: 200,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Typography color="text.secondary">{t("notesTab.loading")}</Typography>
-        </Box>
-      ) : notes.length === 0 ? (
-        <Box
-          sx={{
-            flex: 1,
-            minHeight: 200,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Typography color="text.secondary">{t("notesTab.empty")}</Typography>
-        </Box>
-      ) : (
-        <NotesList
-          notes={notes}
-          saving={saving}
-          onOpenNote={handleOpenNote}
-          onDeleteNote={setConfirmDelete}
-        />
-      )}
+      <Box
+        sx={{
+          flex: 1,
+          minHeight: "100%",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        {loading ? (
+          <Typography color="text.secondary" align="center" sx={{ mt: 4 }}>
+            {t("notesTab.loading")}
+          </Typography>
+        ) : orderedNotes.length === 0 ? (
+          <Typography color="text.secondary" align="center" sx={{ mt: 4 }}>
+            {t("notesTab.empty")}
+          </Typography>
+        ) : (
+          <ReorderableGrid
+            items={orderedNotes}
+            getId={(item) => item.name}
+            itemWidth={260}
+            itemHeight={195}
+            gap={24}
+            scrollY={false}
+            onReorder={handleReorder}
+            dragLabel={t("commonActions.reorder")}
+            renderItem={(note, state) => {
+              const noteIndex = orderedNotes.findIndex(
+                (entry) => entry.name === note.name
+              );
+              return (
+                <Box
+                  sx={{
+                    position: "relative",
+                    borderRadius: 0,
+                    overflow: "hidden",
+                    boxShadow: 2,
+                    cursor: "pointer",
+                    height: "100%",
+                    backgroundColor: "background.paper",
+                    p: 2,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 1,
+                    transition: "transform 150ms ease, box-shadow 150ms ease",
+                    "&:hover": {
+                      transform: "translateY(-2px)",
+                      boxShadow: 4,
+                    },
+                    "&:hover [data-role='note-actions']": {
+                      opacity: 1,
+                    },
+                    "&:hover [data-role='note-drag']": {
+                      opacity: 1,
+                    },
+                  }}
+                  onClick={() => handleOpenNote(note)}
+                >
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                    {noteIndex >= 0
+                      ? t("notesTab.noteLabel", { number: noteIndex + 1 })
+                      : note.name}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      whiteSpace: "pre-line",
+                      overflow: "hidden",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 6,
+                      WebkitBoxOrient: "vertical",
+                    }}
+                  >
+                    {note.text || t("notesTab.emptyNote")}
+                  </Typography>
+                  <Box
+                    data-role="note-actions"
+                    sx={{
+                      position: "absolute",
+                      top: 8,
+                      right: 8,
+                      display: "flex",
+                      gap: 0.5,
+                      bgcolor: "rgba(0,0,0,0.45)",
+                      borderRadius: 999,
+                      p: "2px",
+                      opacity: 0,
+                      transition: "opacity 150ms ease",
+                    }}
+                  >
+                    <IconButton
+                      size="small"
+                      sx={{ color: "common.white" }}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleOpenNote(note);
+                      }}
+                    >
+                      <ZoomInIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      sx={{ color: "common.white" }}
+                      aria-label={t("notesTab.compare")}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleCompareNote(note.name);
+                      }}
+                    >
+                      <CompareArrowsOutlinedIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      sx={{ color: "common.white" }}
+                      aria-label={t("notesTab.openFolder")}
+                      disabled={!assetDirectory}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        void handleRevealNote(note.name);
+                      }}
+                    >
+                      <FolderOpenOutlinedIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      sx={{ color: "error.light" }}
+                      aria-label={t("notesTab.delete")}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setConfirmDelete(note);
+                      }}
+                      disabled={saving}
+                    >
+                      <DeleteOutlineIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
+                  <Box
+                    data-role="note-drag"
+                    sx={{
+                      position: "absolute",
+                      top: 8,
+                      left: 8,
+                      opacity: 0,
+                      transition: "opacity 150ms ease",
+                    }}
+                  >
+                    <IconButton
+                      size="small"
+                      draggable={false}
+                      aria-label={t("commonActions.reorder")}
+                      onPointerDown={state.dragHandleProps?.onPointerDown}
+                      sx={{
+                        cursor: "grab",
+                        bgcolor: "rgba(0,0,0,0.45)",
+                        color: "common.white",
+                        boxShadow: 2,
+                        "&:hover": {
+                          bgcolor: "rgba(0,0,0,0.6)",
+                        },
+                      }}
+                    >
+                      <DragIndicatorRoundedIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
+                </Box>
+              );
+            }}
+          />
+        )}
+      </Box>
 
       {!selectedNote && !isClosing && !referenceOpen && (
         <CreateFab

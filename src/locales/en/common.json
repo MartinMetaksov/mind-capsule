@@ -395,6 +395,8 @@
     "noteLabel": "Note {{number}}",
     "noteTitle": "Note",
     "delete": "Delete note",
+    "compare": "Select for comparison",
+    "openFolder": "Open folder",
     "deleteTitle": "Delete note?",
     "deletePrompt": "Are you sure you want to delete {{name}}?",
     "emptyNote": "Empty note",
