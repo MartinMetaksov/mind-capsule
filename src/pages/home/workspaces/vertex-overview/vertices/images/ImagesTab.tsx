@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import ZoomInIcon from "@mui/icons-material/ZoomIn";
+import FolderOpenOutlinedIcon from "@mui/icons-material/FolderOpenOutlined";
 import CloseIcon from "@mui/icons-material/Close";
 import NavigateBeforeIcon from "@mui/icons-material/NavigateBefore";
 import NavigateNextIcon from "@mui/icons-material/NavigateNext";
@@ -51,6 +52,7 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
   const [description, setDescription] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
+  const assetDirectory = vertex.asset_directory;
   const os = React.useMemo(() => detectOperatingSystem(), []);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const hasLoadedRef = React.useRef(false);
@@ -276,6 +278,22 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
     [buildOrderMap, images, moveItem, onVertexUpdated, t, vertex]
   );
 
+  const handleRevealImage = React.useCallback(async (imageName: string) => {
+    if (!assetDirectory || !imageName) return;
+    const base = assetDirectory.replace(/[\\/]+$/, "");
+    const targetPath = `${base}/${imageName}`;
+    try {
+      const { isTauri, invoke } = await import("@tauri-apps/api/core");
+      if (isTauri()) {
+        await invoke("fs_open_path", { path: targetPath });
+        return;
+      }
+    } catch {
+      // fall back to browser navigation
+    }
+    window.open(encodeURI(`file://${targetPath}`), "_blank", "noreferrer");
+  }, [assetDirectory]);
+
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
     const deletingName = deleteTarget.name;
@@ -401,6 +419,9 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
                   "&:hover [data-role='image-actions']": {
                     opacity: 1,
                   },
+                  "&:hover [data-role='image-drag']": {
+                    opacity: 1,
+                  },
                   "&:hover [data-role='image-overlay']": {
                     opacity: 1,
                   },
@@ -478,6 +499,18 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
                   </IconButton>
                   <IconButton
                     size="small"
+                    sx={{ color: "common.white" }}
+                    aria-label={t("imagesTab.openFolder")}
+                    disabled={!assetDirectory}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void handleRevealImage(img.name);
+                    }}
+                  >
+                    <FolderOpenOutlinedIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton
+                    size="small"
                     sx={{ color: "error.light" }}
                     aria-label={t("commonActions.delete")}
                     onClick={(e) => {
@@ -492,7 +525,16 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
                     <DeleteOutlineIcon fontSize="small" />
                   </IconButton>
                 </Box>
-                <Box sx={{ position: "absolute", top: 8, left: 8 }}>
+                <Box
+                  data-role="image-drag"
+                  sx={{
+                    position: "absolute",
+                    top: 8,
+                    left: 8,
+                    opacity: 0,
+                    transition: "opacity 150ms ease",
+                  }}
+                >
                   <IconButton
                     size="small"
                     draggable={false}

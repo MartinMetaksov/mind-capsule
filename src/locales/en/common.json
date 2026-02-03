@@ -368,6 +368,7 @@
     "dropzone": "Drop images here or click to select (multiple supported)",
     "loading": "Loading images…",
     "empty": "No images yet.",
+    "openFolder": "Open folder",
     "editTitle": "Edit image",
     "upload": "Add images",
     "previous": "Previous image",

@@ -20,6 +20,7 @@ const mockListImages = vi.fn();
 const mockDeleteImage = vi.fn();
 const mockUpdateImageMetadata = vi.fn();
 const mockCreateImage = vi.fn();
+const invokeMock = vi.fn();
 
 vi.mock("@/integrations/fileSystem/integration", () => ({
   getFileSystem: async () => ({
@@ -27,6 +28,17 @@ vi.mock("@/integrations/fileSystem/integration", () => ({
     deleteImage: mockDeleteImage,
     updateImageMetadata: mockUpdateImageMetadata,
     createImage: mockCreateImage,
+  }),
+}));
+
+vi.mock("@tauri-apps/api/core", () => ({
+  isTauri: () => true,
+  invoke: (...args: unknown[]) => invokeMock(...args),
+}));
+
+vi.mock("@tauri-apps/api/window", () => ({
+  getCurrentWindow: () => ({
+    onDragDropEvent: vi.fn(async () => () => {}),
   }),
 }));
 
@@ -90,5 +102,15 @@ describe("ImagesTab", () => {
     const dialog = await screen.findByRole("dialog");
     fireEvent.click(within(dialog).getByRole("button", { name: /Delete/i }));
     await waitFor(() => expect(mockDeleteImage).toHaveBeenCalledWith(vertex, "img1.png"));
+  });
+
+  it("opens the containing folder for an image", async () => {
+    renderTab();
+    fireEvent.click(await screen.findByRole("button", { name: /Open folder/i }));
+    await waitFor(() =>
+      expect(invokeMock).toHaveBeenCalledWith("fs_open_path", {
+        path: `${vertex.asset_directory}/img1.png`,
+      })
+    );
   });
 });

@@ -83,6 +83,8 @@ pub fn fs_open_path(path: String) -> Result<(), String> {
         let mut cmd = Command::new("open");
         if is_dir && path.ends_with(".app") {
             cmd.args(["-R", &path]);
+        } else if !is_dir {
+            cmd.args(["-R", &path]);
         } else {
             cmd.arg(&path);
         }
@@ -95,20 +97,37 @@ pub fn fs_open_path(path: String) -> Result<(), String> {
     }
     #[cfg(target_os = "windows")]
     {
-        let status = Command::new("cmd")
-            .args(["/C", "start", "", &path])
-            .status()
-            .map_err(|e| e.to_string())?;
+        let status = if is_dir {
+            Command::new("cmd")
+                .args(["/C", "start", "", &path])
+                .status()
+                .map_err(|e| e.to_string())?
+        } else {
+            Command::new("explorer")
+                .args(["/select,", &path])
+                .status()
+                .map_err(|e| e.to_string())?
+        };
         if !status.success() {
             return Err(format!("Failed to open path (status: {status})."));
         }
     }
     #[cfg(all(unix, not(target_os = "macos")))]
     {
-        let status = Command::new("xdg-open")
-            .arg(&path)
-            .status()
-            .map_err(|e| e.to_string())?;
+        let status = if is_dir {
+            Command::new("xdg-open")
+                .arg(&path)
+                .status()
+                .map_err(|e| e.to_string())?
+        } else {
+            let dir = target
+                .parent()
+                .ok_or_else(|| "Failed to resolve parent directory.".to_string())?;
+            Command::new("xdg-open")
+                .arg(dir)
+                .status()
+                .map_err(|e| e.to_string())?
+        };
         if !status.success() {
             return Err(format!("Failed to open path (status: {status})."));
         }
