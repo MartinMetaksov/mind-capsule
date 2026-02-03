@@ -55,6 +55,9 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
   const assetDirectory = vertex.asset_directory;
   const os = React.useMemo(() => detectOperatingSystem(), []);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const altInputRef = React.useRef<HTMLInputElement | null>(null);
+  const dialogBodyRef = React.useRef<HTMLDivElement | null>(null);
+  const [pendingAltFocus, setPendingAltFocus] = React.useState(false);
   const hasLoadedRef = React.useRef(false);
   const containerRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -206,6 +209,25 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
   }, [dialogOpen, handleNext, handlePrev, os]);
 
   React.useEffect(() => {
+    if (!dialogOpen) return;
+    setPendingAltFocus(true);
+    requestAnimationFrame(() => {
+      dialogBodyRef.current?.focus({ preventScroll: true });
+    });
+  }, [dialogOpen]);
+
+  const handleDialogContainerKeyDown = React.useCallback(
+    (event: React.KeyboardEvent) => {
+      if (event.key === "Tab" && pendingAltFocus) {
+        event.preventDefault();
+        setPendingAltFocus(false);
+        altInputRef.current?.focus({ preventScroll: true });
+      }
+    },
+    [pendingAltFocus]
+  );
+
+  React.useEffect(() => {
     if (dialogOpen) return;
     const insertShortcut = getShortcut("insert", os);
     const handler = (event: KeyboardEvent) => {
@@ -227,7 +249,7 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
     return () => window.removeEventListener("keydown", handler);
   }, [dialogOpen, os]);
 
-  const handleDialogSave = async () => {
+  const handleDialogSave = React.useCallback(async () => {
     if (selectedIdx === null) return;
     try {
       const target = images[selectedIdx];
@@ -245,7 +267,17 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
     } catch (err) {
       setError(err instanceof Error ? err.message : t("imagesTab.errors.add"));
     }
-  };
+  }, [alt, description, images, selectedIdx, t, vertex]);
+
+  const handleDialogKeyDown = React.useCallback(
+    (event: React.KeyboardEvent) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        void handleDialogSave();
+      }
+    },
+    [handleDialogSave]
+  );
 
   const handleDelete = async (targetName: string) => {
     try {
@@ -570,6 +602,9 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
         }}
       >
         <DialogContent
+          ref={dialogBodyRef}
+          tabIndex={0}
+          onKeyDown={handleDialogContainerKeyDown}
           sx={{
             p: 0,
             position: "relative",
@@ -712,6 +747,8 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
                 label={t("imagesTab.alt")}
                 value={alt}
                 onChange={(e) => setAlt(e.target.value)}
+                onKeyDown={handleDialogKeyDown}
+                inputRef={altInputRef}
                 slotProps={{ inputLabel: { shrink: true } }}
                 size="small"
                 sx={(theme) => ({
@@ -730,6 +767,7 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
                 label={t("imagesTab.descriptionLabel")}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
+                onKeyDown={handleDialogKeyDown}
                 multiline
                 minRows={2}
                 slotProps={{ inputLabel: { shrink: true } }}
