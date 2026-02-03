@@ -2,7 +2,10 @@ import * as React from "react";
 
 import type { Store } from "@tauri-apps/plugin-store";
 
-export type AppSettingKey = "ui.showFooter" | "ui.showSettingsBar";
+export type AppSettingKey =
+  | "ui.showFooter"
+  | "ui.showSettingsBar"
+  | "ui.tabsCollapsedDefault";
 
 const LOCAL_PREFIX = "app-setting:";
 const EVENT_NAME = "app-setting-changed";

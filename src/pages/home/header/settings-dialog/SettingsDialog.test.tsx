@@ -59,4 +59,17 @@ describe("SettingsDialog", () => {
       ).toBe("false");
     });
   });
+
+  it("persists tabs collapsed preference changes in local storage", async () => {
+    renderDialog();
+    const tabsToggle = screen.getByLabelText(/Start tabs collapsed/i);
+
+    fireEvent.click(tabsToggle);
+
+    await waitFor(() => {
+      expect(
+        window.localStorage.getItem("app-setting:ui.tabsCollapsedDefault")
+      ).toBe("true");
+    });
+  });
 });

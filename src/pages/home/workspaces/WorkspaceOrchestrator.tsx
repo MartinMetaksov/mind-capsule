@@ -26,6 +26,7 @@ import { detectOperatingSystem } from "@/utils/os";
 import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
 import { useTranslation } from "react-i18next";
 import { useSplitScreen } from "../SplitScreenContext";
+import { useAppSetting } from "@/utils/settings/useAppSetting";
 
 type RootTab = "projects" | "workspaces" | "detached";
 
@@ -43,7 +44,10 @@ export const WorkspaceOrchestrator: React.FC = () => {
   const { splitEnabled } = useSplitScreen();
   const isNarrow = useMediaQuery("(max-width: 1100px)");
   const autoCollapse = splitEnabled || isNarrow;
-  const [railCollapsed, setRailCollapsed] = React.useState(autoCollapse);
+  const [tabsCollapsedDefault] = useAppSetting("ui.tabsCollapsedDefault", false);
+  const [railCollapsed, setRailCollapsed] = React.useState(
+    autoCollapse || tabsCollapsedDefault
+  );
   const {
     workspaces,
     loading: workspacesLoading,
@@ -96,8 +100,8 @@ export const WorkspaceOrchestrator: React.FC = () => {
   const homeShortcut = React.useMemo(() => getShortcut("goHome", os), [os]);
 
   React.useEffect(() => {
-    setRailCollapsed(autoCollapse);
-  }, [autoCollapse]);
+    setRailCollapsed(autoCollapse || tabsCollapsedDefault);
+  }, [autoCollapse, tabsCollapsedDefault]);
 
   const active = trail.length > 0 ? trail[trail.length - 1] : null;
 

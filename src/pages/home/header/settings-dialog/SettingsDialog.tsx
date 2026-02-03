@@ -57,6 +57,10 @@ export const SettingsDialog: React.FC<Props> = ({
     "ui.showSettingsBar",
     true
   );
+  const [tabsCollapsedDefault, setTabsCollapsedDefault] = useAppSetting(
+    "ui.tabsCollapsedDefault",
+    false
+  );
 
   const shortcutList = React.useMemo(
     () => [
@@ -417,6 +421,17 @@ export const SettingsDialog: React.FC<Props> = ({
                         />
                       }
                       label={t("settings.showSettingsBar")}
+                    />
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={tabsCollapsedDefault}
+                          onChange={(event) =>
+                            setTabsCollapsedDefault(event.target.checked)
+                          }
+                        />
+                      }
+                      label={t("settings.tabsCollapsedDefault")}
                     />
                   </Stack>
                 </Stack>

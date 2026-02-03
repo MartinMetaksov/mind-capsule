@@ -126,15 +126,24 @@ export const VerticalTabs = <T extends string>({
           ...(collapsed
             ? {
                 "& .MuiTab-root": {
-                  minHeight: 68,
+                  minHeight: 56,
+                  height: 56,
                   px: 0,
-                  py: 1,
+                  py: 0,
                   minWidth: 56,
                   justifyContent: "center",
                   alignItems: "center",
                 },
+                "& .MuiTab-wrapper": {
+                  height: "100%",
+                  width: "100%",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  flexDirection: "row",
+                },
                 "& .MuiTab-iconWrapper": {
                   margin: 0,
+                  lineHeight: 1,
                 },
               }
             : {}),
@@ -145,7 +154,7 @@ export const VerticalTabs = <T extends string>({
           key={item.value}
           value={item.value}
           icon={item.icon}
-          iconPosition="top"
+          iconPosition={collapsed ? "start" : "top"}
           label={<span className="tabs-label">{item.label}</span>}
         />
       ))}
