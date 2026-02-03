@@ -6,6 +6,7 @@ import {
   IconButton,
   Tooltip,
   Box,
+  Chip,
 } from "@mui/material";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import { SearchOutlined } from "@mui/icons-material";
@@ -106,6 +107,26 @@ export const Header: React.FC<HeaderProps> = ({
           <Typography variant="caption" color="text.secondary">
             v{packageJson.version}
           </Typography>
+          {import.meta.env.DEV ? (
+            <Chip
+              label="DEV"
+              size="small"
+              sx={(theme) => ({
+                height: 20,
+                fontWeight: 700,
+                letterSpacing: "0.08em",
+                bgcolor:
+                  theme.palette.mode === "light"
+                    ? "rgba(255, 168, 38, 0.18)"
+                    : "rgba(255, 168, 38, 0.22)",
+                color: theme.palette.warning.main,
+                borderRadius: 1,
+                "& .MuiChip-label": {
+                  px: 0.7,
+                },
+              })}
+            />
+          ) : null}
         </Box>
 
         <Tooltip
