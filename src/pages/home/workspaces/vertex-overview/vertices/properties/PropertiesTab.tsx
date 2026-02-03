@@ -102,6 +102,12 @@ const TagsEditor: React.FC<TagsEditorProps> = ({
           size="small"
           InputLabelProps={{ shrink: true }}
           placeholder={t("tagsTab.placeholder")}
+          autoComplete="off"
+          autoCorrect="off"
+          inputProps={{
+            autoCapitalize: "none",
+            spellCheck: "false",
+          }}
           sx={{
             "& .MuiInputBase-root": {
               bgcolor: "background.paper",
@@ -168,6 +174,7 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
   );
   const [isLeaf, setIsLeaf] = React.useState<boolean>(Boolean(vertex.is_leaf));
   const [tags, setTags] = React.useState<string[]>(vertex.tags ?? []);
+  const [hasEditedForm, setHasEditedForm] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const assetDirectory = vertex.asset_directory;
 
@@ -182,14 +189,16 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
     setIsLeaf(Boolean(vertex.is_leaf));
     setTags(vertex.tags ?? []);
     setError(null);
-    requestAnimationFrame(() => {
-      const input = titleInputRef.current;
-      if (!input) return;
-      input.focus({ preventScroll: true });
-      const length = input.value.length;
-      input.setSelectionRange(length, length);
-    });
-  }, [vertex]);
+    if (!hasEditedForm) {
+      requestAnimationFrame(() => {
+        const input = titleInputRef.current;
+        if (!input) return;
+        input.focus({ preventScroll: true });
+        const length = input.value.length;
+        input.setSelectionRange(length, length);
+      });
+    }
+  }, [hasEditedForm, vertex]);
 
   const handleOpenAssetDirectory = React.useCallback(async () => {
     if (!assetDirectory) return;
@@ -261,6 +270,7 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
   );
 
   const handleTitleBlur = React.useCallback(async () => {
+    setHasEditedForm(true);
     const trimmed = title.trim();
     if (!trimmed) {
       setError(t("propertiesTab.errors.titleRequired"));
@@ -274,33 +284,39 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
   }, [buildUpdated, persistVertex, t, title, vertex.title]);
 
   const handleDefaultTabChange = async (next: VertexTabId) => {
+    setHasEditedForm(true);
     setDefaultTab(next);
     await persistVertex(buildUpdated({ default_tab: next }), true);
   };
 
   const handleItemsDisplayChange = async (next: ItemsDisplayHint) => {
+    setHasEditedForm(true);
     const nextBehavior = { ...itemsBehavior, display: next };
     setItemsBehavior(nextBehavior);
     await persistVertex(buildUpdated({ items_behavior: nextBehavior }));
   };
 
   const handleLeafChange = async (next: boolean) => {
+    setHasEditedForm(true);
     setIsLeaf(next);
     await persistVertex(buildUpdated({ is_leaf: next }), true);
   };
 
   const handleThumbnailChange = async (next?: string) => {
+    setHasEditedForm(true);
     setThumbnail(next);
     await persistVertex(buildUpdated({ thumbnail_path: next }));
   };
 
   const handleAddTag = async (tag: string) => {
+    setHasEditedForm(true);
     const next = [...tags, tag];
     setTags(next);
     await persistVertex(buildUpdated({ tags: next }));
   };
 
   const handleRemoveTag = async (tag: string) => {
+    setHasEditedForm(true);
     const next = tags.filter((t) => t !== tag);
     setTags(next);
     await persistVertex(buildUpdated({ tags: next }));

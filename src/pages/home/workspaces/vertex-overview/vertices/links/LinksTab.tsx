@@ -217,7 +217,7 @@ export const LinksTab: React.FC<LinksTabProps> = ({ vertex, refreshToken }) => {
           <Typography color="text.secondary">{t("linksTab.empty")}</Typography>
         ) : (
           <Stack spacing={1}>
-            {links.map((link, idx) => (
+            {links.map((link) => (
               <Paper
                 key={link.id}
                 variant="outlined"
