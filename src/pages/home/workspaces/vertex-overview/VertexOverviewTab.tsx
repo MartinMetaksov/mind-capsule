@@ -8,7 +8,7 @@ import {
 } from "../components/create-fab/CreateFab";
 import type { Vertex } from "@/core/vertex";
 import { detectOperatingSystem } from "@/utils/os";
-import { getShortcut } from "@/utils/shortcuts";
+import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
 import { useTranslation } from "react-i18next";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
 
@@ -79,6 +79,9 @@ export const VertexOverviewTab: React.FC<VertexOverviewTabProps> = (props) => {
     () => getShortcut("searchNextResult", os),
     [os]
   );
+  const viewGridShortcut = React.useMemo(() => getShortcut("viewGrid", os), [os]);
+  const viewListShortcut = React.useMemo(() => getShortcut("viewList", os), [os]);
+  const viewGraphShortcut = React.useMemo(() => getShortcut("viewGraph", os), [os]);
 
   const itemsProps = props.variant === "items" ? props : null;
   const projectsProps = props.variant === "projects" ? props : null;
@@ -161,6 +164,39 @@ export const VertexOverviewTab: React.FC<VertexOverviewTabProps> = (props) => {
     itemsProps?.vertex?.items_behavior?.display,
     resolveViewMode,
   ]);
+
+  React.useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+      if (matchesShortcut(event, viewGridShortcut)) {
+        event.preventDefault();
+        setViewMode("grid");
+        return;
+      }
+      if (matchesShortcut(event, viewListShortcut)) {
+        event.preventDefault();
+        setViewMode("list");
+        return;
+      }
+      if (matchesShortcut(event, viewGraphShortcut)) {
+        event.preventDefault();
+        setViewMode("graph");
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [viewGridShortcut, viewListShortcut, viewGraphShortcut]);
 
   const itemsFabRef = React.useRef<CreateFabHandle | null>(null);
   const projectsFabRef = React.useRef<CreateFabHandle | null>(null);

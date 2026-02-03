@@ -174,6 +174,23 @@ describe("VertexOverviewTab (items)", () => {
     expect(await screen.findByTestId("vertex-overview-list")).toBeInTheDocument();
   });
 
+  it("switches view mode via keyboard shortcuts", async () => {
+    mockGetVertices.mockResolvedValue([item]);
+    renderItems();
+
+    fireEvent.keyDown(window, { key: "g", ctrlKey: true });
+    expect(await screen.findByTestId("vertex-overview-graph")).toBeInTheDocument();
+
+    fireEvent.keyDown(window, { key: "l", ctrlKey: true });
+    expect(await screen.findByTestId("vertex-overview-list")).toBeInTheDocument();
+
+    fireEvent.keyDown(window, { key: "r", ctrlKey: true });
+    await waitFor(() => {
+      expect(screen.queryByTestId("vertex-overview-list")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("vertex-overview-graph")).not.toBeInTheDocument();
+    });
+  });
+
   it("sorts items alphabetically by default", async () => {
     mockGetVertices.mockResolvedValue([
       { ...item, id: "item-b", title: "Bravo" },
