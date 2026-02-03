@@ -16,6 +16,14 @@ export const Home: React.FC = () => {
   const [showFooter] = useAppSetting("ui.showFooter", true);
   const [showSettingsBar] = useAppSetting("ui.showSettingsBar", true);
 
+  React.useEffect(() => {
+    const handleOpen = () => setSplitEnabled(true);
+    window.addEventListener("split-screen-open", handleOpen);
+    return () => {
+      window.removeEventListener("split-screen-open", handleOpen);
+    };
+  }, []);
+
   return (
     <Box
       data-split={splitEnabled ? "true" : "false"}

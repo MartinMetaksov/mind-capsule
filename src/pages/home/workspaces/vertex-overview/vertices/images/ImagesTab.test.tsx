@@ -113,4 +113,19 @@ describe("ImagesTab", () => {
       })
     );
   });
+
+  it("dispatches compare events for an image", async () => {
+    const dispatchSpy = vi.spyOn(window, "dispatchEvent");
+    renderTab();
+    fireEvent.click(
+      await screen.findByRole("button", { name: /Select for comparison/i })
+    );
+    expect(dispatchSpy).toHaveBeenCalledWith(expect.objectContaining({ type: "split-screen-open" }));
+    expect(dispatchSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "split-screen-compare-image",
+        detail: { vertexId: vertex.id, imageName: "img1.png" },
+      })
+    );
+  });
 });

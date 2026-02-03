@@ -9,6 +9,7 @@ import { useVertices } from "./workspaces/hooks/use-vertices/useVertices";
 import type { VertexItem } from "./workspaces/vertex-overview/views/grid/VertexGrid";
 import { GraphReferenceModal } from "./workspaces/vertex-overview/views/graph/components/GraphReferenceModal";
 import { renderMarkdown } from "./workspaces/vertex-overview/vertices/notes/utils/markdown";
+import { getFileSystem } from "@/integrations/fileSystem/integration";
 
 type NotePreview = {
   title: string;
@@ -28,6 +29,10 @@ export const SplitGraphPanel: React.FC = () => {
   const [imagePreview, setImagePreview] = React.useState<ImagePreview | null>(
     null
   );
+  const [pendingImage, setPendingImage] = React.useState<{
+    vertexId: string;
+    imageName: string;
+  } | null>(null);
   const panelRef = React.useRef<HTMLDivElement | null>(null);
   const resizeFrameRef = React.useRef<number | null>(null);
   const lastSizeRef = React.useRef({ width: 0, height: 0 });
@@ -42,6 +47,78 @@ export const SplitGraphPanel: React.FC = () => {
     }
     return next;
   }, [vertices, workspaceByVertexId]);
+
+  const attemptOpenImage = React.useCallback(
+    async (vertexId: string, imageName: string) => {
+      try {
+        const fs = await getFileSystem();
+        const targetVertex = await fs.getVertex(vertexId);
+        if (!targetVertex) {
+          setPendingImage(null);
+          return;
+        }
+        const image = await fs.getImage(targetVertex, imageName);
+        if (!image) {
+          setPendingImage(null);
+          return;
+        }
+        setPendingImage(null);
+        try {
+          window.sessionStorage.removeItem("splitScreen.compareImage");
+        } catch {
+          // ignore storage failures
+        }
+        setNotePreview(null);
+        setImagePreview({
+          title: image.alt || image.name,
+          path: image.path,
+        });
+      } catch {
+        setPendingImage((prev) =>
+          prev?.vertexId === vertexId && prev.imageName === imageName
+            ? prev
+            : { vertexId, imageName }
+        );
+      }
+    },
+    []
+  );
+
+  React.useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (
+        event as CustomEvent<{ vertexId?: string; imageName?: string }>
+      ).detail;
+      const vertexId = detail?.vertexId;
+      const imageName = detail?.imageName;
+      if (!vertexId || !imageName) return;
+      void attemptOpenImage(vertexId, imageName);
+    };
+    window.addEventListener("split-screen-compare-image", handler);
+    return () =>
+      window.removeEventListener("split-screen-compare-image", handler);
+  }, [attemptOpenImage]);
+
+  React.useEffect(() => {
+    if (!pendingImage) return;
+    void attemptOpenImage(pendingImage.vertexId, pendingImage.imageName);
+  }, [attemptOpenImage, pendingImage]);
+
+  React.useEffect(() => {
+    try {
+      const raw = window.sessionStorage.getItem("splitScreen.compareImage");
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as {
+        vertexId?: string;
+        imageName?: string;
+      };
+      if (parsed.vertexId && parsed.imageName) {
+        void attemptOpenImage(parsed.vertexId, parsed.imageName);
+      }
+    } catch {
+      // ignore storage failures
+    }
+  }, [attemptOpenImage]);
 
   React.useEffect(() => {
     const panel = panelRef.current;

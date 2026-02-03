@@ -12,6 +12,7 @@ import {
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import ZoomInIcon from "@mui/icons-material/ZoomIn";
 import FolderOpenOutlinedIcon from "@mui/icons-material/FolderOpenOutlined";
+import CompareArrowsOutlinedIcon from "@mui/icons-material/CompareArrowsOutlined";
 import CloseIcon from "@mui/icons-material/Close";
 import NavigateBeforeIcon from "@mui/icons-material/NavigateBefore";
 import NavigateNextIcon from "@mui/icons-material/NavigateNext";
@@ -279,6 +280,24 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
     [handleDialogSave]
   );
 
+  const handleCompareImage = React.useCallback((imageName: string) => {
+    if (!vertex.id || !imageName) return;
+    try {
+      window.sessionStorage.setItem(
+        "splitScreen.compareImage",
+        JSON.stringify({ vertexId: vertex.id, imageName })
+      );
+    } catch {
+      // ignore storage failures
+    }
+    window.dispatchEvent(new Event("split-screen-open"));
+    window.dispatchEvent(
+      new CustomEvent("split-screen-compare-image", {
+        detail: { vertexId: vertex.id, imageName },
+      })
+    );
+  }, [vertex.id]);
+
   const handleDelete = async (targetName: string) => {
     try {
       const fs = await getFileSystem();
@@ -528,6 +547,17 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
                     }}
                   >
                     <ZoomInIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    sx={{ color: "common.white" }}
+                    aria-label={t("imagesTab.compare")}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCompareImage(img.name);
+                    }}
+                  >
+                    <CompareArrowsOutlinedIcon fontSize="small" />
                   </IconButton>
                   <IconButton
                     size="small"
