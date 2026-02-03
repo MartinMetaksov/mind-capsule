@@ -349,6 +349,9 @@
     "titlePlaceholder": "Descriptive title",
     "loading": "Loading links…",
     "add": "Add link",
+    "open": "Open link",
+    "deleteTitle": "Delete link",
+    "deletePrompt": "Delete \"{{name}}\"?",
     "empty": "No links yet.",
     "errors": {
       "update": "Failed to update links."

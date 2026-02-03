@@ -11,12 +11,12 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/DeleteOutline";
-import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 
 import type { Vertex } from "@/core/vertex";
 import type { UrlEntry } from "@/integrations/fileSystem/fileSystem";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
 import { useTranslation } from "react-i18next";
+import { DeleteConfirmDialog } from "../../../components/delete-confirm-dialog/DeleteConfirmDialog";
 
 type LinksTabProps = {
   vertex: Vertex;
@@ -31,6 +31,7 @@ export const LinksTab: React.FC<LinksTabProps> = ({ vertex, refreshToken }) => {
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
+  const [deleteTarget, setDeleteTarget] = React.useState<UrlEntry | null>(null);
   const urlRef = React.useRef<HTMLInputElement | null>(null);
   const hasLoadedRef = React.useRef(false);
 
@@ -83,15 +84,14 @@ export const LinksTab: React.FC<LinksTabProps> = ({ vertex, refreshToken }) => {
     }
   };
 
-  const handleRemove = async (idx: number) => {
-    const target = links[idx];
-    if (!target) return;
+  const handleRemove = async (target: UrlEntry) => {
     setSaving(true);
     setError(null);
     try {
       const fs = await getFileSystem();
       await fs.deleteLink(vertex, target.id);
-      setLinks((prev) => prev.filter((_, i) => i !== idx));
+      setLinks((prev) => prev.filter((link) => link.id !== target.id));
+      setDeleteTarget(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("linksTab.errors.update"));
     } finally {
@@ -108,6 +108,28 @@ export const LinksTab: React.FC<LinksTabProps> = ({ vertex, refreshToken }) => {
       await handleAdd();
     }
   };
+
+  const normalizeUrl = React.useCallback((rawUrl: string) => {
+    const trimmed = rawUrl.trim();
+    if (!trimmed) return "";
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+    return `https://${trimmed}`;
+  }, []);
+
+  const handleOpenLink = React.useCallback(async (targetUrl: string) => {
+    const normalizedUrl = normalizeUrl(targetUrl);
+    if (!normalizedUrl) return;
+    try {
+      const { isTauri, invoke } = await import("@tauri-apps/api/core");
+      if (isTauri()) {
+        await invoke("open_external_url", { url: normalizedUrl });
+        return;
+      }
+    } catch {
+      // fall back to browser navigation
+    }
+    window.open(normalizedUrl, "_blank", "noreferrer");
+  }, [normalizeUrl]);
 
   return (
     <Box sx={{ width: "100%" }}>
@@ -199,11 +221,17 @@ export const LinksTab: React.FC<LinksTabProps> = ({ vertex, refreshToken }) => {
               <Paper
                 key={link.id}
                 variant="outlined"
+                onClick={() => void handleOpenLink(link.url)}
                 sx={{
                   p: 1.5,
                   display: "flex",
                   alignItems: "center",
                   gap: 1,
+                  cursor: "pointer",
+                  transition: "background-color 120ms ease, box-shadow 120ms ease",
+                  "&:hover": {
+                    backgroundColor: "action.hover",
+                  },
                 }}
               >
                 <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -221,18 +249,12 @@ export const LinksTab: React.FC<LinksTabProps> = ({ vertex, refreshToken }) => {
                 </Box>
                 <IconButton
                   size="small"
-                  component="a"
-                  href={link.url}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <OpenInNewIcon fontSize="small" />
-                </IconButton>
-                <IconButton
-                  size="small"
                   color="error"
                   aria-label={t("commonActions.delete")}
-                  onClick={() => handleRemove(idx)}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setDeleteTarget(link);
+                  }}
                   disabled={saving}
                 >
                   <DeleteIcon fontSize="small" />
@@ -243,6 +265,19 @@ export const LinksTab: React.FC<LinksTabProps> = ({ vertex, refreshToken }) => {
         )}
       </Stack>
       </Box>
+
+      <DeleteConfirmDialog
+        open={Boolean(deleteTarget)}
+        title={t("linksTab.deleteTitle")}
+        message={t("linksTab.deletePrompt", {
+          name: deleteTarget?.title || deleteTarget?.url || "",
+        })}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (!deleteTarget) return;
+          void handleRemove(deleteTarget);
+        }}
+      />
     </Box>
   );
 };

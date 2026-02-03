@@ -8,6 +8,7 @@ import i18n from "@/i18n";
 const mockListLinks = vi.fn();
 const mockCreateLink = vi.fn();
 const mockDeleteLink = vi.fn();
+const mockInvoke = vi.fn();
 
 vi.mock("@/integrations/fileSystem/integration", () => ({
   getFileSystem: async () => ({
@@ -15,6 +16,11 @@ vi.mock("@/integrations/fileSystem/integration", () => ({
     createLink: mockCreateLink,
     deleteLink: mockDeleteLink,
   }),
+}));
+
+vi.mock("@tauri-apps/api/core", () => ({
+  isTauri: () => false,
+  invoke: (...args: unknown[]) => mockInvoke(...args),
 }));
 
 const vertex: Vertex = {
@@ -32,6 +38,7 @@ const vertex: Vertex = {
 describe("LinksTab", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.open = vi.fn();
     mockListLinks.mockResolvedValue([
       { id: "link-1", url: "https://example.com", title: "Example" },
     ]);
@@ -70,9 +77,25 @@ describe("LinksTab", () => {
     );
   });
 
-  it("deletes a link", async () => {
+  it("deletes a link after confirmation", async () => {
     renderTab();
     fireEvent.click(await screen.findByRole("button", { name: /Delete/i }));
-    await waitFor(() => expect(mockDeleteLink).toHaveBeenCalledWith(vertex, "link-1"));
+    fireEvent.click(await screen.findByRole("button", { name: /^Delete$/i }));
+    await waitFor(() =>
+      expect(mockDeleteLink).toHaveBeenCalledWith(vertex, "link-1")
+    );
+  });
+
+  it("opens a link when clicking the row outside Tauri", async () => {
+    renderTab();
+    const row = await screen.findByText("Example");
+    fireEvent.click(row);
+    await waitFor(() =>
+      expect(window.open).toHaveBeenCalledWith(
+        "https://example.com",
+        "_blank",
+        "noreferrer"
+      )
+    );
   });
 });
