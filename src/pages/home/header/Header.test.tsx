@@ -13,6 +13,10 @@ vi.mock("@/utils/themes/hooks/useThemeMode", () => ({
   }),
 }));
 
+vi.mock("@/utils/os", () => ({
+  detectOperatingSystem: () => "macOS",
+}));
+
 // Mock heavy child dialogs (note: path reflects header folder structure)
 vi.mock("./search-dialog/SearchDialog", () => ({
   SearchDialog: ({ open }: { open: boolean }) => (
@@ -41,5 +45,19 @@ describe("Header", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Settings/i }));
     expect(screen.getByText(/Settings Dialog/i)).toBeInTheDocument();
+  });
+
+  it("toggles compare view via keyboard shortcut", () => {
+    const onToggleSplit = vi.fn();
+    render(
+      <I18nextProvider i18n={i18n}>
+        <BrowserRouter>
+          <Header onToggleSplit={onToggleSplit} />
+        </BrowserRouter>
+      </I18nextProvider>
+    );
+
+    fireEvent.keyDown(window, { key: "e", metaKey: true });
+    expect(onToggleSplit).toHaveBeenCalledTimes(1);
   });
 });

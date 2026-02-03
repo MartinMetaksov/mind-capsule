@@ -11,6 +11,7 @@ export type ShortcutAction =
   | "searchNextResult"
   | "imagePrev"
   | "imageNext"
+  | "toggleSplit"
   | "viewGrid"
   | "viewList"
   | "viewGraph"
@@ -61,6 +62,7 @@ const SHORTCUTS: Record<
   searchNextResult: makeUniformShortcuts({ keys: ["arrowdown"], display: "↓" }),
   imagePrev: makeUniformShortcuts({ keys: ["arrowleft"], display: "←" }),
   imageNext: makeUniformShortcuts({ keys: ["arrowright"], display: "→" }),
+  toggleSplit: makeUniformShortcuts({ keys: ["meta", "e"], display: "⌘/Ctrl + E" }),
   viewGrid: makeUniformShortcuts({ keys: ["meta", "r"], display: "⌘/Ctrl + R" }),
   viewList: makeUniformShortcuts({ keys: ["meta", "l"], display: "⌘/Ctrl + L" }),
   viewGraph: makeUniformShortcuts({ keys: ["meta", "g"], display: "⌘/Ctrl + G" }),

@@ -76,6 +76,7 @@ export const SettingsDialog: React.FC<Props> = ({
       { label: t("shortcuts.tab", { number: 4 }), key: getShortcut("tab4", os).display },
       { label: t("shortcuts.tab", { number: 5 }), key: getShortcut("tab5", os).display },
       { label: t("shortcuts.tab", { number: 6 }), key: getShortcut("tab6", os).display },
+      { label: t("shortcuts.compareWith"), key: getShortcut("toggleSplit", os).display },
       { label: t("shortcuts.viewGrid"), key: getShortcut("viewGrid", os).display },
       { label: t("shortcuts.viewList"), key: getShortcut("viewList", os).display },
       { label: t("shortcuts.viewGraph"), key: getShortcut("viewGraph", os).display },

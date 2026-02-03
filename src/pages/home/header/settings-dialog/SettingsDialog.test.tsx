@@ -36,6 +36,7 @@ describe("SettingsDialog", () => {
     fireEvent.click(screen.getByText(/Keyboard shortcuts/i));
     expect(screen.getByText(/^Search$/i)).toBeInTheDocument();
     expect(screen.getByText(/Open Settings/i)).toBeInTheDocument();
+    expect(screen.getByText(/Compare with/i)).toBeInTheDocument();
   });
 
   it("switches tabs to language and allows selection", () => {

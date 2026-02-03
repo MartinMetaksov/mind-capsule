@@ -48,6 +48,7 @@ export const Header: React.FC<HeaderProps> = ({
     const shortcuts = {
       search: getShortcut("openSearch", os),
       settings: getShortcut("openSettings", os),
+      compare: getShortcut("toggleSplit", os),
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -59,12 +60,20 @@ export const Header: React.FC<HeaderProps> = ({
         event.preventDefault();
         setSettingsOpen(true);
       }
+      if (
+        onToggleSplit &&
+        !disableCompare &&
+        matchesShortcut(event, shortcuts.compare)
+      ) {
+        event.preventDefault();
+        onToggleSplit();
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [os]);
+  }, [disableCompare, onToggleSplit, os]);
 
   return (
     <>
