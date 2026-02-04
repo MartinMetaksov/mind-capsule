@@ -7,6 +7,7 @@ type VerticalTabItem<T extends string> = {
   value: T;
   label: string;
   icon: React.ReactElement;
+  count?: number;
 };
 
 type VerticalTabsProps<T extends string> = {
@@ -143,6 +144,9 @@ export const VerticalTabs = <T extends string>({
                   justifyContent: "center",
                   alignItems: "center",
                   flexDirection: "row",
+                  "& .tabs-label": {
+                    display: "none",
+                  },
                 },
                 "& .MuiTab-iconWrapper": {
                   margin: 0,
@@ -152,15 +156,20 @@ export const VerticalTabs = <T extends string>({
             : {}),
         }}
       >
-        {items.map((item) => (
-          <Tab
-            key={item.value}
-            value={item.value}
-            icon={item.icon}
-            iconPosition={collapsed ? "start" : "top"}
-            label={<span className="tabs-label">{item.label}</span>}
-          />
-        ))}
+      {items.map((item) => (
+        <Tab
+          key={item.value}
+          value={item.value}
+          icon={item.icon}
+          iconPosition={collapsed ? "start" : "top"}
+          label={
+            <span className="tabs-label">
+              {item.label}
+              {item.count != null ? ` (${item.count})` : ""}
+            </span>
+          }
+        />
+      ))}
       </Tabs>
       {scrollState.hasOverflow && (
         <>

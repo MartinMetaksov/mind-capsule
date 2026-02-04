@@ -23,6 +23,7 @@ import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useSplitScreen } from "../../../SplitScreenContext";
+import { getFileSystem } from "@/integrations/fileSystem/integration";
 
 type VertexTab =
   | "items"
@@ -77,6 +78,9 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
   const [fsRefreshToken, setFsRefreshToken] = React.useState(0);
   const lastRefreshAtRef = React.useRef(0);
   const os = React.useMemo(() => detectOperatingSystem(), []);
+  const [tabCounts, setTabCounts] = React.useState<Record<string, number | undefined>>(
+    {}
+  );
 
   React.useEffect(() => {
     setCurrentVertex(vertex);
@@ -127,6 +131,58 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
     };
   }, [currentVertex.asset_directory]);
 
+  React.useEffect(() => {
+    let active = true;
+    const loadCounts = async () => {
+      try {
+        const fs = await getFileSystem();
+        const [notes, images, links, items] = await Promise.all([
+          fs.listNotes(currentVertex),
+          fs.listImages(currentVertex),
+          fs.listLinks(currentVertex),
+          currentVertex.is_leaf ? Promise.resolve([]) : fs.getVertices(currentVertex.id),
+        ]);
+
+        let filesCount: number | undefined;
+        try {
+          const { isTauri } = await import("@tauri-apps/api/core");
+          if (await isTauri()) {
+            const { readDir } = await import("@tauri-apps/plugin-fs");
+            const entries = await readDir(currentVertex.asset_directory);
+            filesCount = entries.filter((entry) => {
+              const name = entry.name ?? "";
+              if (!name || name.startsWith(".")) return false;
+              const ext = name.split(".").pop()?.toLowerCase() ?? "";
+              if (["json", "md"].includes(ext)) return false;
+              if (["png", "jpg", "jpeg", "gif", "webp", "bmp", "tiff", "svg"].includes(ext)) {
+                return false;
+              }
+              return true;
+            }).length;
+          }
+        } catch {
+          filesCount = undefined;
+        }
+
+        if (!active) return;
+        setTabCounts({
+          items: currentVertex.is_leaf ? undefined : items.length,
+          notes: notes.length,
+          images: images.length,
+          urls: links.length,
+          tags: filesCount,
+        });
+      } catch {
+        if (!active) return;
+        setTabCounts({});
+      }
+    };
+    loadCounts();
+    return () => {
+      active = false;
+    };
+  }, [currentVertex, fsRefreshToken]);
+
   const tabOrder: VertexTab[] = React.useMemo(() => {
     const base: VertexTab[] = [
       "items",
@@ -158,6 +214,7 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
               value: "items" as const,
               label: itemsLabel,
               icon: <AccountTreeOutlinedIcon />,
+              count: tabCounts.items,
             },
           ]
         : []),
@@ -170,24 +227,28 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
         value: "notes" as const,
         label: t("vertex.tabs.notes"),
         icon: <CommentOutlinedIcon />,
+        count: tabCounts.notes,
       },
       {
         value: "urls" as const,
         label: t("vertex.tabs.links"),
         icon: <LinkOutlinedIcon />,
+        count: tabCounts.urls,
       },
       {
         value: "images" as const,
         label: t("vertex.tabs.images"),
         icon: <ImageOutlinedIcon />,
+        count: tabCounts.images,
       },
       {
         value: "tags" as const,
         label: t("vertex.tabs.files"),
         icon: <InsertDriveFileOutlinedIcon />,
+        count: tabCounts.tags,
       },
     ],
-    [itemsLabel, currentVertex.is_leaf, t]
+    [itemsLabel, currentVertex.is_leaf, t, tabCounts]
   );
   const availableTabValues = React.useMemo(
     () => vertexTabs.map((t) => t.value),
