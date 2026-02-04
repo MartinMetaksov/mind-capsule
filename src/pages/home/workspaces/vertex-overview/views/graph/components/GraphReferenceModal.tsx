@@ -20,7 +20,7 @@ import type {
   NoteEntry,
 } from "@/integrations/fileSystem/fileSystem";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
-import type { VertexItem } from "../../grid/VertexGrid";
+import type { VertexItem, VertexItemCounts } from "../../grid/VertexGrid";
 import type { GraphNode } from "../types";
 import { GraphCanvas } from "./GraphCanvas";
 import { GraphActionRing, type GraphAction } from "./GraphActionRing";
@@ -92,6 +92,9 @@ export const GraphReferenceModal: React.FC<GraphReferenceModalProps> = ({
   const [notes, setNotes] = React.useState<NoteEntry[]>([]);
   const [images, setImages] = React.useState<ImageEntry[]>([]);
   const [files, setFiles] = React.useState<FileEntry[]>([]);
+  const [countsByVertexId, setCountsByVertexId] = React.useState<
+    Record<string, VertexItemCounts>
+  >({});
   const railTransformRef = React.useRef<d3.ZoomTransform | null>(null);
   const handleClose = React.useCallback(() => {
     onClose();
@@ -101,6 +104,100 @@ export const GraphReferenceModal: React.FC<GraphReferenceModalProps> = ({
   }, [onClose]);
 
   const { graphData, loading, error } = useGraphData(items);
+
+  React.useEffect(() => {
+    let active = true;
+    const loadCounts = async () => {
+      if (!graphData) {
+        setCountsByVertexId({});
+        return;
+      }
+      const vertices = graphData.nodes
+        .filter((node) => node.kind === "vertex" && node.vertex)
+        .map((node) => node.vertex as Vertex);
+      if (vertices.length === 0) {
+        setCountsByVertexId({});
+        return;
+      }
+      const childCounts = new Map<string, number>();
+      vertices.forEach((vertex) => {
+        const parentId = vertex.parent_id ?? null;
+        if (!parentId) return;
+        childCounts.set(parentId, (childCounts.get(parentId) ?? 0) + 1);
+      });
+      try {
+        const fs = await getFileSystem();
+        const results = await Promise.all(
+          vertices.map(async (vertex) => {
+            try {
+              const [notesList, imagesList, linksList] = await Promise.all([
+                fs.listNotes(vertex),
+                fs.listImages(vertex),
+                fs.listLinks(vertex),
+              ]);
+              let filesCount = 0;
+              try {
+                const { isTauri } = await import("@tauri-apps/api/core");
+                if (await isTauri()) {
+                  const { readDir } = await import("@tauri-apps/plugin-fs");
+                  const entries = await readDir(vertex.asset_directory);
+                  filesCount = entries.filter((entry) => {
+                    const name = entry.name ?? "";
+                    if (!name || name.startsWith(".")) return false;
+                    const ext = name.split(".").pop()?.toLowerCase() ?? "";
+                    if (["json", "md"].includes(ext)) return false;
+                    if (
+                      [
+                        "png",
+                        "jpg",
+                        "jpeg",
+                        "gif",
+                        "webp",
+                        "bmp",
+                        "tiff",
+                        "svg",
+                      ].includes(ext)
+                    ) {
+                      return false;
+                    }
+                    return true;
+                  }).length;
+                }
+              } catch {
+                filesCount = 0;
+              }
+              return [
+                vertex.id,
+                {
+                  items: childCounts.get(vertex.id) ?? 0,
+                  notes: notesList.length,
+                  images: imagesList.length,
+                  urls: linksList.length,
+                  files: filesCount,
+                },
+              ] as const;
+            } catch {
+              return null;
+            }
+          })
+        );
+        if (!active) return;
+        const next: Record<string, VertexItemCounts> = {};
+        results.forEach((entry) => {
+          if (!entry) return;
+          next[entry[0]] = entry[1];
+        });
+        setCountsByVertexId(next);
+      } catch {
+        if (!active) return;
+        setCountsByVertexId({});
+      }
+    };
+    loadCounts();
+    return () => {
+      active = false;
+    };
+  }, [graphData]);
 
   React.useEffect(() => {
     if (!graphData) return;
@@ -460,6 +557,7 @@ export const GraphReferenceModal: React.FC<GraphReferenceModalProps> = ({
               currentVertexId={null}
               selectedId={selectedId}
               hoveredId={hoveredId}
+              countsByVertexId={countsByVertexId}
               containerRef={containerRef}
               svgRef={svgRef}
               actionRef={actionRef}

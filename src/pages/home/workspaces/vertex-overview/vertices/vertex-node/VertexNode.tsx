@@ -3,6 +3,8 @@ import { Box, Grow, IconButton, Paper, Typography } from "@mui/material";
 import { DeleteOutlineRounded } from "@mui/icons-material";
 import type { Vertex } from "@/core/vertex";
 import type { Workspace } from "@/core/workspace";
+import { VertexCounts } from "../../components/VertexCounts";
+import type { VertexItemCounts } from "../../views/grid/VertexGrid";
 
 export type VertexNodeProps = {
   vertex: Vertex;
@@ -11,6 +13,7 @@ export type VertexNodeProps = {
   onSelect: (vertexId: string) => void;
   showWorkspaceLabel?: boolean;
   onDelete?: (vertex: Vertex) => void;
+  counts?: VertexItemCounts;
 };
 
 export const VERTEX_NODE_WIDTH = 300;
@@ -24,6 +27,7 @@ export const VertexNode: React.FC<VertexNodeProps> = ({
   onSelect,
   showWorkspaceLabel = true,
   onDelete,
+  counts,
 }) => {
   const handleClick = () => {
     onSelect(vertex.id);
@@ -124,10 +128,10 @@ export const VertexNode: React.FC<VertexNodeProps> = ({
               position: "absolute",
               left: 14,
               right: 14,
-              bottom: 14,
+              bottom: 12,
               display: "flex",
               flexDirection: "column",
-              gap: 0.25,
+              gap: 0.4,
             }}
           >
             {showWorkspaceLabel && (
@@ -162,6 +166,7 @@ export const VertexNode: React.FC<VertexNodeProps> = ({
             >
               {vertex.title}
             </Typography>
+            <VertexCounts counts={counts} variant="grid" />
           </Box>
         </Paper>
       </Box>

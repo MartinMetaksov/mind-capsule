@@ -13,6 +13,7 @@ import DragIndicatorRoundedIcon from "@mui/icons-material/DragIndicatorRounded";
 
 import type { Vertex } from "@/core/vertex";
 import type { VertexItem } from "../grid/VertexGrid";
+import { VertexCounts } from "../../components/VertexCounts";
 
 const REORDER_END_ID = "__end__";
 
@@ -348,19 +349,24 @@ export const VertexListView: React.FC<VertexListViewProps> = ({
                   primaryTypographyProps={{ noWrap: true }}
                 />
               </Box>
-              {renderActions ? (
-                <Box onClick={(e) => e.stopPropagation()}>{renderActions(item)}</Box>
-              ) : onDeleteVertex ? (
-                <IconButton
-                  aria-label="delete"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDeleteVertex(item.vertex);
-                  }}
-                >
-                  <DeleteOutlineRoundedIcon fontSize="small" />
-                </IconButton>
-              ) : null}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                <VertexCounts counts={item.counts} variant="list" />
+                {renderActions ? (
+                  <Box onClick={(e) => e.stopPropagation()}>
+                    {renderActions(item)}
+                  </Box>
+                ) : onDeleteVertex ? (
+                  <IconButton
+                    aria-label="delete"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteVertex(item.vertex);
+                    }}
+                  >
+                    <DeleteOutlineRoundedIcon fontSize="small" />
+                  </IconButton>
+                ) : null}
+              </Box>
             </ListItemButton>
           </ListItem>
         );

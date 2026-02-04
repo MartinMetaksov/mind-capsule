@@ -230,16 +230,16 @@ export const VertexOrchestrator: React.FC<VertexOrchestratorProps> = ({
         count: tabCounts.notes,
       },
       {
-        value: "urls" as const,
-        label: t("vertex.tabs.links"),
-        icon: <LinkOutlinedIcon />,
-        count: tabCounts.urls,
-      },
-      {
         value: "images" as const,
         label: t("vertex.tabs.images"),
         icon: <ImageOutlinedIcon />,
         count: tabCounts.images,
+      },
+      {
+        value: "urls" as const,
+        label: t("vertex.tabs.links"),
+        icon: <LinkOutlinedIcon />,
+        count: tabCounts.urls,
       },
       {
         value: "tags" as const,

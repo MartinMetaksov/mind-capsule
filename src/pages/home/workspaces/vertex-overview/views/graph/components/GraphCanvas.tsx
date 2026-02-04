@@ -2,6 +2,7 @@ import * as React from "react";
 import * as d3 from "d3";
 import { useTheme } from "@mui/material";
 import type { GraphData, GraphLink, GraphNode } from "../types";
+import type { VertexItemCounts } from "../../grid/VertexGrid";
 import {
   NODE_LABEL_OFFSET,
   NODE_LABEL_SELECTED_OFFSET,
@@ -15,6 +16,7 @@ type GraphCanvasProps = {
   currentVertexId: string | null;
   selectedId: string | null;
   hoveredId: string | null;
+  countsByVertexId: Record<string, VertexItemCounts>;
   containerRef: React.RefObject<HTMLDivElement>;
   svgRef: React.RefObject<SVGSVGElement>;
   actionRef: React.RefObject<HTMLDivElement>;
@@ -34,6 +36,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
   currentVertexId,
   selectedId,
   hoveredId,
+  countsByVertexId,
   containerRef,
   svgRef,
   actionRef,
@@ -55,11 +58,24 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
   const selectionRingRef = React.useRef<
     d3.Selection<SVGCircleElement, GraphNode, SVGGElement, unknown> | null
   >(null);
+  const countGroupRef = React.useRef<
+    d3.Selection<SVGGElement, GraphNode, SVGGElement, unknown> | null
+  >(null);
   const selectedIdRef = React.useRef<string | null>(null);
+  const countsByIdRef = React.useRef<Record<string, VertexItemCounts>>({});
+  const hoveredIdRef = React.useRef<string | null>(null);
 
   React.useEffect(() => {
     selectedIdRef.current = selectedId;
   }, [selectedId]);
+
+  React.useEffect(() => {
+    hoveredIdRef.current = hoveredId;
+  }, [hoveredId]);
+
+  React.useEffect(() => {
+    countsByIdRef.current = countsByVertexId;
+  }, [countsByVertexId]);
 
   React.useEffect(() => {
     if (!graphData || !svgRef.current || !containerRef.current) return;
@@ -187,6 +203,69 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
       .attr("opacity", 0.6);
     selectionRingRef.current = selectionRing;
 
+    const countRingItems = [
+      { key: "items", label: "It", angle: -160 },
+      { key: "notes", label: "No", angle: -120 },
+      { key: "images", label: "Im", angle: -80 },
+      { key: "urls", label: "Li", angle: -40 },
+      { key: "files", label: "Fi", angle: 0 },
+    ] as const;
+
+    const countGroup = root
+      .append("g")
+      .selectAll<SVGGElement, GraphNode>("g")
+      .data(vertexNodes)
+      .join("g")
+      .attr("class", "graph-count-ring")
+      .style("pointer-events", "none")
+      .style("opacity", 0)
+      .style("transition", "opacity 160ms ease");
+
+    countGroup.each(function (node) {
+      const group = d3.select(this);
+      const items = group
+        .selectAll<SVGGElement, (typeof countRingItems)[number]>("g")
+        .data(countRingItems)
+        .join("g")
+        .attr("class", "graph-count-item");
+
+      items
+        .append("circle")
+        .attr("r", 10)
+        .attr("fill", theme.palette.background.paper)
+        .attr("stroke", theme.palette.divider)
+        .attr("stroke-width", 0.8)
+        .attr("opacity", 0.85);
+
+      items
+        .append("text")
+        .attr("class", "graph-count-label")
+        .attr("text-anchor", "middle")
+        .attr("dominant-baseline", "middle")
+        .attr("fill", theme.palette.text.secondary)
+        .attr("font-size", 7)
+        .attr("font-weight", 600)
+        .attr("transform", "translate(0, -3)")
+        .text((entry) => entry.label);
+
+      items
+        .append("text")
+        .attr("class", "graph-count-value")
+        .attr("text-anchor", "middle")
+        .attr("dominant-baseline", "middle")
+        .attr("fill", theme.palette.text.primary)
+        .attr("font-size", 9)
+        .attr("font-weight", 700)
+        .attr("transform", "translate(0, 5)")
+        .text((entry) => {
+          const counts = countsByIdRef.current[node.id];
+          const value = counts ? counts[entry.key] : 0;
+          return `${value}`;
+        });
+    });
+
+    countGroupRef.current = countGroup;
+
     const node = root
       .append("g")
       .selectAll<SVGCircleElement, GraphNode>("circle")
@@ -240,6 +319,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
       .attr("text-anchor", "middle")
       .attr("fill", theme.palette.text.primary)
       .attr("font-size", 11)
+      .style("pointer-events", "none")
       .style("user-select", "none")
       .style("-webkit-user-select", "none")
       .on("mousedown", (event: MouseEvent) => {
@@ -247,6 +327,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
       })
       .text((d: GraphNode) => d.label);
     labelSelectionRef.current = label;
+    countGroup.raise();
 
     svg.on("click", () => onSelectId(null));
 
@@ -327,7 +408,28 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
             (d.id === selectedIdRef.current
               ? NODE_LABEL_SELECTED_OFFSET
               : NODE_LABEL_OFFSET)
-        );
+          );
+
+      const countGroupSelection = countGroupRef.current;
+      if (countGroupSelection) {
+        countGroupSelection.each(function (node) {
+          const group = d3.select(this);
+          const radius = getNodeRadius(node) + 18;
+          group.attr("transform", `translate(${node.x ?? 0}, ${node.y ?? 0})`);
+          group.style(
+            "opacity",
+            node.id === hoveredIdRef.current ? "1" : "0"
+          );
+          group
+            .selectAll<SVGGElement, (typeof countRingItems)[number]>("g")
+            .attr("transform", (entry) => {
+              const radians = (entry.angle * Math.PI) / 180;
+              const x = Math.cos(radians) * radius;
+              const y = Math.sin(radians) * radius;
+              return `translate(${x}, ${y})`;
+            });
+        });
+      }
 
       nodesByIdRef.current = new Map(
         graphData.nodes.map((n) => [n.id, n])
@@ -420,6 +522,57 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
       }
     }
   }, [actionRef, nodesByIdRef, selectedId, zoomTransformRef]);
+
+  React.useEffect(() => {
+    const countGroup = countGroupRef.current;
+    if (!countGroup) return;
+    countGroup.raise();
+    countGroup.style("opacity", (node: GraphNode) =>
+      node.id === hoveredId ? "1" : "0"
+    );
+  }, [hoveredId]);
+
+  React.useEffect(() => {
+    const countGroup = countGroupRef.current;
+    if (!countGroup) return;
+    countGroup.each(function (node) {
+      const group = d3.select(this);
+      group
+        .selectAll<
+          SVGTextElement,
+          { key: keyof VertexItemCounts; label: string }
+        >("text.graph-count-value")
+        .text((entry) => {
+          const counts = countsByIdRef.current[node.id];
+          const value = counts ? counts[entry.key] : 0;
+          return `${value}`;
+        })
+        .attr("opacity", (entry) => {
+          const counts = countsByIdRef.current[node.id];
+          const value = counts ? counts[entry.key] : 0;
+          return value > 0 ? 1 : 0.55;
+        });
+      group
+        .selectAll<
+          SVGTextElement,
+          { key: keyof VertexItemCounts; label: string }
+        >("text.graph-count-label")
+        .attr("opacity", (entry) => {
+          const counts = countsByIdRef.current[node.id];
+          const value = counts ? counts[entry.key] : 0;
+          return value > 0 ? 0.9 : 0.45;
+        });
+      group
+        .selectAll<SVGCircleElement, { key: keyof VertexItemCounts; label: string }>(
+          "circle"
+        )
+        .attr("opacity", (entry) => {
+          const counts = countsByIdRef.current[node.id];
+          const value = counts ? counts[entry.key] : 0;
+          return value > 0 ? 0.9 : 0.5;
+        });
+    });
+  }, [countsByVertexId]);
 
   React.useEffect(() => {
     const nodeSelection = nodeSelectionRef.current;

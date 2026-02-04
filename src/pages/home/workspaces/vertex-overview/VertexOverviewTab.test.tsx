@@ -14,6 +14,9 @@ const mockGetVertices = vi.fn();
 const mockCreateVertex = vi.fn();
 const mockRemoveVertex = vi.fn();
 const mockGetAllVertices = vi.fn<() => Promise<Vertex[]>>();
+const mockListNotes = vi.fn();
+const mockListImages = vi.fn();
+const mockListLinks = vi.fn();
 
 vi.mock("@/integrations/fileSystem/integration", () => ({
   getFileSystem: async () => ({
@@ -21,6 +24,9 @@ vi.mock("@/integrations/fileSystem/integration", () => ({
     createVertex: mockCreateVertex,
     removeVertex: mockRemoveVertex,
     getAllVertices: mockGetAllVertices,
+    listNotes: mockListNotes,
+    listImages: mockListImages,
+    listLinks: mockListLinks,
   }),
 }));
 
@@ -122,6 +128,12 @@ const renderTab = (ui: React.ReactElement) =>
       <BrowserRouter>{ui}</BrowserRouter>
     </I18nextProvider>
   );
+
+beforeEach(() => {
+  mockListNotes.mockResolvedValue([]);
+  mockListImages.mockResolvedValue([]);
+  mockListLinks.mockResolvedValue([]);
+});
 
 describe("VertexOverviewTab (items)", () => {
   const renderItems = (override?: Partial<ItemsOverviewProps>) =>

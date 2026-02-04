@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Alert, Box, Typography } from "@mui/material";
 
-import { VertexGrid, VertexItem } from "./views/grid/VertexGrid";
+import { VertexGrid, VertexItem, type VertexItemCounts } from "./views/grid/VertexGrid";
 import {
   CreateFab,
   type CreateFabHandle,
@@ -118,6 +118,9 @@ export const VertexOverviewTab: React.FC<VertexOverviewTabProps> = (props) => {
         : undefined
     )
   );
+  const [countsByVertexId, setCountsByVertexId] = React.useState<
+    Record<string, VertexItemCounts>
+  >({});
 
   React.useEffect(() => {
     let nextMode: OverviewViewMode = "grid";
@@ -260,6 +263,88 @@ export const VertexOverviewTab: React.FC<VertexOverviewTabProps> = (props) => {
   const orderedItems = React.useMemo(
     () => sortItems(gridItems, orderMap),
     [gridItems, orderMap]
+  );
+
+  React.useEffect(() => {
+    let active = true;
+    const loadCounts = async () => {
+      if (orderedItems.length === 0) {
+        setCountsByVertexId({});
+        return;
+      }
+      try {
+        const fs = await getFileSystem();
+        const results = await Promise.all(
+          orderedItems.map(async (item) => {
+            try {
+              const [notes, images, links, children] = await Promise.all([
+                fs.listNotes(item.vertex),
+                fs.listImages(item.vertex),
+                fs.listLinks(item.vertex),
+                item.vertex.is_leaf
+                  ? Promise.resolve([])
+                  : fs.getVertices(item.vertex.id),
+              ]);
+              let filesCount = 0;
+              try {
+                const { isTauri } = await import("@tauri-apps/api/core");
+                if (await isTauri()) {
+                  const { readDir } = await import("@tauri-apps/plugin-fs");
+                  const entries = await readDir(item.vertex.asset_directory);
+                  filesCount = entries.filter((entry) => {
+                    const name = entry.name ?? "";
+                    if (!name || name.startsWith(".")) return false;
+                    const ext = name.split(".").pop()?.toLowerCase() ?? "";
+                    if (["json", "md"].includes(ext)) return false;
+                    if (["png", "jpg", "jpeg", "gif", "webp", "bmp", "tiff", "svg"].includes(ext)) {
+                      return false;
+                    }
+                    return true;
+                  }).length;
+                }
+              } catch {
+                filesCount = 0;
+              }
+              return [
+                item.vertex.id,
+                {
+                  items: item.vertex.is_leaf ? 0 : children.length,
+                  notes: notes.length,
+                  images: images.length,
+                  urls: links.length,
+                  files: filesCount,
+                },
+              ] as const;
+            } catch {
+              return null;
+            }
+          })
+        );
+        if (!active) return;
+        const next: Record<string, VertexItemCounts> = {};
+        results.forEach((entry) => {
+          if (!entry) return;
+          next[entry[0]] = entry[1];
+        });
+        setCountsByVertexId(next);
+      } catch {
+        if (!active) return;
+        setCountsByVertexId({});
+      }
+    };
+    loadCounts();
+    return () => {
+      active = false;
+    };
+  }, [orderedItems]);
+
+  const itemsWithCounts = React.useMemo(
+    () =>
+      orderedItems.map((item) => ({
+        ...item,
+        counts: countsByVertexId[item.vertex.id],
+      })),
+    [countsByVertexId, orderedItems]
   );
 
   const gridEmpty =
@@ -473,7 +558,7 @@ export const VertexOverviewTab: React.FC<VertexOverviewTabProps> = (props) => {
 
   const contentView = viewMode === "grid" ? (
     <VertexGrid
-      items={orderedItems}
+      items={itemsWithCounts}
       selectedVertexId={null}
       onSelect={handleGridSelect}
       onDeleteVertex={detachedProps ? undefined : handleGridDelete}
@@ -485,7 +570,7 @@ export const VertexOverviewTab: React.FC<VertexOverviewTabProps> = (props) => {
     />
   ) : viewMode === "list" ? (
     <VertexListView
-      items={orderedItems}
+      items={itemsWithCounts}
       onSelect={handleGridSelect}
       onDeleteVertex={detachedProps ? undefined : handleGridDelete}
       renderActions={renderOverlay}
@@ -495,7 +580,7 @@ export const VertexOverviewTab: React.FC<VertexOverviewTabProps> = (props) => {
     />
   ) : (
     <GraphView
-      items={gridItems}
+      items={itemsWithCounts}
       currentVertex={itemsProps?.vertex ?? null}
       currentWorkspace={itemsProps?.workspace ?? null}
       onOpenVertex={graphOpenVertex}

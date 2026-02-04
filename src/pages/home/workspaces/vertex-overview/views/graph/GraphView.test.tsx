@@ -11,6 +11,9 @@ const mockGetWorkspaces = vi.fn();
 const mockGetAllVertices = vi.fn();
 const mockRemoveVertex = vi.fn();
 const mockUpdateVertex = vi.fn();
+const mockListNotes = vi.fn();
+const mockListImages = vi.fn();
+const mockListLinks = vi.fn();
 const mockReadDir = vi.fn();
 const mockReadFile = vi.fn();
 const mockWriteFile = vi.fn();
@@ -24,6 +27,9 @@ vi.mock("@/integrations/fileSystem/integration", () => ({
     getAllVertices: mockGetAllVertices,
     removeVertex: mockRemoveVertex,
     updateVertex: mockUpdateVertex,
+    listNotes: mockListNotes,
+    listImages: mockListImages,
+    listLinks: mockListLinks,
   }),
 }));
 
@@ -103,6 +109,9 @@ describe("GraphView", () => {
     mockMkdir.mockResolvedValue(undefined);
     mockIsTauri.mockReturnValue(false);
     mockUpdateVertex.mockResolvedValue(undefined);
+    mockListNotes.mockResolvedValue([]);
+    mockListImages.mockResolvedValue([]);
+    mockListLinks.mockResolvedValue([]);
   });
 
   it("renders workspace and vertex labels", async () => {

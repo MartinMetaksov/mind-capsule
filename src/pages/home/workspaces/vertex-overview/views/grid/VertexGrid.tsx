@@ -10,9 +10,18 @@ import {
 } from "../../vertices/vertex-node/VertexNode";
 import { ReorderableGrid } from "../../common/ReorderableGrid";
 
+export type VertexItemCounts = {
+  items: number;
+  notes: number;
+  images: number;
+  urls: number;
+  files: number;
+};
+
 export type VertexItem = {
   vertex: Vertex;
   workspace: Workspace;
+  counts?: VertexItemCounts;
 };
 
 type VertexGridProps = {
@@ -77,6 +86,7 @@ export const VertexGrid: React.FC<VertexGridProps> = ({
             onSelect={onSelect}
             showWorkspaceLabel={showWorkspaceLabel}
             onDelete={onDeleteVertex}
+            counts={item.counts}
           />
           {renderOverlay && (
             <Box
