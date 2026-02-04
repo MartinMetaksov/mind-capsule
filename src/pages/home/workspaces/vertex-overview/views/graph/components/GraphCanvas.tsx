@@ -604,6 +604,53 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
   ]);
 
   React.useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+      const zoomBehavior = zoomBehaviorRef.current;
+      const svg = svgRef.current;
+      if (!zoomBehavior || !svg) return;
+      const step = event.shiftKey ? 120 : 60;
+      let dx = 0;
+      let dy = 0;
+      switch (event.key) {
+        case "ArrowUp":
+          dy = step;
+          break;
+        case "ArrowDown":
+          dy = -step;
+          break;
+        case "ArrowLeft":
+          dx = step;
+          break;
+        case "ArrowRight":
+          dx = -step;
+          break;
+        default:
+          return;
+      }
+      event.preventDefault();
+      d3.select(svg)
+        .transition()
+        .duration(140)
+        .ease(d3.easeCubicOut)
+        .call(zoomBehavior.translateBy, dx, dy);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [svgRef, zoomBehaviorRef]);
+
+  React.useEffect(() => {
     const labels = labelSelectionRef.current;
     if (labels) {
       labels.attr(
