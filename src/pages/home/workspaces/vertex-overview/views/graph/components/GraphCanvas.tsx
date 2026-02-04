@@ -17,6 +17,8 @@ type GraphCanvasProps = {
   selectedId: string | null;
   hoveredId: string | null;
   countsByVertexId: Record<string, VertexItemCounts>;
+  collapsedIds: Set<string>;
+  onToggleCollapse?: (vertexId: string) => void;
   containerRef: React.RefObject<HTMLDivElement>;
   svgRef: React.RefObject<SVGSVGElement>;
   actionRef: React.RefObject<HTMLDivElement>;
@@ -37,6 +39,8 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
   selectedId,
   hoveredId,
   countsByVertexId,
+  collapsedIds,
+  onToggleCollapse,
   containerRef,
   svgRef,
   actionRef,
@@ -67,6 +71,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
   const selectedIdRef = React.useRef<string | null>(null);
   const countsByIdRef = React.useRef<Record<string, VertexItemCounts>>({});
   const hoveredIdRef = React.useRef<string | null>(null);
+  const collapsedIdsRef = React.useRef<Set<string>>(new Set());
 
   React.useEffect(() => {
     selectedIdRef.current = selectedId;
@@ -79,6 +84,10 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
   React.useEffect(() => {
     countsByIdRef.current = countsByVertexId;
   }, [countsByVertexId]);
+
+  React.useEffect(() => {
+    collapsedIdsRef.current = collapsedIds;
+  }, [collapsedIds]);
 
   React.useEffect(() => {
     if (!graphData || !svgRef.current || !containerRef.current) return;
@@ -216,17 +225,18 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
       .data(thumbNodes)
       .join("pattern")
       .attr("id", (d) => `thumb-${sanitizeId(d.id)}`)
-      .attr("patternUnits", "userSpaceOnUse")
-      .attr("width", (d) => getNodeRadius(d) * 2)
-      .attr("height", (d) => getNodeRadius(d) * 2)
-      .attr("x", (d) => -getNodeRadius(d))
-      .attr("y", (d) => -getNodeRadius(d));
+      .attr("patternUnits", "objectBoundingBox")
+      .attr("patternContentUnits", "objectBoundingBox")
+      .attr("width", 1)
+      .attr("height", 1);
 
     patterns
       .append("image")
       .attr("href", (d) => d.vertex?.thumbnail_path ?? "")
-      .attr("width", (d) => getNodeRadius(d) * 2)
-      .attr("height", (d) => getNodeRadius(d) * 2)
+      .attr("x", 0)
+      .attr("y", 0)
+      .attr("width", 1)
+      .attr("height", 1)
       .attr("preserveAspectRatio", "xMidYMid slice");
 
     const countRingItems = [
@@ -348,6 +358,11 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
         onHoverId(d.id);
       })
       .on("mouseleave", () => onHoverId(null))
+      .on("dblclick", (event: MouseEvent, d: GraphNode) => {
+        if (d.kind !== "vertex") return;
+        event.stopPropagation();
+        onToggleCollapse?.(d.id);
+      })
       .on("click", (event: MouseEvent, d: GraphNode) => {
         event.stopPropagation();
         onSelectId(selectedIdRef.current === d.id ? null : d.id);
@@ -371,6 +386,31 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
       })
       .text((d: GraphNode) => d.label);
     labelSelectionRef.current = label;
+
+    let collapsedMarker = root
+      .append("g")
+      .selectAll<SVGGElement, GraphNode>("g")
+      .data(vertexNodes.filter((node) => collapsedIdsRef.current.has(node.id)))
+      .join("g")
+      .attr("class", "graph-collapsed-marker")
+      .style("pointer-events", "none");
+
+    collapsedMarker
+      .append("circle")
+      .attr("r", 12)
+      .attr("fill", theme.palette.primary.main)
+      .attr("stroke", theme.palette.background.paper)
+      .attr("stroke-width", 1.4)
+      .attr("opacity", 0.95);
+
+    collapsedMarker
+      .append("text")
+      .attr("text-anchor", "middle")
+      .attr("dominant-baseline", "middle")
+      .attr("fill", theme.palette.common.white)
+      .attr("font-size", 14)
+      .attr("font-weight", 800)
+      .text("+");
     countGroup.raise();
 
     svg.on("click", () => onSelectId(null));
@@ -444,6 +484,40 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
       nodeBackground
         .attr("cx", (d: GraphNode) => d.x ?? 0)
         .attr("cy", (d) => d.y ?? 0);
+      collapsedMarker = collapsedMarker
+        .data(
+          vertexNodes.filter((node) => collapsedIdsRef.current.has(node.id))
+        )
+        .join((enter) => {
+          const group = enter
+            .append("g")
+            .attr("class", "graph-collapsed-marker")
+            .style("pointer-events", "none");
+          group
+            .append("circle")
+            .attr("r", 12)
+            .attr("fill", theme.palette.primary.main)
+            .attr("stroke", theme.palette.background.paper)
+            .attr("stroke-width", 1.4)
+            .attr("opacity", 0.95);
+          group
+            .append("text")
+            .attr("text-anchor", "middle")
+            .attr("dominant-baseline", "middle")
+            .attr("fill", theme.palette.common.white)
+            .attr("font-size", 14)
+            .attr("font-weight", 800)
+            .text("+");
+          return group;
+        })
+        .attr("transform", (d: GraphNode) => {
+          const x = d.x ?? 0;
+          const y = d.y ?? 0;
+          return `translate(${x}, ${y})`;
+        });
+      collapsedMarker
+        .attr("opacity", 1)
+        .raise();
 
       label
         .attr("x", (d: GraphNode) => d.x ?? 0)
@@ -521,6 +595,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
     onHoverId,
     onPannedStateChange,
     onSelectId,
+    onToggleCollapse,
     persistTransformKey,
     svgRef,
     theme,

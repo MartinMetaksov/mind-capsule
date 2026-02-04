@@ -175,6 +175,7 @@ export const GraphActionModal: React.FC<GraphActionModalProps> = ({
               selectedId={selectedId}
               hoveredId={hoveredId}
               countsByVertexId={{}}
+              collapsedIds={new Set()}
               containerRef={containerRef}
               svgRef={svgRef}
               actionRef={actionRef}
