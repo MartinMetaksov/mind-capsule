@@ -52,6 +52,9 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
   const nodeSelectionRef = React.useRef<
     d3.Selection<SVGCircleElement, GraphNode, SVGGElement, unknown> | null
   >(null);
+  const nodeBackgroundRef = React.useRef<
+    d3.Selection<SVGCircleElement, GraphNode, SVGGElement, unknown> | null
+  >(null);
   const labelSelectionRef = React.useRef<
     d3.Selection<SVGTextElement, GraphNode, SVGGElement, unknown> | null
   >(null);
@@ -203,6 +206,29 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
       .attr("opacity", 0.6);
     selectionRingRef.current = selectionRing;
 
+    const defs = root.append("defs");
+    const thumbNodes = vertexNodes.filter(
+      (node) => node.vertex?.thumbnail_path
+    );
+    const sanitizeId = (value: string) => value.replace(/[^a-zA-Z0-9_-]/g, "_");
+    const patterns = defs
+      .selectAll("pattern")
+      .data(thumbNodes)
+      .join("pattern")
+      .attr("id", (d) => `thumb-${sanitizeId(d.id)}`)
+      .attr("patternUnits", "userSpaceOnUse")
+      .attr("width", (d) => getNodeRadius(d) * 2)
+      .attr("height", (d) => getNodeRadius(d) * 2)
+      .attr("x", (d) => -getNodeRadius(d))
+      .attr("y", (d) => -getNodeRadius(d));
+
+    patterns
+      .append("image")
+      .attr("href", (d) => d.vertex?.thumbnail_path ?? "")
+      .attr("width", (d) => getNodeRadius(d) * 2)
+      .attr("height", (d) => getNodeRadius(d) * 2)
+      .attr("preserveAspectRatio", "xMidYMid slice");
+
     const countRingItems = [
       { key: "items", label: "It", angle: -160 },
       { key: "notes", label: "No", angle: -120 },
@@ -266,6 +292,18 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
 
     countGroupRef.current = countGroup;
 
+    const nodeBackground = root
+      .append("g")
+      .selectAll<SVGCircleElement, GraphNode>("circle")
+      .data(renderNodes)
+      .join("circle")
+      .attr("class", "graph-node-bg")
+      .attr("data-node-id", (d: GraphNode) => d.id)
+      .attr("fill", theme.palette.background.paper)
+      .attr("r", (d: GraphNode) => getNodeRadius(d));
+
+    nodeBackgroundRef.current = nodeBackground;
+
     const node = root
       .append("g")
       .selectAll<SVGCircleElement, GraphNode>("circle")
@@ -288,6 +326,12 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
             ? "#c2cbff"
             : "#6f7dff"
       )
+      .style("fill", (d: GraphNode) => {
+        if (d.kind === "vertex" && d.vertex?.thumbnail_path) {
+          return `url(#thumb-${sanitizeId(d.id)})`;
+        }
+        return "var(--node-fill)";
+      })
       .attr("stroke", (d: GraphNode) =>
         d.id === currentVertexId
           ? theme.palette.warning.main
@@ -397,6 +441,9 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
         .attr("y2", (d: GraphLink) => (d.target as GraphNode).y ?? 0);
 
       node.attr("cx", (d: GraphNode) => d.x ?? 0).attr("cy", (d) => d.y ?? 0);
+      nodeBackground
+        .attr("cx", (d: GraphNode) => d.x ?? 0)
+        .attr("cy", (d) => d.y ?? 0);
 
       label
         .attr("x", (d: GraphNode) => d.x ?? 0)
@@ -576,13 +623,22 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
 
   React.useEffect(() => {
     const nodeSelection = nodeSelectionRef.current;
-    if (!nodeSelection) return;
+    const nodeBackground = nodeBackgroundRef.current;
+    if (!nodeSelection || !nodeBackground) return;
     nodeSelection
       .attr("r", (d: GraphNode) => {
         const base = getNodeRadius(d);
         const isSelected = d.id === selectedId;
         const isHovered = d.id === hoveredId;
         return base + (isSelected ? 6 : isHovered ? 3 : 0);
+      })
+      .style("fill", (d: GraphNode) => {
+        if (d.kind === "vertex" && d.vertex?.thumbnail_path) {
+          const sanitizeId = (value: string) =>
+            value.replace(/[^a-zA-Z0-9_-]/g, "_");
+          return `url(#thumb-${sanitizeId(d.id)})`;
+        }
+        return "var(--node-fill)";
       })
       .classed("graph-node-selected", (d: GraphNode) => d.id === currentVertexId)
       .attr("stroke", (d: GraphNode) =>
@@ -593,6 +649,12 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
       .attr("stroke-width", (d: GraphNode) =>
         d.id === currentVertexId ? 3 : 1.5
       );
+    nodeBackground.attr("r", (d: GraphNode) => {
+      const base = getNodeRadius(d);
+      const isSelected = d.id === selectedId;
+      const isHovered = d.id === hoveredId;
+      return base + (isSelected ? 6 : isHovered ? 3 : 0);
+    });
   }, [currentVertexId, hoveredId, selectedId, theme]);
 
   return <svg ref={svgRef} />;
