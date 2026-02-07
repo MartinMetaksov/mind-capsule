@@ -40,12 +40,6 @@ async function initStore(): Promise<Store> {
   return store;
 }
 
-async function persist(key: string, value: unknown) {
-  const activeStore = await initStore();
-  await activeStore.set(key, value);
-  await activeStore.save();
-}
-
 function resolveWorkspaceIdFromMap(vertex: Vertex, map: VertexMap): Id | null {
   if (vertex.workspace_id) return vertex.workspace_id;
   let cursor: Vertex | undefined = vertex;
@@ -382,7 +376,6 @@ async function ensureLoaded() {
     workspaces = {};
     vertices = {};
 
-    let migratedLegacy = false;
     for (const entry of workspaceIndex) {
       const legacyWorkspace = legacyWorkspaces[entry.id];
       const fromFile = await readWorkspaceDataFile(entry.path);
@@ -412,7 +405,6 @@ async function ensureLoaded() {
         Object.values(data.vertices).forEach((vertex) => {
           vertices[vertex.id] = vertex;
         });
-        if (needsWrite) migratedLegacy = true;
         continue;
       }
 
@@ -434,7 +426,6 @@ async function ensureLoaded() {
         await writeWorkspaceDataFile(entry.path, data);
         workspaceDataById[fallbackWorkspace.id] = data;
         workspaces[fallbackWorkspace.id] = data.workspace;
-        migratedLegacy = true;
         continue;
       }
       const baseWorkspace = { ...legacyWorkspace, path: entry.path };
@@ -447,7 +438,6 @@ async function ensureLoaded() {
       Object.values(data.vertices).forEach((vertex) => {
         vertices[vertex.id] = vertex;
       });
-      if (didMigrate) migratedLegacy = true;
     }
 
     const hasLegacy =
