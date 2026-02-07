@@ -31,19 +31,19 @@ describe("WorkspaceSetup", () => {
   it("renders welcome content", () => {
     renderSetup();
     expect(screen.getByText(/Welcome to/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Create workspace/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Attach workspace/i })).toBeInTheDocument();
   });
 
   it("creates a workspace from the dialog", async () => {
     renderSetup();
-    fireEvent.click(screen.getByRole("button", { name: /Create workspace/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Attach workspace/i }));
     fireEvent.change(screen.getByLabelText(/Name/i), {
       target: { value: "New Workspace" },
     });
     fireEvent.change(screen.getByLabelText(/Path/i), {
       target: { value: "/tmp/new-ws" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /^Create$/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Attach$/i }));
     await waitFor(() => expect(mockCreateWorkspace).toHaveBeenCalled());
   });
 });

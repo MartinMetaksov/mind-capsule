@@ -21,6 +21,8 @@ type WorkspaceDialogProps = {
   open: boolean;
   initial?: WorkspaceFormData;
   error?: string | null;
+  titleOverride?: string;
+  submitLabelOverride?: string;
   onClose: () => void;
   onSubmit: (data: WorkspaceFormData) => void;
   onPickPath?: () => Promise<string | null | undefined>;
@@ -30,6 +32,8 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
   open,
   initial,
   error,
+  titleOverride,
+  submitLabelOverride,
   onClose,
   onSubmit,
   onPickPath,
@@ -67,7 +71,9 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>
-        {data.id ? t("workspaces.editTitle") : t("workspaces.createTitle")}
+        {data.id
+          ? t("workspaces.editTitle")
+          : titleOverride ?? t("workspaces.createTitle")}
       </DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ pt: 2, pb: 1 }}>
@@ -118,7 +124,9 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
       <DialogActions>
         <Button onClick={onClose}>{t("commonActions.cancel")}</Button>
         <Button variant="contained" onClick={handleSubmit}>
-          {data.id ? t("commonActions.save") : t("commonActions.create")}
+          {data.id
+            ? t("commonActions.save")
+            : submitLabelOverride ?? t("commonActions.create")}
         </Button>
       </DialogActions>
     </Dialog>

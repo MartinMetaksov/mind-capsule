@@ -89,7 +89,7 @@ describe("tauri fileSystem bridge", () => {
     await fs.createWorkspace(ws);
     expect(storeMock.set).toHaveBeenCalledWith(
       "workspaces.index.json",
-      [{ id: ws.id, path: ws.path }]
+      [ws]
     );
     expect(storeMock.save).toHaveBeenCalled();
     expect(invokeMock).toHaveBeenCalledWith("fs_create_workspace", { workspacePath: ws.path });
@@ -136,5 +136,14 @@ describe("tauri fileSystem bridge", () => {
       vertexId: vertex.id,
     });
     expect(storeMock.delete).not.toHaveBeenCalledWith(`vert-${vertex.id}.json`);
+  });
+
+  it("removes workspace association without deleting folder", async () => {
+    const fs = await loadFs();
+    await fs.createWorkspace(ws);
+    await fs.removeWorkspace(ws.id);
+    expect(invokeMock).not.toHaveBeenCalledWith("fs_remove_workspace", {
+      workspacePath: ws.path,
+    });
   });
 });

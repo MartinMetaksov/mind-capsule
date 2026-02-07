@@ -158,6 +158,8 @@ export const WorkspaceSetup: React.FC<WorkspaceSetupProps> = ({
           setEditorOpen(false);
           setError(null);
         }}
+        titleOverride={t("workspaceSetup.create")}
+        submitLabelOverride={t("workspaceSetup.attachAction")}
         onSubmit={handleCreateWorkspace}
         onPickPath={handlePickPath}
         error={error}

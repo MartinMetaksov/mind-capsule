@@ -121,15 +121,16 @@
   "workspaceSetup": {
     "welcome": "Welcome to {{app}}",
     "description": "{{app}} keeps your projects, notes, and files inside a workspace you control.",
-    "requires": "Create a",
+    "requires": "Attach a",
     "workspace": "workspace",
     "toGetStarted": "to get started.",
     "tooltip": {
       "line1": "A workspace is a folder on your computer where {{app}} stores your work.",
       "line2": "Tip: Put it in iCloud, Dropbox, or OneDrive to sync across devices."
     },
-    "settingUp": "Creating workspace…",
-    "create": "Create workspace",
+    "settingUp": "Attaching workspace…",
+    "create": "Attach workspace",
+    "attachAction": "Attach",
     "changeLater": "You can change your workspace later in Settings."
   },
   "vertexNotFound": {
