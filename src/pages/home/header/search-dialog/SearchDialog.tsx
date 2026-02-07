@@ -12,6 +12,7 @@ import {
 } from "@mui/material";
 import { useLocation, useNavigate } from "react-router-dom";
 import type { Vertex } from "@/core/vertex";
+import type { Workspace } from "@/core/workspace";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
 import { detectOperatingSystem } from "@/utils/os";
 import { getShortcut, matchesShortcut } from "@/utils/shortcuts";
@@ -26,6 +27,7 @@ type Props = {
 export const SearchDialog: React.FC<Props> = ({ open, onClose }) => {
   const [search, setSearch] = React.useState("");
   const [allVertices, setAllVertices] = React.useState<Vertex[]>([]);
+  const [allWorkspaces, setAllWorkspaces] = React.useState<Workspace[]>([]);
   const [activeIndex, setActiveIndex] = React.useState<number>(-1);
   const inputRef = React.useRef<HTMLInputElement | null>(null);
   const navigate = useNavigate();
@@ -46,8 +48,12 @@ export const SearchDialog: React.FC<Props> = ({ open, onClose }) => {
     setSearch("");
     (async () => {
       const fs = await getFileSystem();
-      const verts = await fs.getAllVertices();
+      const [verts, workspaces] = await Promise.all([
+        fs.getAllVertices(),
+        fs.getWorkspaces(),
+      ]);
       setAllVertices(verts);
+      setAllWorkspaces(workspaces);
       // defer focus to ensure dialog is painted
       requestAnimationFrame(() => {
         inputRef.current?.focus();
@@ -61,6 +67,12 @@ export const SearchDialog: React.FC<Props> = ({ open, onClose }) => {
     return map;
   }, [allVertices]);
 
+  const workspaceMap = React.useMemo(() => {
+    const map = new Map<string, Workspace>();
+    allWorkspaces.forEach((w) => map.set(w.id, w));
+    return map;
+  }, [allWorkspaces]);
+
   const buildPath = (v: Vertex) => {
     const segs: string[] = [];
     let cur: Vertex | undefined = v;
@@ -72,6 +84,44 @@ export const SearchDialog: React.FC<Props> = ({ open, onClose }) => {
     }
     return `/${segs.join("/")}`;
   };
+
+  const resolveWorkspace = React.useCallback(
+    (v: Vertex): Workspace | null => {
+      let cur: Vertex | undefined = v;
+      if (cur.workspace_id) {
+        return workspaceMap.get(cur.workspace_id) ?? null;
+      }
+      while (cur?.parent_id) {
+        const parent = vertexMap.get(cur.parent_id);
+        if (!parent) break;
+        if (parent.workspace_id) {
+          return workspaceMap.get(parent.workspace_id) ?? null;
+        }
+        cur = parent;
+      }
+      return null;
+    },
+    [vertexMap, workspaceMap]
+  );
+
+  const buildTitlePath = React.useCallback(
+    (v: Vertex): string => {
+      const segs: string[] = [];
+      let cur: Vertex | undefined = v;
+      while (cur) {
+        segs.unshift(cur.title || cur.id);
+        if (!cur.parent_id) break;
+        cur = vertexMap.get(cur.parent_id);
+        if (!cur) break;
+      }
+      const workspace = resolveWorkspace(v);
+      if (workspace?.name) {
+        return `${workspace.name} / ${segs.join(" / ")}`;
+      }
+      return segs.join(" / ");
+    },
+    [resolveWorkspace, vertexMap]
+  );
 
   const scopedVertices = React.useMemo(() => {
     const segments = location.pathname.split("/").filter(Boolean);
@@ -242,7 +292,16 @@ export const SearchDialog: React.FC<Props> = ({ open, onClose }) => {
                     />
                   )}
                 </Box>
-                <ListItemText primary={v.title} />
+                <ListItemText
+                  primary={v.title}
+                  secondary={buildTitlePath(v)}
+                  primaryTypographyProps={{ variant: "body1" }}
+                  secondaryTypographyProps={{
+                    variant: "body2",
+                    color: "text.secondary",
+                    sx: { mt: 0.25 },
+                  }}
+                />
               </ListItemButton>
             ))}
             {filtered.length === 0 && (

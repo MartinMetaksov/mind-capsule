@@ -4,6 +4,7 @@ import { I18nextProvider } from "react-i18next";
 import i18n from "@/i18n";
 import { SearchDialog } from "./SearchDialog";
 import type { Vertex } from "@/core/vertex";
+import type { Workspace } from "@/core/workspace";
 
 const baseVertex: Vertex = {
   id: "v-1",
@@ -18,13 +19,23 @@ const baseVertex: Vertex = {
 };
 
 let mockVertices: Vertex[] = [baseVertex];
+let mockWorkspaces: Workspace[] = [
+  {
+    id: "ws-1",
+    name: "Workspace",
+    path: "/tmp/ws",
+    created_at: "2024-01-01T00:00:00.000Z",
+    updated_at: "2024-01-01T00:00:00.000Z",
+    tags: [],
+  },
+];
 
 vi.mock("@/integrations/fileSystem/integration", () => ({
   getFileSystem: async () => ({
     getVertex: async (id: string) =>
       mockVertices.find((v) => v.id === id) ?? null,
     getAllVertices: async () => mockVertices,
-    getWorkspaces: vi.fn(),
+    getWorkspaces: async () => mockWorkspaces,
   }),
 }));
 
@@ -41,6 +52,16 @@ describe("SearchDialog", () => {
   beforeEach(() => {
     window.history.pushState({}, "", "/");
     mockVertices = [baseVertex];
+    mockWorkspaces = [
+      {
+        id: "ws-1",
+        name: "Workspace",
+        path: "/tmp/ws",
+        created_at: "2024-01-01T00:00:00.000Z",
+        updated_at: "2024-01-01T00:00:00.000Z",
+        tags: [],
+      },
+    ];
     localStorage.clear();
   });
 
