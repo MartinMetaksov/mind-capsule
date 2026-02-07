@@ -10,6 +10,9 @@ import { join } from "@tauri-apps/api/path";
 const WORKSPACE_KEY_PREFIX = "ws-";
 const VERTEX_KEY_PREFIX = "vert-";
 const KEY_SUFFIX = ".json";
+const WORKSPACE_INDEX_KEY = "workspaces.index.json";
+const WORKSPACE_DATA_FILE = "mind-capsule.workspace.json";
+const WORKSPACE_DATA_VERSION = 1;
 const IMAGE_META_FILE = "images.meta.json";
 const IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg"];
 const URLS_FILE = "urls.json";
@@ -17,8 +20,16 @@ const NOTE_EXTENSION = ".md";
 
 type WorkspaceMap = Record<Id, Workspace>;
 type VertexMap = Record<Id, Vertex>;
+type WorkspaceIndexEntry = { id: Id; path: string };
+type WorkspaceDataFile = {
+  version: number;
+  workspace: Workspace;
+  vertices: Record<Id, Vertex>;
+};
 
 let store: Store | null = null;
+let workspaceIndex: WorkspaceIndexEntry[] = [];
+let workspaceDataById: Record<Id, WorkspaceDataFile> = {};
 let workspaces: WorkspaceMap = {};
 let vertices: VertexMap = {};
 let loadPromise: Promise<void> | null = null;
@@ -35,24 +46,20 @@ async function persist(key: string, value: unknown) {
   await activeStore.save();
 }
 
-function workspaceKey(id: Id): string {
-  return `${WORKSPACE_KEY_PREFIX}${id}${KEY_SUFFIX}`;
-}
-
-function vertexKey(id: Id): string {
-  return `${VERTEX_KEY_PREFIX}${id}${KEY_SUFFIX}`;
-}
-
-function resolveWorkspaceId(vertex: Vertex): Id | null {
+function resolveWorkspaceIdFromMap(vertex: Vertex, map: VertexMap): Id | null {
   if (vertex.workspace_id) return vertex.workspace_id;
   let cursor: Vertex | undefined = vertex;
   while (cursor?.parent_id) {
-    const parent: Vertex = vertices[cursor.parent_id];
+    const parent: Vertex = map[cursor.parent_id];
     if (!parent) return null;
     if (parent.workspace_id) return parent.workspace_id;
     cursor = parent;
   }
   return null;
+}
+
+function resolveWorkspaceId(vertex: Vertex): Id | null {
+  return resolveWorkspaceIdFromMap(vertex, vertices);
 }
 
 function parseMetadataId(prefix: string, key: string): Id | null {
@@ -64,6 +71,11 @@ function parseMetadataId(prefix: string, key: string): Id | null {
 function buildAssetDirectory(workspacePath: string, vertexId: Id): string {
   const trimmed = workspacePath.replace(/[\\/]+$/, "");
   return `${trimmed}/${vertexId}`;
+}
+
+function inferWorkspaceNameFromPath(path: string): string {
+  const parts = path.split(/[\\/]+/).filter(Boolean);
+  return parts[parts.length - 1] ?? "Workspace";
 }
 
 function pickImageExtension(file: File): string {
@@ -197,6 +209,165 @@ async function loadMetadata<T>(activeStore: Store, prefix: string): Promise<Reco
   return map;
 }
 
+async function readWorkspaceDataFile(workspacePath: string): Promise<WorkspaceDataFile | null> {
+  const dataPath = await join(workspacePath, WORKSPACE_DATA_FILE);
+  try {
+    const raw = await readFile(dataPath);
+    const text = new TextDecoder().decode(raw);
+    const parsed = JSON.parse(text) as WorkspaceDataFile | null;
+    if (
+      parsed &&
+      typeof parsed === "object" &&
+      parsed.workspace &&
+      parsed.vertices &&
+      typeof parsed.vertices === "object"
+    ) {
+      return parsed;
+    }
+  } catch {
+    // ignore missing/invalid data file
+  }
+  return null;
+}
+
+async function writeWorkspaceDataFile(
+  workspacePath: string,
+  data: WorkspaceDataFile
+): Promise<void> {
+  const dataPath = await join(workspacePath, WORKSPACE_DATA_FILE);
+  const encoded = new TextEncoder().encode(JSON.stringify(data, null, 2));
+  await writeFile(dataPath, encoded);
+}
+
+function normalizeVerticesForWorkspace(
+  workspace: Workspace,
+  source: Record<Id, Vertex>
+): { vertices: Record<Id, Vertex>; changed: boolean } {
+  const normalized: Record<Id, Vertex> = {};
+  let changed = false;
+  Object.values(source).forEach((vertex) => {
+    const assetDirectory =
+      vertex.asset_directory || buildAssetDirectory(workspace.path, vertex.id);
+    if (assetDirectory !== vertex.asset_directory) changed = true;
+    const workspaceId = vertex.workspace_id ?? workspace.id;
+    if (workspaceId !== vertex.workspace_id) changed = true;
+    const next: Vertex = {
+      ...vertex,
+      asset_directory: assetDirectory ?? "",
+      workspace_id: workspaceId,
+      is_corrupt: assetDirectory ? vertex.is_corrupt : true,
+    };
+    normalized[next.id] = next;
+  });
+  return { vertices: normalized, changed };
+}
+
+function filterVerticesForWorkspace(
+  workspace: Workspace,
+  source: VertexMap
+): Record<Id, Vertex> {
+  const selected: Record<Id, Vertex> = {};
+  Object.values(source).forEach((vertex) => {
+    const resolvedWorkspaceId = resolveWorkspaceIdFromMap(vertex, source);
+    if (resolvedWorkspaceId === workspace.id) {
+      selected[vertex.id] = vertex;
+    }
+  });
+  return selected;
+}
+
+async function loadWorkspaceIndex(
+  activeStore: Store,
+  legacyWorkspaces: WorkspaceMap
+): Promise<WorkspaceIndexEntry[]> {
+  const stored = await activeStore.get<WorkspaceIndexEntry[]>(WORKSPACE_INDEX_KEY);
+  if (Array.isArray(stored)) return stored;
+  const index = Object.values(legacyWorkspaces).map((workspace) => ({
+    id: workspace.id,
+    path: workspace.path,
+  }));
+  await activeStore.set(WORKSPACE_INDEX_KEY, index);
+  await activeStore.save();
+  return index;
+}
+
+async function loadWorkspaceData(
+  workspace: Workspace,
+  legacyVertices: VertexMap
+): Promise<{ data: WorkspaceDataFile; didMigrate: boolean }> {
+  const fromFile = await readWorkspaceDataFile(workspace.path);
+  if (fromFile) {
+    const normalizedWorkspace = {
+      ...fromFile.workspace,
+      path: workspace.path,
+    };
+    const { vertices: normalizedVertices, changed } = normalizeVerticesForWorkspace(
+      normalizedWorkspace,
+      fromFile.vertices
+    );
+    const needsWrite =
+      fromFile.version !== WORKSPACE_DATA_VERSION ||
+      normalizedWorkspace.path !== fromFile.workspace.path ||
+      changed;
+    const data: WorkspaceDataFile = {
+      version: WORKSPACE_DATA_VERSION,
+      workspace: normalizedWorkspace,
+      vertices: normalizedVertices,
+    };
+    if (needsWrite) {
+      await writeWorkspaceDataFile(workspace.path, data);
+    }
+    return { data, didMigrate: needsWrite };
+  }
+
+  const selected = filterVerticesForWorkspace(workspace, legacyVertices);
+  const { vertices: normalizedVertices } = normalizeVerticesForWorkspace(
+    workspace,
+    selected
+  );
+  const data: WorkspaceDataFile = {
+    version: WORKSPACE_DATA_VERSION,
+    workspace,
+    vertices: normalizedVertices,
+  };
+  await writeWorkspaceDataFile(workspace.path, data);
+  return { data, didMigrate: true };
+}
+
+async function persistWorkspaceIndex(): Promise<void> {
+  const activeStore = await initStore();
+  await activeStore.set(WORKSPACE_INDEX_KEY, workspaceIndex);
+  await activeStore.save();
+}
+
+async function persistWorkspaceData(workspaceId: Id): Promise<void> {
+  const data = workspaceDataById[workspaceId];
+  if (!data) return;
+  await writeWorkspaceDataFile(data.workspace.path, data);
+}
+
+async function cleanupLegacyStore(
+  activeStore: Store,
+  legacyWorkspaces: WorkspaceMap,
+  legacyVertices: VertexMap
+): Promise<void> {
+  const keys = await activeStore.keys();
+  let updated = false;
+  for (const key of keys) {
+    if (parseMetadataId(WORKSPACE_KEY_PREFIX, key) && legacyWorkspaces) {
+      await activeStore.delete(key);
+      updated = true;
+    }
+    if (parseMetadataId(VERTEX_KEY_PREFIX, key) && legacyVertices) {
+      await activeStore.delete(key);
+      updated = true;
+    }
+  }
+  if (updated) {
+    await activeStore.save();
+  }
+}
+
 async function ensureLoaded() {
   if (loadPromise) {
     await loadPromise;
@@ -204,25 +375,93 @@ async function ensureLoaded() {
   }
   loadPromise = (async () => {
     const activeStore = await initStore();
-    workspaces = await loadMetadata<Workspace>(activeStore, WORKSPACE_KEY_PREFIX);
-    vertices = await loadMetadata<Vertex>(activeStore, VERTEX_KEY_PREFIX);
-    Object.values(vertices).forEach((vertex) => {
-      if (!vertex.asset_directory) {
-        const workspaceId = resolveWorkspaceId(vertex);
-        const workspace = workspaceId ? workspaces[workspaceId] : null;
-        vertex.asset_directory = workspace
-          ? buildAssetDirectory(workspace.path, vertex.id)
-          : "";
-        vertex.is_corrupt = true;
+    const legacyWorkspaces = await loadMetadata<Workspace>(activeStore, WORKSPACE_KEY_PREFIX);
+    const legacyVertices = await loadMetadata<Vertex>(activeStore, VERTEX_KEY_PREFIX);
+    workspaceIndex = await loadWorkspaceIndex(activeStore, legacyWorkspaces);
+    workspaceDataById = {};
+    workspaces = {};
+    vertices = {};
+
+    let migratedLegacy = false;
+    for (const entry of workspaceIndex) {
+      const legacyWorkspace = legacyWorkspaces[entry.id];
+      const fromFile = await readWorkspaceDataFile(entry.path);
+      if (fromFile) {
+        const normalizedWorkspace = {
+          ...fromFile.workspace,
+          path: entry.path,
+        };
+        const { vertices: normalizedVertices, changed } = normalizeVerticesForWorkspace(
+          normalizedWorkspace,
+          fromFile.vertices
+        );
+        const needsWrite =
+          fromFile.version !== WORKSPACE_DATA_VERSION ||
+          normalizedWorkspace.path !== fromFile.workspace.path ||
+          changed;
+        const data: WorkspaceDataFile = {
+          version: WORKSPACE_DATA_VERSION,
+          workspace: normalizedWorkspace,
+          vertices: normalizedVertices,
+        };
+        if (needsWrite) {
+          await writeWorkspaceDataFile(entry.path, data);
+        }
+        workspaceDataById[normalizedWorkspace.id] = data;
+        workspaces[normalizedWorkspace.id] = data.workspace;
+        Object.values(data.vertices).forEach((vertex) => {
+          vertices[vertex.id] = vertex;
+        });
+        if (needsWrite) migratedLegacy = true;
+        continue;
       }
-    });
+
+      if (!legacyWorkspace) {
+        const now = new Date().toISOString();
+        const fallbackWorkspace: Workspace = {
+          id: entry.id,
+          name: inferWorkspaceNameFromPath(entry.path),
+          path: entry.path,
+          created_at: now,
+          updated_at: now,
+          tags: [],
+        };
+        const data: WorkspaceDataFile = {
+          version: WORKSPACE_DATA_VERSION,
+          workspace: fallbackWorkspace,
+          vertices: {},
+        };
+        await writeWorkspaceDataFile(entry.path, data);
+        workspaceDataById[fallbackWorkspace.id] = data;
+        workspaces[fallbackWorkspace.id] = data.workspace;
+        migratedLegacy = true;
+        continue;
+      }
+      const baseWorkspace = { ...legacyWorkspace, path: entry.path };
+      const { data, didMigrate } = await loadWorkspaceData(
+        baseWorkspace,
+        legacyVertices
+      );
+      workspaceDataById[baseWorkspace.id] = data;
+      workspaces[baseWorkspace.id] = data.workspace;
+      Object.values(data.vertices).forEach((vertex) => {
+        vertices[vertex.id] = vertex;
+      });
+      if (didMigrate) migratedLegacy = true;
+    }
+
+    const hasLegacy =
+      Object.keys(legacyWorkspaces).length > 0 ||
+      Object.keys(legacyVertices).length > 0;
+    if (hasLegacy) {
+      await cleanupLegacyStore(activeStore, legacyWorkspaces, legacyVertices);
+    }
   })();
   await loadPromise;
 }
 
 async function pruneMissingWorkspaces(): Promise<{ workspaces: number; vertices: number }> {
   await ensureLoaded();
-  const activeStore = await initStore();
   const missing: Workspace[] = [];
 
   for (const workspace of Object.values(workspaces)) {
@@ -240,17 +479,16 @@ async function pruneMissingWorkspaces(): Promise<{ workspaces: number; vertices:
   let removedVertices = 0;
   for (const workspace of missing) {
     delete workspaces[workspace.id];
-    await activeStore.delete(workspaceKey(workspace.id));
-
+    delete workspaceDataById[workspace.id];
+    workspaceIndex = workspaceIndex.filter((entry) => entry.id !== workspace.id);
     for (const vertex of Object.values(vertices)) {
       if (vertex.workspace_id !== workspace.id) continue;
       delete vertices[vertex.id];
       removedVertices += 1;
-      await activeStore.delete(vertexKey(vertex.id));
     }
   }
 
-  await activeStore.save();
+  await persistWorkspaceIndex();
   return { workspaces: missing.length, vertices: removedVertices };
 }
 
@@ -267,7 +505,18 @@ export const fileSystem: FileSystem = {
       updated_at: workspace.updated_at ?? now,
     };
     await invoke("fs_create_workspace", { workspacePath: workspaces[workspace.id].path });
-    await persist(workspaceKey(workspace.id), workspaces[workspace.id]);
+    workspaceIndex = [
+      ...workspaceIndex.filter((entry) => entry.id !== workspace.id),
+      { id: workspace.id, path: workspaces[workspace.id].path },
+    ];
+    const data: WorkspaceDataFile = {
+      version: WORKSPACE_DATA_VERSION,
+      workspace: workspaces[workspace.id],
+      vertices: {},
+    };
+    workspaceDataById[workspace.id] = data;
+    await persistWorkspaceIndex();
+    await writeWorkspaceDataFile(workspaces[workspace.id].path, data);
   },
   async selectWorkspaceDirectory(): Promise<string | null> {
     try {
@@ -291,12 +540,41 @@ export const fileSystem: FileSystem = {
     if (!workspaces[new_workspace.id]) {
       throw new Error(`Workspace ${new_workspace.id} does not exist.`);
     }
+    const previous = workspaces[new_workspace.id];
     workspaces[new_workspace.id] = {
+      ...previous,
       ...new_workspace,
       updated_at: new Date().toISOString(),
     };
+    if (previous.path !== workspaces[new_workspace.id].path) {
+      Object.values(vertices).forEach((vertex) => {
+        if (vertex.workspace_id !== new_workspace.id) return;
+        vertex.asset_directory = buildAssetDirectory(
+          workspaces[new_workspace.id].path,
+          vertex.id
+        );
+      });
+    }
+    const data = workspaceDataById[new_workspace.id] ?? {
+      version: WORKSPACE_DATA_VERSION,
+      workspace: workspaces[new_workspace.id],
+      vertices: {},
+    };
+    data.workspace = workspaces[new_workspace.id];
+    data.vertices = Object.fromEntries(
+      Object.values(vertices)
+        .filter((vertex) => vertex.workspace_id === new_workspace.id)
+        .map((vertex) => [vertex.id, vertex])
+    );
+    workspaceDataById[new_workspace.id] = data;
+    workspaceIndex = workspaceIndex.map((entry) =>
+      entry.id === new_workspace.id
+        ? { id: entry.id, path: workspaces[new_workspace.id].path }
+        : entry
+    );
     await invoke("fs_update_workspace", { workspacePath: workspaces[new_workspace.id].path });
-    await persist(workspaceKey(new_workspace.id), workspaces[new_workspace.id]);
+    await persistWorkspaceIndex();
+    await persistWorkspaceData(new_workspace.id);
   },
   async removeWorkspace(workspace_id: Id): Promise<void> {
     await ensureLoaded();
@@ -305,16 +583,15 @@ export const fileSystem: FileSystem = {
       throw new Error(`Workspace ${workspace_id} does not exist.`);
     }
     await invoke("fs_remove_workspace", { workspacePath: workspace.path });
-    const activeStore = await initStore();
     for (const vertex of Object.values(vertices)) {
       if (vertex.workspace_id === workspace_id) {
         delete vertices[vertex.id];
-        await activeStore.delete(vertexKey(vertex.id));
       }
     }
     delete workspaces[workspace_id];
-    await activeStore.delete(workspaceKey(workspace_id));
-    await activeStore.save();
+    delete workspaceDataById[workspace_id];
+    workspaceIndex = workspaceIndex.filter((entry) => entry.id !== workspace_id);
+    await persistWorkspaceIndex();
   },
   async pruneMissingWorkspaces(): Promise<{ workspaces: number; vertices: number }> {
     return pruneMissingWorkspaces();
@@ -336,13 +613,22 @@ export const fileSystem: FileSystem = {
       asset_directory: assetDirectory,
       created_at: vertex.created_at ?? now,
       updated_at: vertex.updated_at ?? now,
+      workspace_id: workspaceId,
     };
     await invoke("fs_create_vertex_dir", {
       workspacePath: workspace.path,
       vertexId: vertex.id,
     });
     await ensureUrlsFile(assetDirectory);
-    await persist(vertexKey(vertex.id), vertices[vertex.id]);
+    if (!workspaceDataById[workspaceId]) {
+      workspaceDataById[workspaceId] = {
+        version: WORKSPACE_DATA_VERSION,
+        workspace,
+        vertices: {},
+      };
+    }
+    workspaceDataById[workspaceId].vertices[vertex.id] = vertices[vertex.id];
+    await persistWorkspaceData(workspaceId);
   },
   async getVertices(parent_id: Id): Promise<Vertex[]> {
     await ensureLoaded();
@@ -375,7 +661,19 @@ export const fileSystem: FileSystem = {
       is_corrupt: assetDirectory ? new_vertex.is_corrupt : true,
       updated_at: new Date().toISOString(),
     };
-    await persist(vertexKey(new_vertex.id), vertices[new_vertex.id]);
+    const workspaceId = resolveWorkspaceId(vertices[new_vertex.id]);
+    if (workspaceId) {
+      if (!workspaceDataById[workspaceId]) {
+        const workspace = workspaces[workspaceId];
+        workspaceDataById[workspaceId] = {
+          version: WORKSPACE_DATA_VERSION,
+          workspace,
+          vertices: {},
+        };
+      }
+      workspaceDataById[workspaceId].vertices[new_vertex.id] = vertices[new_vertex.id];
+      await persistWorkspaceData(workspaceId);
+    }
   },
   async removeVertex(new_vertex: Vertex): Promise<void> {
     await ensureLoaded();
@@ -392,9 +690,10 @@ export const fileSystem: FileSystem = {
       vertexId: new_vertex.id,
     });
     delete vertices[new_vertex.id];
-    const activeStore = await initStore();
-    await activeStore.delete(vertexKey(new_vertex.id));
-    await activeStore.save();
+    if (workspaceDataById[workspaceId]) {
+      delete workspaceDataById[workspaceId].vertices[new_vertex.id];
+      await persistWorkspaceData(workspaceId);
+    }
   },
 
   /* ===== Images ===== */

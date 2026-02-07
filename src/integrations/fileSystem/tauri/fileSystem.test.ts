@@ -15,7 +15,6 @@ const invokeMock = vi.fn();
 const readDirMock = vi.fn(async () => []);
 const readFileMock = vi.fn();
 const writeFileMock = vi.fn();
-const createDirMock = vi.fn();
 const removeFileMock = vi.fn();
 const joinMock = vi.fn(async (...parts: string[]) => parts.join("/"));
 
@@ -29,12 +28,11 @@ vi.mock("@tauri-apps/api/core", () => ({
   invoke: invokeMock,
 }));
 
-vi.mock("@tauri-apps/api/fs", () => ({
+vi.mock("@tauri-apps/plugin-fs", () => ({
   readDir: readDirMock,
   readFile: readFileMock,
   writeFile: writeFileMock,
-  createDir: createDirMock,
-  removeFile: removeFileMock,
+  remove: removeFileMock,
 }));
 
 vi.mock("@tauri-apps/api/path", () => ({
@@ -52,7 +50,6 @@ const loadFs = async (): Promise<FileSystem> => {
   readDirMock.mockClear();
   readFileMock.mockClear();
   writeFileMock.mockClear();
-  createDirMock.mockClear();
   removeFileMock.mockClear();
   joinMock.mockClear();
   // default empty store
@@ -90,9 +87,16 @@ describe("tauri fileSystem bridge", () => {
   it("persists workspaces and invokes create command", async () => {
     const fs = await loadFs();
     await fs.createWorkspace(ws);
-    expect(storeMock.set).toHaveBeenCalledWith(`ws-${ws.id}.json`, ws);
+    expect(storeMock.set).toHaveBeenCalledWith(
+      "workspaces.index.json",
+      [{ id: ws.id, path: ws.path }]
+    );
     expect(storeMock.save).toHaveBeenCalled();
     expect(invokeMock).toHaveBeenCalledWith("fs_create_workspace", { workspacePath: ws.path });
+    expect(writeFileMock).toHaveBeenCalledWith(
+      "/tmp/ws/mind-capsule.workspace.json",
+      expect.anything()
+    );
   });
 
   it("selectWorkspaceDirectory returns value or null on error", async () => {
@@ -111,9 +115,9 @@ describe("tauri fileSystem bridge", () => {
       workspacePath: ws.path,
       vertexId: vertex.id,
     });
-    expect(storeMock.set).toHaveBeenCalledWith(
-      `vert-${vertex.id}.json`,
-      expect.objectContaining({ asset_directory: `${ws.path}/${vertex.id}` })
+    expect(writeFileMock).toHaveBeenCalledWith(
+      "/tmp/ws/mind-capsule.workspace.json",
+      expect.anything()
     );
     expect(await fs.getVertex(vertex.id)).toEqual(
       expect.objectContaining({ asset_directory: `${ws.path}/${vertex.id}` })
@@ -121,16 +125,16 @@ describe("tauri fileSystem bridge", () => {
     expect(await fs.getWorkspaceRootVertices(ws.id)).toEqual([vertex]);
 
     await fs.updateVertex({ ...vertex, title: "Updated" });
-    expect(storeMock.set).toHaveBeenCalledWith(
-      `vert-${vertex.id}.json`,
-      expect.objectContaining({ title: "Updated" })
-    );
+    const lastWrite = writeFileMock.mock.calls[writeFileMock.mock.calls.length - 1];
+    const encoded = lastWrite[1] as Uint8Array;
+    const text = new TextDecoder().decode(encoded);
+    expect(text).toMatch(/Updated/);
 
     await fs.removeVertex(vertex);
     expect(invokeMock).toHaveBeenCalledWith("fs_remove_vertex_dir", {
       workspacePath: ws.path,
       vertexId: vertex.id,
     });
-    expect(storeMock.delete).toHaveBeenCalledWith(`vert-${vertex.id}.json`);
+    expect(storeMock.delete).not.toHaveBeenCalledWith(`vert-${vertex.id}.json`);
   });
 });
