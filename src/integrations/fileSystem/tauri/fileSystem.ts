@@ -380,6 +380,33 @@ async function cleanupLegacyStore(
   }
 }
 
+async function pruneMissingVertexDirs(): Promise<number> {
+  const byWorkspace = new Map<Id, Id[]>();
+  const entries = Object.values(vertices);
+  for (const vertex of entries) {
+    if (!vertex.asset_directory) continue;
+    try {
+      await readDir(vertex.asset_directory);
+    } catch {
+      const list = byWorkspace.get(vertex.workspace_id ?? "") ?? [];
+      list.push(vertex.id);
+      byWorkspace.set(vertex.workspace_id ?? "", list);
+    }
+  }
+
+  let removed = 0;
+  for (const [workspaceId, ids] of byWorkspace.entries()) {
+    ids.forEach((id) => {
+      delete vertices[id];
+      removed += 1;
+    });
+    if (workspaceId) {
+      await persistWorkspaceData(workspaceId);
+    }
+  }
+  return removed;
+}
+
 async function ensureLoaded() {
   if (loadPromise) {
     await loadPromise;
@@ -432,6 +459,8 @@ async function ensureLoaded() {
     if (hasLegacy) {
       await cleanupLegacyStore(activeStore, legacyWorkspaces, legacyVertices);
     }
+
+    await pruneMissingVertexDirs();
   })();
   await loadPromise;
 }
@@ -449,7 +478,8 @@ async function pruneMissingWorkspaces(): Promise<{ workspaces: number; vertices:
   }
 
   if (missing.length === 0) {
-    return { workspaces: 0, vertices: 0 };
+    const removedVertices = await pruneMissingVertexDirs();
+    return { workspaces: 0, vertices: removedVertices };
   }
 
   let removedVertices = 0;
@@ -464,7 +494,11 @@ async function pruneMissingWorkspaces(): Promise<{ workspaces: number; vertices:
   }
 
   await persistWorkspaceIndex();
-  return { workspaces: missing.length, vertices: removedVertices };
+  const prunedVertexDirs = await pruneMissingVertexDirs();
+  return {
+    workspaces: missing.length,
+    vertices: removedVertices + prunedVertexDirs,
+  };
 }
 
 export const fileSystem: FileSystem = {
