@@ -429,7 +429,7 @@ async function ensureLoaded() {
         continue;
       }
       const baseWorkspace = { ...legacyWorkspace, path: entry.path };
-      const { data, didMigrate } = await loadWorkspaceData(
+      const { data } = await loadWorkspaceData(
         baseWorkspace,
         legacyVertices
       );
