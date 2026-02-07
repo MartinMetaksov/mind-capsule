@@ -655,7 +655,15 @@ export const VertexOverviewTab: React.FC<VertexOverviewTabProps> = (props) => {
       {projectsProps && (
         <CreateFab
           ref={projectsFabRef}
-          onClick={(e) => projectsState.setFabAnchor(e.currentTarget)}
+          onClick={(e) => {
+            if (projectsProps.workspaces.length === 1) {
+              projectsState.handleCreateProjectInWorkspace(
+                projectsProps.workspaces[0]
+              );
+              return;
+            }
+            projectsState.setFabAnchor(e.currentTarget);
+          }}
           title={t("projects.create")}
           sx={{ position: "absolute", bottom: 20, right: 20 }}
         />

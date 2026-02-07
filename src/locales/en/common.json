@@ -99,7 +99,8 @@
     "subtitle": "Create, rename, change paths, or remove workspaces.",
     "actions": {
       "edit": "Edit",
-      "delete": "Delete",
+      "delete": "Disassociate",
+      "associate": "Associate",
       "selectDirectory": "Select directory"
     },
     "fields": {
@@ -112,10 +113,10 @@
       "save": "Failed to save workspace.",
       "delete": "Failed to delete workspace."
     },
-    "createTitle": "Create workspace",
+    "createTitle": "Associate workspace",
     "editTitle": "Edit workspace",
-    "deleteTitle": "Delete workspace",
-    "deleteConfirm": "Are you sure you want to delete {{name}}?",
+    "deleteTitle": "Disassociate workspace",
+    "deleteConfirm": "Disassociate \"{{name}}\" from this app?",
     "deleteFallback": "this workspace"
   },
   "workspaceSetup": {

@@ -273,7 +273,17 @@ describe("VertexOverviewTab (projects)", () => {
   });
 
   it("opens workspace picker popover when fab clicked", () => {
-    renderProjects();
+    renderProjects({
+      workspaces: [
+        workspace,
+        {
+          ...workspace,
+          id: "ws-2",
+          name: "Workspace Two",
+          path: "/tmp/ws-2",
+        },
+      ],
+    });
     fireEvent.click(screen.getByRole("button", { name: /Create project/i }));
     expect(screen.getByText(/Add project to workspace/i)).toBeInTheDocument();
   });

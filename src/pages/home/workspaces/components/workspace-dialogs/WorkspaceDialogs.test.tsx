@@ -56,7 +56,9 @@ describe("DeleteWorkspaceDialog", () => {
       </I18nextProvider>
     );
 
-    expect(screen.getByRole("heading", { name: /Delete workspace/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /Disassociate workspace/i })
+    ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Cancel/i }));
     fireEvent.click(screen.getByRole("button", { name: /^Delete$/i }));
     expect(onCancel).toHaveBeenCalledTimes(1);

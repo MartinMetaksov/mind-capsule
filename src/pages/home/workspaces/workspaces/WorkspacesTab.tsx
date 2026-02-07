@@ -8,7 +8,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
-import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
+import LinkOffRoundedIcon from "@mui/icons-material/LinkOffRounded";
 
 import type { Workspace } from "@/core/workspace";
 import { getFileSystem } from "@/integrations/fileSystem/integration";
@@ -201,7 +201,7 @@ export const WorkspacesTab: React.FC<WorkspacesTabProps> = ({
                   onClick={() => setConfirmDelete(ws)}
                   aria-label={t("workspaces.actions.delete")}
                 >
-                  <DeleteOutlineRoundedIcon fontSize="small" />
+                  <LinkOffRoundedIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
             </Stack>
@@ -211,6 +211,12 @@ export const WorkspacesTab: React.FC<WorkspacesTabProps> = ({
 
       <WorkspaceDialog
         open={editorOpen}
+        titleOverride={
+          editing.id ? undefined : t("workspaces.createTitle")
+        }
+        submitLabelOverride={
+          editing.id ? undefined : t("workspaces.actions.associate")
+        }
         initial={
           editing.name && editing.path
             ? {
@@ -229,6 +235,8 @@ export const WorkspacesTab: React.FC<WorkspacesTabProps> = ({
       <DeleteWorkspaceDialog
         open={Boolean(confirmDelete)}
         name={confirmDelete?.name}
+        titleOverride={t("workspaces.deleteTitle")}
+        confirmLabelOverride={t("workspaces.actions.delete")}
         onCancel={() => setConfirmDelete(null)}
         onConfirm={removeWorkspace}
       />

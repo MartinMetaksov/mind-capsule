@@ -44,7 +44,7 @@ describe("WorkspacesTab", () => {
 
   it("opens create dialog when FAB clicked", () => {
     renderTab();
-    fireEvent.click(screen.getByRole("button", { name: /Create workspace/i }));
-    expect(screen.getByText(/Create workspace/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Associate workspace/i }));
+    expect(screen.getByText(/Associate workspace/i)).toBeInTheDocument();
   });
 });

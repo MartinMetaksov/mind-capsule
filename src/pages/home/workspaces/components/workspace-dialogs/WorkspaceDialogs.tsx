@@ -136,6 +136,8 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
 type DeleteWorkspaceDialogProps = {
   open: boolean;
   name?: string;
+  titleOverride?: string;
+  confirmLabelOverride?: string;
   onCancel: () => void;
   onConfirm: () => void;
 };
@@ -143,6 +145,8 @@ type DeleteWorkspaceDialogProps = {
 export const DeleteWorkspaceDialog: React.FC<DeleteWorkspaceDialogProps> = ({
   open,
   name,
+  titleOverride,
+  confirmLabelOverride,
   onCancel,
   onConfirm,
 }) => {
@@ -150,10 +154,11 @@ export const DeleteWorkspaceDialog: React.FC<DeleteWorkspaceDialogProps> = ({
   return (
     <DeleteConfirmDialog
       open={open}
-      title={t("workspaces.deleteTitle")}
+      title={titleOverride ?? t("workspaces.deleteTitle")}
       message={t("workspaces.deleteConfirm", {
         name: name ?? t("workspaces.deleteFallback"),
       })}
+      confirmLabel={confirmLabelOverride}
       onCancel={onCancel}
       onConfirm={onConfirm}
     />
