@@ -5,7 +5,9 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
+  IconButton,
   LinearProgress,
+  Tooltip,
   Stack,
   Typography,
   useTheme,
@@ -14,6 +16,7 @@ import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import FolderOpenOutlinedIcon from "@mui/icons-material/FolderOpenOutlined";
 import DriveFileMoveOutlinedIcon from "@mui/icons-material/DriveFileMoveOutlined";
 import OpenInNewOutlinedIcon from "@mui/icons-material/OpenInNewOutlined";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { useTranslation } from "react-i18next";
 
 import type { Vertex } from "@/core/vertex";
@@ -60,6 +63,7 @@ export const GraphView: React.FC<GraphViewProps> = ({
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = React.useState(false);
   const [confirmRelocateOpen, setConfirmRelocateOpen] = React.useState(false);
+  const [helpOpen, setHelpOpen] = React.useState(false);
   const [isPanned, setIsPanned] = React.useState(false);
   const [moveState, setMoveState] = React.useState<{
     stage: "scan" | "move";
@@ -604,6 +608,23 @@ export const GraphView: React.FC<GraphViewProps> = ({
 
       <GraphRecenterButton visible={isPanned} onClick={handleRecenter} />
 
+      <Tooltip title={t("graphView.help.tooltip")} placement="right">
+        <IconButton
+          size="small"
+          onClick={() => setHelpOpen(true)}
+          aria-label={t("graphView.help.tooltip")}
+          sx={{
+            position: "absolute",
+            bottom: 20,
+            left: 20,
+            bgcolor: "background.paper",
+            boxShadow: 1,
+          }}
+        >
+          <InfoOutlinedIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
+
       <DeleteConfirmDialog
         open={confirmDeleteOpen}
         title={t("graphView.dialogs.deleteTitle")}
@@ -632,6 +653,52 @@ export const GraphView: React.FC<GraphViewProps> = ({
           setSelectedId(null);
         }}
       />
+
+      <Dialog
+        open={helpOpen}
+        onClose={() => setHelpOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>{t("graphView.help.title")}</DialogTitle>
+        <DialogContent>
+          <Stack spacing={1.5} sx={{ pt: 0.5, pb: 1 }}>
+            <Typography color="text.secondary">
+              {t("graphView.help.intro")}
+            </Typography>
+            <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+              {t("graphView.help.sections.expand")}
+            </Typography>
+            <Typography color="text.secondary">
+              {t("graphView.help.expandCollapse")}
+            </Typography>
+            <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+              {t("graphView.help.sections.defaults")}
+            </Typography>
+            <Typography color="text.secondary">
+              {t("graphView.help.defaults")}
+            </Typography>
+            <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+              {t("graphView.help.sections.navigation")}
+            </Typography>
+            <Typography color="text.secondary">
+              {t("graphView.help.navigation")}
+            </Typography>
+            <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+              {t("graphView.help.sections.pan")}
+            </Typography>
+            <Typography color="text.secondary">
+              {t("graphView.help.pan")}
+            </Typography>
+            <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+              {t("graphView.help.sections.badges")}
+            </Typography>
+            <Typography color="text.secondary">
+              {t("graphView.help.badges")}
+            </Typography>
+          </Stack>
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 };

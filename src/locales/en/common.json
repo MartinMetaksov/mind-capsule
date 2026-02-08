@@ -231,6 +231,23 @@
   "graphView": {
     "loading": "Loading graph…",
     "recenter": "Recenter graph",
+    "help": {
+      "tooltip": "Graph help",
+      "title": "Graph view help",
+      "intro": "Explore workspaces and vertices as a hierarchy graph. Select nodes for actions and double-click to collapse.",
+      "sections": {
+        "expand": "Expand and collapse",
+        "defaults": "Default behavior",
+        "navigation": "Navigation",
+        "pan": "Pan and recenter",
+        "badges": "Badges and abbreviations"
+      },
+      "expandCollapse": "Double-click a workspace or vertex to collapse or expand its children.",
+      "defaults": "At the root, everything starts expanded. When you open a nested vertex, other workspaces and projects start collapsed.",
+      "navigation": "Click a vertex to select it and use the action ring to open, relocate, or delete.",
+      "pan": "Click and drag empty space to pan. Use the recenter button to reset the view.",
+      "badges": "Count badges show how many items a vertex contains; hover a vertex for details."
+    },
     "move": {
       "title": "Moving vertex files",
       "subtitle": "Moving files to {{workspace}}…",
