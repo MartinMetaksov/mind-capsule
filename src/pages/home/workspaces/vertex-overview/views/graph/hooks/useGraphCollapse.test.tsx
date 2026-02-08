@@ -6,10 +6,17 @@ import { useGraphCollapse } from "./useGraphCollapse";
 type HarnessProps = {
   data: GraphData;
   collapseId: string;
+  defaultCollapsedIds?: Set<string> | null;
 };
 
-const Harness: React.FC<HarnessProps> = ({ data, collapseId }) => {
-  const { visibleGraphData, toggleCollapse } = useGraphCollapse(data);
+const Harness: React.FC<HarnessProps> = ({
+  data,
+  collapseId,
+  defaultCollapsedIds,
+}) => {
+  const { visibleGraphData, toggleCollapse } = useGraphCollapse(data, {
+    defaultCollapsedIds,
+  });
   return (
     <div>
       <div data-testid="nodes">
@@ -89,5 +96,35 @@ describe("useGraphCollapse", () => {
     expect(screen.getByTestId("nodes").textContent).not.toContain("v-parent");
     expect(screen.getByTestId("nodes").textContent).not.toContain("v-child");
     expect(screen.getByTestId("links").textContent).toBe("1");
+  });
+
+  it("applies default collapsed ids before any user interaction", () => {
+    const graph = makeGraph();
+    render(
+      <Harness
+        data={graph}
+        collapseId="v-parent"
+        defaultCollapsedIds={new Set(["v-parent"])}
+      />
+    );
+
+    expect(screen.getByTestId("nodes").textContent).not.toContain("v-child");
+    expect(screen.getByTestId("nodes").textContent).not.toContain("v-grandchild");
+    expect(screen.getByTestId("links").textContent).toBe("2");
+  });
+
+  it("allows toggling when defaults are provided", () => {
+    const graph = makeGraph();
+    render(
+      <Harness
+        data={graph}
+        collapseId="v-parent"
+        defaultCollapsedIds={new Set(["v-parent"])}
+      />
+    );
+
+    expect(screen.getByTestId("nodes").textContent).not.toContain("v-child");
+    fireEvent.click(screen.getByRole("button", { name: "toggle" }));
+    expect(screen.getByTestId("nodes").textContent).toContain("v-child");
   });
 });

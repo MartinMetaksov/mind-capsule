@@ -7,32 +7,52 @@ type UseGraphCollapseResult = {
   visibleGraphData: GraphData | null;
 };
 
+type UseGraphCollapseOptions = {
+  defaultCollapsedIds?: Set<string> | null;
+};
+
 export const useGraphCollapse = (
-  graphData: GraphData | null
+  graphData: GraphData | null,
+  options?: UseGraphCollapseOptions
 ): UseGraphCollapseResult => {
-  const [collapsedIds, setCollapsedIds] = React.useState<Set<string>>(
-    () => new Set()
+  const [collapsedIds, setCollapsedIds] = React.useState<Set<string> | null>(
+    null
   );
+
+  const validIds = React.useMemo(() => {
+    if (!graphData) return new Set<string>();
+    return new Set(
+      graphData.nodes
+        .filter((node) => node.kind === "vertex" || node.kind === "workspace")
+        .map((node) => node.id)
+    );
+  }, [graphData]);
+
+  const normalizedDefault = React.useMemo(() => {
+    if (!options?.defaultCollapsedIds || !graphData) return null;
+    const next = new Set<string>();
+    options.defaultCollapsedIds.forEach((id) => {
+      if (validIds.has(id)) next.add(id);
+    });
+    return next;
+  }, [graphData, options?.defaultCollapsedIds, validIds]);
 
   React.useEffect(() => {
     if (!graphData) return;
     setCollapsedIds((prev) => {
-      const valid = new Set(
-        graphData.nodes
-          .filter((node) => node.kind === "vertex" || node.kind === "workspace")
-          .map((node) => node.id)
-      );
+      if (!prev) return prev;
       const next = new Set<string>();
       prev.forEach((id) => {
-        if (valid.has(id)) next.add(id);
+        if (validIds.has(id)) next.add(id);
       });
       return next.size === prev.size ? prev : next;
     });
-  }, [graphData]);
+  }, [graphData, validIds]);
 
   const toggleCollapse = React.useCallback((vertexId: string) => {
     setCollapsedIds((prev) => {
-      const next = new Set(prev);
+      const base = prev ?? normalizedDefault ?? new Set<string>();
+      const next = new Set(base);
       if (next.has(vertexId)) {
         next.delete(vertexId);
       } else {
@@ -40,11 +60,17 @@ export const useGraphCollapse = (
       }
       return next;
     });
-  }, []);
+  }, [normalizedDefault]);
+
+  const emptySet = React.useMemo(() => new Set<string>(), []);
+  const effectiveCollapsedIds = React.useMemo(
+    () => collapsedIds ?? normalizedDefault ?? emptySet,
+    [collapsedIds, normalizedDefault, emptySet]
+  );
 
   const visibleGraphData = React.useMemo(() => {
     if (!graphData) return null;
-    if (collapsedIds.size === 0) return graphData;
+    if (effectiveCollapsedIds.size === 0) return graphData;
     const nodesById = new Map(graphData.nodes.map((node) => [node.id, node]));
     const childrenByParent = new Map<string, GraphNode[]>();
     const verticesByWorkspace = new Map<string, GraphNode[]>();
@@ -62,7 +88,7 @@ export const useGraphCollapse = (
       }
     });
     const hidden = new Set<string>();
-    const stack = Array.from(collapsedIds);
+    const stack = Array.from(effectiveCollapsedIds);
     while (stack.length > 0) {
       const current = stack.pop();
       if (!current) continue;
@@ -95,7 +121,7 @@ export const useGraphCollapse = (
       return !hidden.has(sourceId) && !hidden.has(targetId);
     });
     return { ...graphData, nodes: visibleNodes, links: visibleLinks };
-  }, [collapsedIds, graphData]);
+  }, [effectiveCollapsedIds, graphData]);
 
-  return { collapsedIds, toggleCollapse, visibleGraphData };
+  return { collapsedIds: effectiveCollapsedIds, toggleCollapse, visibleGraphData };
 };

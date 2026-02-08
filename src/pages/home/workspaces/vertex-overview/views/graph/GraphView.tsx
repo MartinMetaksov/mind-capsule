@@ -86,8 +86,50 @@ export const GraphView: React.FC<GraphViewProps> = ({
     _items
   );
 
+  const defaultCollapsedIds = React.useMemo(() => {
+    if (!graphData) return null;
+    if (!currentVertexId) return new Set<string>();
+    const nodesById = new Map(graphData.nodes.map((node) => [node.id, node]));
+    const currentNode = nodesById.get(currentVertexId);
+    const currentWorkspaceId =
+      currentVertex?.workspace_id ??
+      currentWorkspace?.id ??
+      currentNode?.workspaceId ??
+      null;
+
+    let rootProjectId: string | null = currentNode?.id ?? null;
+    while (rootProjectId) {
+      const node = nodesById.get(rootProjectId);
+      if (!node || node.kind !== "vertex" || !node.parentId) break;
+      rootProjectId = node.parentId;
+    }
+
+    const collapsed = new Set<string>();
+    graphData.nodes.forEach((node) => {
+      if (node.kind === "workspace") {
+        if (
+          currentWorkspaceId &&
+          node.workspaceId &&
+          node.workspaceId !== currentWorkspaceId
+        ) {
+          collapsed.add(node.id);
+        }
+      }
+    });
+    graphData.nodes.forEach((node) => {
+      if (node.kind === "vertex" && !node.parentId) {
+        if (rootProjectId && node.id !== rootProjectId) {
+          if (!currentWorkspaceId || node.workspaceId === currentWorkspaceId) {
+            collapsed.add(node.id);
+          }
+        }
+      }
+    });
+    return collapsed;
+  }, [currentVertexId, currentVertex?.workspace_id, currentWorkspace?.id, graphData]);
+
   const { collapsedIds, toggleCollapse, visibleGraphData } =
-    useGraphCollapse(graphData);
+    useGraphCollapse(graphData, { defaultCollapsedIds });
 
   const { countsByVertexId } = useGraphCounts(graphData ?? null);
 
