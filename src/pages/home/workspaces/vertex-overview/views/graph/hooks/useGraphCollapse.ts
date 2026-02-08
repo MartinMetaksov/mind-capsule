@@ -19,7 +19,7 @@ export const useGraphCollapse = (
     setCollapsedIds((prev) => {
       const valid = new Set(
         graphData.nodes
-          .filter((node) => node.kind === "vertex")
+          .filter((node) => node.kind === "vertex" || node.kind === "workspace")
           .map((node) => node.id)
       );
       const next = new Set<string>();
@@ -45,24 +45,46 @@ export const useGraphCollapse = (
   const visibleGraphData = React.useMemo(() => {
     if (!graphData) return null;
     if (collapsedIds.size === 0) return graphData;
+    const nodesById = new Map(graphData.nodes.map((node) => [node.id, node]));
     const childrenByParent = new Map<string, GraphNode[]>();
+    const verticesByWorkspace = new Map<string, GraphNode[]>();
     graphData.nodes.forEach((node) => {
-      if (node.kind !== "vertex" || !node.parentId) return;
-      const list = childrenByParent.get(node.parentId) ?? [];
-      list.push(node);
-      childrenByParent.set(node.parentId, list);
+      if (node.kind !== "vertex") return;
+      if (node.parentId) {
+        const list = childrenByParent.get(node.parentId) ?? [];
+        list.push(node);
+        childrenByParent.set(node.parentId, list);
+      }
+      if (node.workspaceId) {
+        const list = verticesByWorkspace.get(node.workspaceId) ?? [];
+        list.push(node);
+        verticesByWorkspace.set(node.workspaceId, list);
+      }
     });
     const hidden = new Set<string>();
     const stack = Array.from(collapsedIds);
     while (stack.length > 0) {
       const current = stack.pop();
       if (!current) continue;
-      const children = childrenByParent.get(current) ?? [];
-      children.forEach((child) => {
-        if (hidden.has(child.id)) return;
-        hidden.add(child.id);
-        stack.push(child.id);
-      });
+      const node = nodesById.get(current);
+      if (!node) continue;
+      if (node.kind === "workspace" && node.workspaceId) {
+        const workspaceVertices = verticesByWorkspace.get(node.workspaceId) ?? [];
+        workspaceVertices.forEach((child) => {
+          if (hidden.has(child.id)) return;
+          hidden.add(child.id);
+          stack.push(child.id);
+        });
+        continue;
+      }
+      if (node.kind === "vertex") {
+        const children = childrenByParent.get(current) ?? [];
+        children.forEach((child) => {
+          if (hidden.has(child.id)) return;
+          hidden.add(child.id);
+          stack.push(child.id);
+        });
+      }
     }
     const visibleNodes = graphData.nodes.filter((node) => !hidden.has(node.id));
     const visibleLinks = graphData.links.filter((link) => {

@@ -76,4 +76,18 @@ describe("useGraphCollapse", () => {
     expect(screen.getByTestId("nodes").textContent).not.toContain("v-grandchild");
     expect(screen.getByTestId("links").textContent).toBe("2");
   });
+
+  it("hides workspace vertices when workspace collapsed", () => {
+    const graph = makeGraph();
+    render(<Harness data={graph} collapseId="ws:1" />);
+
+    expect(screen.getByTestId("nodes").textContent).toContain("v-parent");
+    expect(screen.getByTestId("nodes").textContent).toContain("v-child");
+
+    fireEvent.click(screen.getByRole("button", { name: "toggle" }));
+
+    expect(screen.getByTestId("nodes").textContent).not.toContain("v-parent");
+    expect(screen.getByTestId("nodes").textContent).not.toContain("v-child");
+    expect(screen.getByTestId("links").textContent).toBe("1");
+  });
 });

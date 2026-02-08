@@ -359,7 +359,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
       })
       .on("mouseleave", () => onHoverId(null))
       .on("dblclick", (event: MouseEvent, d: GraphNode) => {
-        if (d.kind !== "vertex") return;
+        if (d.kind !== "vertex" && d.kind !== "workspace") return;
         event.stopPropagation();
         onToggleCollapse?.(d.id);
       })
@@ -387,10 +387,13 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
       .text((d: GraphNode) => d.label);
     labelSelectionRef.current = label;
 
+    const collapsedMarkerNodes = () =>
+      renderNodes.filter((node) => collapsedIdsRef.current.has(node.id));
+
     let collapsedMarker = root
       .append("g")
       .selectAll<SVGGElement, GraphNode>("g")
-      .data(vertexNodes.filter((node) => collapsedIdsRef.current.has(node.id)))
+      .data(collapsedMarkerNodes())
       .join("g")
       .attr("class", "graph-collapsed-marker")
       .style("pointer-events", "none");
@@ -485,9 +488,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
         .attr("cx", (d: GraphNode) => d.x ?? 0)
         .attr("cy", (d) => d.y ?? 0);
       collapsedMarker = collapsedMarker
-        .data(
-          vertexNodes.filter((node) => collapsedIdsRef.current.has(node.id))
-        )
+        .data(collapsedMarkerNodes())
         .join((enter) => {
           const group = enter
             .append("g")
