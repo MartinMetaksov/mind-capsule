@@ -8,6 +8,7 @@ import {
   IconButton,
   TextField,
   Typography,
+  useMediaQuery,
 } from "@mui/material";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import ZoomInIcon from "@mui/icons-material/ZoomIn";
@@ -53,6 +54,7 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
   const [description, setDescription] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
+  const isMobile = useMediaQuery("(max-width: 900px)");
   const assetDirectory = vertex.asset_directory;
   const os = React.useMemo(() => detectOperatingSystem(), []);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
@@ -548,17 +550,19 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
                   >
                     <ZoomInIcon fontSize="small" />
                   </IconButton>
-                  <IconButton
-                    size="small"
-                    sx={{ color: "common.white" }}
-                    aria-label={t("imagesTab.compare")}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleCompareImage(img.name);
-                    }}
-                  >
-                    <CompareArrowsOutlinedIcon fontSize="small" />
-                  </IconButton>
+                  {!isMobile && (
+                    <IconButton
+                      size="small"
+                      sx={{ color: "common.white" }}
+                      aria-label={t("imagesTab.compare")}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCompareImage(img.name);
+                      }}
+                    >
+                      <CompareArrowsOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  )}
                   <IconButton
                     size="small"
                     sx={{ color: "common.white" }}

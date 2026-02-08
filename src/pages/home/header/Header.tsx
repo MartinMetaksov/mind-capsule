@@ -7,6 +7,7 @@ import {
   Tooltip,
   Box,
   Chip,
+  useMediaQuery,
 } from "@mui/material";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import { SearchOutlined } from "@mui/icons-material";
@@ -43,6 +44,7 @@ export const Header: React.FC<HeaderProps> = ({
   const [settingsOpen, setSettingsOpen] = React.useState(false);
   const navigate = useNavigate();
   const os = React.useMemo(() => detectOperatingSystem(), []);
+  const isMobile = useMediaQuery("(max-width: 900px)");
 
   React.useEffect(() => {
     const shortcuts = {
@@ -63,6 +65,7 @@ export const Header: React.FC<HeaderProps> = ({
       if (
         onToggleSplit &&
         !disableCompare &&
+        !isMobile &&
         matchesShortcut(event, shortcuts.compare)
       ) {
         event.preventDefault();
@@ -73,7 +76,7 @@ export const Header: React.FC<HeaderProps> = ({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [disableCompare, onToggleSplit, os]);
+  }, [disableCompare, isMobile, onToggleSplit, os]);
 
   return (
     <>
@@ -142,35 +145,37 @@ export const Header: React.FC<HeaderProps> = ({
               ) : null}
             </Box>
 
-            <Tooltip
-              title={t("header.splitScreen")}
-              disableHoverListener={disableCompare || !onToggleSplit}
-              disableFocusListener={disableCompare || !onToggleSplit}
-            >
-              <span>
-                <IconButton
-                  aria-label={t("header.splitScreen")}
-                  onClick={onToggleSplit}
-                  disabled={disableCompare || !onToggleSplit}
-                  sx={(theme) => ({
-                    color: splitEnabled
-                      ? theme.palette.primary.main
-                      : theme.palette.mode === "light"
-                        ? theme.palette.text.secondary
-                        : theme.palette.text.primary,
-                    borderRadius: 2,
-                    "&:hover": {
-                      backgroundColor: theme.palette.action.hover,
+            {!isMobile && (
+              <Tooltip
+                title={t("header.splitScreen")}
+                disableHoverListener={disableCompare || !onToggleSplit}
+                disableFocusListener={disableCompare || !onToggleSplit}
+              >
+                <span>
+                  <IconButton
+                    aria-label={t("header.splitScreen")}
+                    onClick={onToggleSplit}
+                    disabled={disableCompare || !onToggleSplit}
+                    sx={(theme) => ({
                       color: splitEnabled
                         ? theme.palette.primary.main
-                        : theme.palette.text.primary,
-                    },
-                  })}
-                >
-                  <VerticalSplitIcon />
-                </IconButton>
-              </span>
-            </Tooltip>
+                        : theme.palette.mode === "light"
+                          ? theme.palette.text.secondary
+                          : theme.palette.text.primary,
+                      borderRadius: 2,
+                      "&:hover": {
+                        backgroundColor: theme.palette.action.hover,
+                        color: splitEnabled
+                          ? theme.palette.primary.main
+                          : theme.palette.text.primary,
+                      },
+                    })}
+                  >
+                    <VerticalSplitIcon />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            )}
             <Tooltip
               title={t("header.search")}
               disableHoverListener={disableSearch}

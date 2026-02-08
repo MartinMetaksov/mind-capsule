@@ -4,6 +4,7 @@ import { I18nextProvider } from "react-i18next";
 import i18n from "@/i18n";
 import { ImagesTab } from "./ImagesTab";
 import type { Vertex } from "@/core/vertex";
+import { useMediaQuery } from "@mui/material";
 
 // Mock ResizeObserver for layout calculations
 beforeAll(() => {
@@ -42,6 +43,16 @@ vi.mock("@tauri-apps/api/window", () => ({
   }),
 }));
 
+vi.mock("@mui/material", async () => {
+  const actual = await vi.importActual<typeof import("@mui/material")>(
+    "@mui/material"
+  );
+  return {
+    ...actual,
+    useMediaQuery: vi.fn(),
+  };
+});
+
 const vertex: Vertex = {
   id: "v-1",
   title: "Vertex",
@@ -57,6 +68,7 @@ const vertex: Vertex = {
 describe("ImagesTab", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(useMediaQuery).mockReturnValue(false);
     mockListImages.mockResolvedValue([
       {
         name: "img1.png",
@@ -127,5 +139,13 @@ describe("ImagesTab", () => {
         detail: { vertexId: vertex.id, imageName: "img1.png" },
       })
     );
+  });
+
+  it("hides compare actions on mobile", async () => {
+    vi.mocked(useMediaQuery).mockReturnValue(true);
+    renderTab();
+    expect(
+      screen.queryByRole("button", { name: /Select for comparison/i })
+    ).not.toBeInTheDocument();
   });
 });

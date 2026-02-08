@@ -3,6 +3,7 @@ import {
   Alert,
   Box,
   IconButton,
+  useMediaQuery,
   Stack,
   ToggleButton,
   ToggleButtonGroup,
@@ -118,6 +119,7 @@ export const NotesTab: React.FC<NotesTabProps> = ({
   const [notePreview, setNotePreview] = React.useState<NotePreview | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
+  const isMobile = useMediaQuery("(max-width: 900px)");
   const [loading, setLoading] = React.useState(false);
   const [confirmDelete, setConfirmDelete] = React.useState<NoteEntry | null>(null);
   const [notesOrderMap, setNotesOrderMap] = React.useState<Record<string, number>>(
@@ -823,17 +825,19 @@ export const NotesTab: React.FC<NotesTabProps> = ({
                     >
                       <ZoomInIcon fontSize="small" />
                     </IconButton>
-                    <IconButton
-                      size="small"
-                      sx={{ color: "common.white" }}
-                      aria-label={t("notesTab.compare")}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handleCompareNote(note.name);
-                      }}
-                    >
-                      <CompareArrowsOutlinedIcon fontSize="small" />
-                    </IconButton>
+                    {!isMobile && (
+                      <IconButton
+                        size="small"
+                        sx={{ color: "common.white" }}
+                        aria-label={t("notesTab.compare")}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleCompareNote(note.name);
+                        }}
+                      >
+                        <CompareArrowsOutlinedIcon fontSize="small" />
+                      </IconButton>
+                    )}
                     <IconButton
                       size="small"
                       sx={{ color: "common.white" }}

@@ -4,6 +4,7 @@ import { I18nextProvider } from "react-i18next";
 import i18n from "@/i18n";
 import { NotesTab } from "./NotesTab";
 import type { Vertex } from "@/core/vertex";
+import { useMediaQuery } from "@mui/material";
 
 // Mock ResizeObserver for layout calculations
 beforeAll(() => {
@@ -56,6 +57,16 @@ vi.mock("@/integrations/fileSystem/integration", () => ({
   }),
 }));
 
+vi.mock("@mui/material", async () => {
+  const actual = await vi.importActual<typeof import("@mui/material")>(
+    "@mui/material"
+  );
+  return {
+    ...actual,
+    useMediaQuery: vi.fn(),
+  };
+});
+
 const vertex: Vertex = {
   id: "v-1",
   title: "Vertex One",
@@ -71,6 +82,7 @@ const vertex: Vertex = {
 describe("NotesTab", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(useMediaQuery).mockReturnValue(false);
     window.localStorage.clear();
     mockIsTauri.mockResolvedValue(false);
     mockJoin.mockImplementation(async (...parts: string[]) => parts.join("/"));
@@ -251,6 +263,14 @@ describe("NotesTab", () => {
         detail: { vertexId: vertex.id, noteName: "note-1.md" },
       })
     );
+  });
+
+  it("hides compare actions on mobile", async () => {
+    vi.mocked(useMediaQuery).mockReturnValue(true);
+    renderTab();
+    expect(
+      screen.queryByRole("button", { name: /Select for comparison/i })
+    ).not.toBeInTheDocument();
   });
 
   it("removes a single history entry", async () => {

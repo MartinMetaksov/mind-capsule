@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import { I18nextProvider } from "react-i18next";
 import i18n from "@/i18n";
 import { Header } from "./Header";
+import { useMediaQuery } from "@mui/material";
 
 // Mock theme mode hook
 vi.mock("@/utils/themes/hooks/useThemeMode", () => ({
@@ -17,6 +18,16 @@ vi.mock("@/utils/os", () => ({
   detectOperatingSystem: () => "macOS",
 }));
 
+vi.mock("@mui/material", async () => {
+  const actual = await vi.importActual<typeof import("@mui/material")>(
+    "@mui/material"
+  );
+  return {
+    ...actual,
+    useMediaQuery: vi.fn(),
+  };
+});
+
 // Mock heavy child dialogs (note: path reflects header folder structure)
 vi.mock("./search-dialog/SearchDialog", () => ({
   SearchDialog: ({ open }: { open: boolean }) => (
@@ -29,6 +40,10 @@ vi.mock("./settings-dialog/SettingsDialog", () => ({
 }));
 
 describe("Header", () => {
+  beforeEach(() => {
+    vi.mocked(useMediaQuery).mockReturnValue(false);
+  });
+
   it("renders app name and opens search/settings dialogs", () => {
     render(
       <I18nextProvider i18n={i18n}>
@@ -59,5 +74,20 @@ describe("Header", () => {
 
     fireEvent.keyDown(window, { key: "e", metaKey: true });
     expect(onToggleSplit).toHaveBeenCalledTimes(1);
+  });
+
+  it("hides compare button on mobile", () => {
+    vi.mocked(useMediaQuery).mockReturnValue(true);
+    render(
+      <I18nextProvider i18n={i18n}>
+        <BrowserRouter>
+          <Header />
+        </BrowserRouter>
+      </I18nextProvider>
+    );
+
+    expect(
+      screen.queryByRole("button", { name: /Compare with/i })
+    ).not.toBeInTheDocument();
   });
 });
